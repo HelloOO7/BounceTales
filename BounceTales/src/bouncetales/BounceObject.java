@@ -79,6 +79,7 @@ public final class BounceObject extends GameObject {
 	private static int aabbRayWeight;
 
 	//made these non-static to allow for more BounceObjects
+	
 	/* renamed from: b */
 	public int idleAnimStartTimer;
 
@@ -626,15 +627,9 @@ public final class BounceObject extends GameObject {
 									if (jumpPad.calcPush > maxPush) {
 										jumpPad.calcPush = maxPush;
 									}
-									jumpPad.jumper = this;
-									jumpPad.jumper.enablePhysics = false;
-									jumpPad.jumper.curXVelocity = 0.0f;
-									jumpPad.jumper.curYVelocity = 0.0f;
+									jumpPad.setJumper(this);
 									jumpPad.isJumpFinished = false;
 									jumpPad.onJumperContact();
-									if (this.equals(BounceGame.bounceObj)) {
-										EventObject.eventVars[1] = BounceGame.CONTROLLER_FROZEN;
-									}
 								}
 							}
 							other = other.getNextNodeDescendToChildren(startNode);
