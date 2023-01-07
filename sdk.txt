@@ -1,0 +1,2 @@
+https://mirror.nforce.com/pub/drivers/java_jre/jre-1_5_0_22-windows-i586-p.exe
+https://archive.org/download/nokia_sdks_n_dev_tools2/Series_40_5th_Edition_SDK_Feature_Pack_1_1_0.zip

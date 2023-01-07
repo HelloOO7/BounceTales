@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.6.5
+Created-By: 1.6.0_03-b05 (Sun Microsystems Inc.)
+Cheats: On
+MIDlet-Data-Size: 1024
+MicroEdition-Configuration: CLDC-1.1
+MIDlet-Name: Bounce Tales EX
+MIDlet-Icon: /icon.png
+MIDlet-Vendor: Nokia
+MIDlet-1: Bounce Tales EX, /icon.png, bouncetales.RMIDlet
+MIDlet-Version: 2.0.3
+MicroEdition-Profile: MIDP-2.0
+Nokia-Platform: Nokia*
+
