@@ -3,23 +3,16 @@ package bouncetales;
 /* renamed from: d */
 public final class Matrix {
 
-	/* renamed from: a */
-	public static Matrix temp = new Matrix();
-	public static int vectorMulRslX;
-	public static int vectorMulRslY;
+	public static Matrix temp = new Matrix(); //renamed from: a
+	public static int vectorMulRslX; //renamed from: a
+	public static int vectorMulRslY; //renamed from: b
 
-	/* renamed from: a */
-	public int m00 = LP32.ONE;
-	/* renamed from: b */
-	public int m01;
-	/* renamed from: c */
-	public int translationX;
-	/* renamed from: d */
-	public int m10;
-	/* renamed from: e */
-	public int m11 = LP32.ONE;
-	/* renamed from: f */
-	public int translationY;
+	public int m00 = LP32.ONE; //renamed from: a
+	public int m01; //renamed from: b
+	public int translationX; //renamed from: c
+	public int m10; //renamed from: d
+	public int m11 = LP32.ONE; //renamed from: e
+	public int translationY; //renamed from: f
 
 	/* renamed from: a */
 	public static void multMatrices(Matrix a, Matrix b, Matrix dest) {
@@ -35,6 +28,16 @@ public final class Matrix {
 		dest.m10 = _m10;
 		dest.m11 = _m11;
 		dest.translationY = _ty;
+	}
+
+	/* renamed from: a */
+	public final void setFromMatrix(Matrix src) {
+		m00 = src.m00;
+		m01 = src.m01;
+		translationX = src.translationX;
+		m10 = src.m10;
+		m11 = src.m11;
+		translationY = src.translationY;
 	}
 
 	/* renamed from: a */
@@ -66,20 +69,10 @@ public final class Matrix {
 		vectorMulRslY = ((int) (((((long) m10) * ((long) x)) + (((long) m11) * ((long) y))) >> 16)) + translationY;
 	}
 
-	/* renamed from: a */
-	public final void setFromMatrix(Matrix src) {
-		m00 = src.m00;
-		m01 = src.m01;
-		translationX = src.translationX;
-		m10 = src.m10;
-		m11 = src.m11;
-		translationY = src.translationY;
-	}
-
 	/* renamed from: b */
-	public final void mulDirection(int i, int i2) {
-		vectorMulRslX = (int) (((((long) m00) * ((long) i)) + (((long) m01) * ((long) i2))) >> 16);
-		vectorMulRslY = (int) (((((long) m10) * ((long) i)) + (((long) m11) * ((long) i2))) >> 16);
+	public final void mulDirection(int x, int y) {
+		vectorMulRslX = (int) (((((long) m00) * ((long) x)) + (((long) m01) * ((long) y))) >> 16);
+		vectorMulRslY = (int) (((((long) m10) * ((long) x)) + (((long) m11) * ((long) y))) >> 16);
 	}
 
 	/* renamed from: b */
@@ -112,15 +105,8 @@ public final class Matrix {
 			throw new ArithmeticException("Non-invertible matrix.");
 		}
 	}
-	
-	public String translationToString() {
-		return "(" + LP32.LP32ToFP32(translationX) + ", " + LP32.LP32ToFP32(translationY) + ")";
-	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append(LP32.LP32ToFP32(m00)).append(' ').append(LP32.LP32ToFP32(m01)).append(' ').append(LP32.LP32ToFP32(translationX))
-				.append('\n').append(LP32.LP32ToFP32(m10)).append(' ').append(LP32.LP32ToFP32(m11)).append(' ').append(LP32.LP32ToFP32(translationY));
-		return sb.toString();
+		return m00 + " " + m01 + " " + translationX + "\n" + m10 + " " + m11 + " " + translationY;
 	}
 }

@@ -13,45 +13,111 @@ public final class EventObject extends GameObject {
 	public static final byte STATE_ACTIVE = 2;
 	public static final byte STATE_PAUSED = 3;
 
-	/* renamed from: a */
-	public static int finalBossTimer = 0;
-	/* renamed from: a */
-	public static int[] eventVars;
-	/* renamed from: a */
-	private static EventObject[] currentEvents;
-	/* renamed from: c */
-	private static GameObject[] triggerCandidates = new GameObject[2];
+	//Global state
+	public static int finalBossTimer = 0; //renamed from: a
+	public static int[] eventVars; //renamed from: a
 
-	/* renamed from: a */
-	private short triggerObjId;
+	//Global - stream pos after read function return
+	private static int readPtr = 0; //renamed from: d
 
-	/* renamed from: a */
-	private GameObject[] actorsInAreaQueue = new GameObject[2];
-	/* renamed from: b */
-	private int queuedAreaActorCount;
-	/* renamed from: b */
-	private GameObject[] lastActorsInArea = new GameObject[2];
-	/* renamed from: c */
-	private int lastAreaActorCount;
+	private static EventObject[] currentEvents; //renamed from: a
+	private static GameObject[] triggerCandidates = new GameObject[2]; //renamed from: c
 
-	/* renamed from: a */
-	private byte[][] events;
-	/* renamed from: d */
-	private byte triggerByLeave;
-	/* renamed from: e */
-	private byte repeatable;
+	//Parameters
+	private byte[][] events; //renamed from: a
+	private byte eventCount = 0; //renamed from: f
 
-	/* renamed from: f */
-	private byte eventCount = 0;
-	/* renamed from: a */
-	private byte eventState = 0;
-	/* renamed from: g */
-	private byte currentEvent = -1;
-	/* renamed from: d */
-	private static int readPtr = 0;
+	private byte triggerByLeave; //renamed from: d
+	private short triggerObjId; //renamed from: a
+	private byte repeatable; //renamed from: e
+
+	//State - interaction
+	private GameObject[] actorsInAreaQueue = new GameObject[2]; //renamed from: a
+	private int queuedAreaActorCount; //renamed from: b
+	private GameObject[] lastActorsInArea = new GameObject[2]; //renamed from: b
+	private int lastAreaActorCount; //renamed from: c
+
+	private byte eventState = 0; //renamed from: a
+	private byte currentEvent = -1; //renamed from: g
 
 	public EventObject() {
 		this.objType = TYPEID;
+	}
+
+	// p000.GameObject
+	/* renamed from: a */
+	//@Override
+	public final int readData(byte[] b, int dataPos) {
+		dataPos = super.readData(b, dataPos);
+		this.bboxMinX = readShort(b, dataPos + 0) << 16;
+		this.bboxMaxY = readShort(b, dataPos + 2) << 16;
+		this.bboxMaxX = readShort(b, dataPos + 4) << 16;
+		this.bboxMinY = readShort(b, dataPos + 6) << 16;
+		dataPos += 8;
+		this.eventState = b[dataPos++];
+		if (this.eventState == STATE_ACTIVE) {
+			System.out.println("Event " + getObjectId() + " autostart!");
+			this.currentEvent = 0;
+		}
+		this.triggerByLeave = b[dataPos++];
+		this.repeatable = b[dataPos++];
+		this.triggerObjId = readShort(b, dataPos);
+		dataPos += 2;
+		this.eventCount = b[dataPos++];
+		this.events = new byte[this.eventCount][];
+		for (int eventIdx = 0; eventIdx < this.eventCount; eventIdx++) {
+			byte evCmdCount = b[dataPos++];
+			this.events[eventIdx] = new byte[evCmdCount];
+			for (int i = 0; i < evCmdCount; i++) {
+				this.events[eventIdx][i] = b[dataPos++];
+			}
+		}
+		if (!DEBUG_DRAW_ON) {
+			this.flags |= FLAG_NODRAW;
+		}
+		return dataPos;
+	}
+
+	// p000.GameObject
+	/* renamed from: a */
+	//@Override
+	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix rootMatrix) {
+		if (DEBUG_DRAW_ON) {
+			int[] colors = new int[]{0x0000FF, 0xFF0000, 0x00FF00, 0x00CC00};
+			debugDraw(graphics, colors[eventState], rootMatrix);
+		}
+	}
+
+	/* access modifiers changed from: protected */
+ /* renamed from: a */
+	public final void changeEventState(int newState) {
+		switch (this.eventState) {
+			case STATE_WAITING:
+				if (newState == STATE_ACTIVE) {
+					this.eventState = STATE_ACTIVE;
+					this.currentEvent = 0;
+				}
+				if (newState == STATE_TERMINATED) {
+					this.eventState = STATE_TERMINATED;
+				}
+				break;
+			case STATE_TERMINATED:
+				if (newState == STATE_WAITING) {
+					this.eventState = STATE_WAITING;
+					resetTransformEvents();
+				}
+				break;
+			case STATE_ACTIVE:
+				if (newState == STATE_TERMINATED || newState == STATE_PAUSED) {
+					this.eventState = (byte) newState;
+				}
+				break;
+			case STATE_PAUSED:
+				if (newState == STATE_ACTIVE) {
+					this.eventState = STATE_ACTIVE;
+				}
+				break;
+		}
 	}
 
 	/* renamed from: a */
@@ -62,6 +128,44 @@ public final class EventObject extends GameObject {
 	/* renamed from: a */
 	private static void setFloatEventVar(byte b, float f) {
 		eventVars[b] = Float.floatToIntBits(f);
+	}
+
+	/* renamed from: a */
+	private static float readFloat(byte[] arr, int offset) {
+		byte dataType = arr[offset];
+		readPtr = offset + 1;
+		switch (dataType) {
+			case 1:
+				readPtr++;
+				return getFloatEventVar(arr[offset + 1]);
+			case 2:
+				readPtr++;
+				return (float) eventVars[arr[offset + 1]];
+			case 16:
+				readPtr += 4;
+				return Float.intBitsToFloat(GameObject.readInt(arr, offset + 1));
+			case 32:
+				readPtr += 4;
+				return (float) GameObject.readInt(arr, offset + 1);
+			default:
+				return 0.0f;
+		}
+	}
+
+	/* renamed from: c */
+	private static int readInteger(byte[] data, int offset) {
+		byte size = data[offset];
+		readPtr = 4;
+		switch (size) {
+			case 2:
+				readPtr++;
+				return eventVars[data[offset + 1]];
+			case 32:
+				readPtr += 4;
+				return GameObject.readInt(data, offset + 1);
+			default:
+				return 0;
+		}
 	}
 
 	/* renamed from: a */
@@ -129,36 +233,36 @@ public final class EventObject extends GameObject {
 				switch (evCmd[0]) {
 					case EventCommand.MESSAGE: //display message
 						short msg = BounceGame.SCRIPT_MESSAGE_IDS[GameObject.readShort(evCmd, 1)];
-						if (!BounceGame.wasLevelBeaten(LevelID.FINAL_RIDE)) {
+						if (!BounceGame.wasLevelBeaten(LevelID.GAME_CLEAR_LEVEL)) {
 							BounceGame.pushFieldMessage(msg);
 						}
 						advanceEvent = true;
 						break;
-					case EventCommand.BLOWER: //activate blower
+					case EventCommand.OBJ_ANIMATE: //start ambient animation
 						GameObject spriteGO = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
 						if (spriteGO != null) {
-							eventLog("Activate blower object " + spriteGO.getObjectId());
+							eventLog("Start sprite animation @ " + spriteGO.getObjectId());
 							SpriteObject sprite = (SpriteObject) spriteGO;
-							for (int i5 = 0; i5 < sprite.imageIDs.length; i5++) {
-								short s2 = -1;
-								short s3 = 0;
-								switch (sprite.imageIDs[i5]) {
-									case 118:
-										s2 = 485;
-										s3 = 9999;
+							for (int componentIdx = 0; componentIdx < sprite.imageIDs.length; componentIdx++) {
+								short anmImage = -1;
+								short anmLength = 0; //9999 = loop forever
+								switch (sprite.imageIDs[componentIdx]) {
+									case 118: //propeller flower
+										anmImage = 485;
+										anmLength = 9999;
 										break;
-									case 334:
-										s2 = 474;
-										s3 = 750;
+									case 334: //bumpy cracks stone wall
+										anmImage = 474;
+										anmLength = 750;
 										break;
-									case 342:
-										s2 = 480;
-										s3 = 9999;
+									case 342: //color machine ray
+										anmImage = 480;
+										anmLength = 9999;
 										break;
 								}
-								if (s2 > -1) {
-									sprite.f485b[i5] = s2;
-									sprite.imageIDs[i5] = s3;
+								if (anmImage > -1) {
+									sprite.actionImageIDs[componentIdx] = anmImage;
+									sprite.imageIDs[componentIdx] = anmLength;
 								}
 							}
 						}
@@ -299,7 +403,7 @@ public final class EventObject extends GameObject {
 						if (moveobj == null) {
 							advanceEvent = true;
 						} else {
-							int moveSpeed = GameObject.read32(evCmd, 15);
+							int moveSpeed = GameObject.readInt(evCmd, 15);
 							int delta = GameRuntime.updateDelta;
 							if (delta >= moveSpeed) {
 								evCmd[15] = evCmd[11];
@@ -308,8 +412,8 @@ public final class EventObject extends GameObject {
 								evCmd[18] = evCmd[14];
 								delta = moveSpeed;
 							}
-							moveobj.localObjectMatrix.translationX += GameObject.read32(evCmd, 3) * delta;
-							moveobj.localObjectMatrix.translationY += GameObject.read32(evCmd, 7) * delta;
+							moveobj.localObjectMatrix.translationX += GameObject.readInt(evCmd, 3) * delta;
+							moveobj.localObjectMatrix.translationY += GameObject.readInt(evCmd, 7) * delta;
 							moveobj.setIsDirtyRecursive();
 							moveobj.setBBoxIsDirty();
 							int deltaDiff = moveSpeed - delta;
@@ -326,8 +430,8 @@ public final class EventObject extends GameObject {
 						if (rotObj == null) {
 							advanceEvent = true;
 						} else {
-							int b6 = GameObject.read32(evCmd, 11);
-							int b7 = GameObject.read32(evCmd, 7);
+							int b6 = GameObject.readInt(evCmd, 11);
+							int b7 = GameObject.readInt(evCmd, 7);
 							int i8 = GameRuntime.updateDelta;
 							if (b6 == b7) {
 								write32(evCmd, 15, rotObj.localObjectMatrix.m00); //save initial rotation
@@ -342,14 +446,14 @@ public final class EventObject extends GameObject {
 								evCmd[14] = evCmd[10];
 								b6 = 0;
 							}
-							float rotation = LP32.LP32ToFP32((int) ((((long) GameObject.read32(evCmd, 3)) * ((long) (b7 - b6))) / ((long) b7)));
+							float rotation = LP32.LP32ToFP32((int) ((((long) GameObject.readInt(evCmd, 3)) * ((long) (b7 - b6))) / ((long) b7)));
 							Matrix.temp.setRotation(rotation);
 							Matrix.temp.translationX = 0;
 							Matrix.temp.translationY = 0;
-							rotObj.localObjectMatrix.m00 = GameObject.read32(evCmd, 15);
-							rotObj.localObjectMatrix.m01 = GameObject.read32(evCmd, 19);
-							rotObj.localObjectMatrix.m10 = GameObject.read32(evCmd, 23);
-							rotObj.localObjectMatrix.m11 = GameObject.read32(evCmd, 27);
+							rotObj.localObjectMatrix.m00 = GameObject.readInt(evCmd, 15);
+							rotObj.localObjectMatrix.m01 = GameObject.readInt(evCmd, 19);
+							rotObj.localObjectMatrix.m10 = GameObject.readInt(evCmd, 23);
+							rotObj.localObjectMatrix.m11 = GameObject.readInt(evCmd, 27);
 							rotObj.localObjectMatrix.mul(Matrix.temp);
 							rotObj.setIsDirtyRecursive();
 							rotObj.setBBoxIsDirty();
@@ -368,8 +472,8 @@ public final class EventObject extends GameObject {
 						if (destObj != null) {
 							short srcObjId = GameObject.readShort(evCmd, 3);
 							if (srcObjId < 0) {
-								destObj.localObjectMatrix.translationX = GameObject.read32(evCmd, 5);
-								destObj.localObjectMatrix.translationY = GameObject.read32(evCmd, 9);
+								destObj.localObjectMatrix.translationX = GameObject.readInt(evCmd, 5);
+								destObj.localObjectMatrix.translationY = GameObject.readInt(evCmd, 9);
 								eventLog("Set translation of object " + destObj.getObjectId() + " to (" + (destObj.localObjectMatrix.translationX >> 16) + ", " + (destObj.localObjectMatrix.translationY >> 16) + ")");
 							} else {
 								eventLog("Set translation of object " + destObj.getObjectId() + " from " + srcObjId);
@@ -446,61 +550,73 @@ public final class EventObject extends GameObject {
 						eventLog("Checkpoint reached: " + BounceGame.checkpointPosX + ", " + BounceGame.checkpointPosY);
 						break;
 					case EventCommand.PUSH: //force gravity push
-						GameObject bounceGO = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
-						if (bounceGO.objType == BounceObject.TYPEID) {
-							BounceObject bounce = (BounceObject) bounceGO;
-							bounce.horizontalPush += (float) GameObject.readShort(evCmd, 3);
-							bounce.verticalPush += (float) GameObject.readShort(evCmd, 5);
+						GameObject pushTarget = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
+						if (pushTarget.objType == BounceObject.TYPEID) {
+							BounceObject bounce = (BounceObject) pushTarget;
+							bounce.pushX += (float) GameObject.readShort(evCmd, 3);
+							bounce.pushY += (float) GameObject.readShort(evCmd, 5);
 						}
 						advanceEvent = true;
 						break;
 					case EventCommand.GRAVITATE:
-						GameObject a15 = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
-						if (a15.objType == BounceObject.TYPEID) {
-							BounceObject cVar2 = (BounceObject) a15;
-							cVar2.gravityX += (float) GameObject.readShort(evCmd, 3);
-							cVar2.gravityY += (float) GameObject.readShort(evCmd, 5);
+						GameObject gravityTarget = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
+						if (gravityTarget.objType == BounceObject.TYPEID) {
+							BounceObject bounce = (BounceObject) gravityTarget;
+							bounce.gravityX += (float) GameObject.readShort(evCmd, 3);
+							bounce.gravityY += (float) GameObject.readShort(evCmd, 5);
 						}
 						advanceEvent = true;
 						break;
 					case EventCommand.ACCELERATE:
-						GameObject a16 = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
-						if (a16.objType == BounceObject.TYPEID) {
-							BounceObject cVar3 = (BounceObject) a16;
-							cVar3.curXVelocity += (float) GameObject.readShort(evCmd, 3);
-							cVar3.curYVelocity += (float) GameObject.readShort(evCmd, 5);
+						GameObject accelTarget = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
+						if (accelTarget.objType == BounceObject.TYPEID) {
+							BounceObject bounce = (BounceObject) accelTarget;
+							bounce.curXVelocity += (float) GameObject.readShort(evCmd, 3);
+							bounce.curYVelocity += (float) GameObject.readShort(evCmd, 5);
 						}
 						advanceEvent = true;
 						break;
-					case EventCommand.CMD_29: {
+					case EventCommand.OBJ_SET_FLAGS: {
 						GameObject obj = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
 						if (obj != null) {
 							eventLog("evcmd 29 on object " + obj.getObjectId());
-							int b8 = GameObject.read32(evCmd, 3);
-							int b9 = GameObject.read32(evCmd, 7);
-							if ((b8 & 1) > 0) {
-								obj.flags &= -32;
-								obj.flags |= b9 & 31;
-								obj.zCoord = (byte) ((obj.flags & 31) - 16);
+							int flagExistMask = GameObject.readInt(evCmd, 3);
+							int flagValues = GameObject.readInt(evCmd, 7);
+							if ((flagExistMask & 1) != 0) {
+								obj.flags &= ~FLAG_Z_COORD_MASK;
+								obj.flags |= flagValues & FLAG_Z_COORD_MASK;
+								obj.zCoord = (byte) ((obj.flags & FLAG_Z_COORD_MASK) - 16);
 							}
-							if ((b8 & 32) > 0) {
-								obj.flags &= -33;
-								obj.flags |= b9 & 32;
+							if ((flagExistMask & FLAG_NOCOLLIDE) != 0) {
+								obj.flags &= ~FLAG_NOCOLLIDE;
+								obj.flags |= flagValues & FLAG_NOCOLLIDE;
 							}
-							if ((b8 & 128) > 0) {
-								obj.flags &= -129;
-								obj.flags |= b9 & 128;
+							if ((flagExistMask & FLAG_NODRAW) != 0) {
+								obj.flags &= ~FLAG_NODRAW;
+								obj.flags |= flagValues & FLAG_NODRAW;
 								if (obj.getObjType() == SpriteObject.TYPEID) {
 									SpriteObject sprite = (SpriteObject) obj;
-									if (sprite.imageIDs[0] == 358) {
+									if (sprite.imageIDs[0] == 358) { //evil machine
 										sprite.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-										BounceGame.f300h.mo71a(24, sprite.bboxMinX + LP32.Int32ToLP32(60) + GameObject.tmpObjMatrix.translationX, sprite.bboxMinY + 3932160 + GameObject.tmpObjMatrix.translationY, (sprite.bboxMaxX - 3932160) + GameObject.tmpObjMatrix.translationX, GameObject.tmpObjMatrix.translationY + (sprite.bboxMaxY - LP32.Int32ToLP32(60)), 840, 0, 0, 360, 2040, 510);
+										BounceGame.colorMachineDestroyParticle.emitIndependentBursts(
+												24,
+												sprite.bboxMinX + (60 << 16) + GameObject.tmpObjMatrix.translationX,
+												sprite.bboxMinY + (60 << 16) + GameObject.tmpObjMatrix.translationY,
+												(sprite.bboxMaxX - (60 << 16)) + GameObject.tmpObjMatrix.translationX,
+												(sprite.bboxMaxY - (60 << 16)) + GameObject.tmpObjMatrix.translationY,
+												840,
+												0,
+												0,
+												360,
+												2040,
+												510
+										);
 									}
 								}
 							}
-							if ((b8 & 256) > 0) {
-								obj.flags &= 0xFFFFFEFF;
-								obj.flags |= b9 & 0x100;
+							if ((flagExistMask & 256) > 0) {
+								obj.flags &= ~256;
+								obj.flags |= flagValues & 0x100;
 							}
 						}
 						advanceEvent = true;
@@ -548,6 +664,32 @@ public final class EventObject extends GameObject {
 		}
 	}
 
+	/* renamed from: b */
+	private void resetTransformEvents() {
+		this.currentEvent = -1;
+		for (int i = 0; i < this.events.length; i++) {
+			byte[] evt = this.events[i];
+			switch (evt[0]) {
+				case 6:
+					evt[3] = evt[1];
+					evt[4] = evt[2];
+					break;
+				case 16:
+					evt[15] = evt[11];
+					evt[16] = evt[12];
+					evt[17] = evt[13];
+					evt[18] = evt[14];
+					break;
+				case 17:
+					evt[11] = evt[7];
+					evt[12] = evt[8];
+					evt[13] = evt[9];
+					evt[14] = evt[10];
+					break;
+			}
+		}
+	}
+
 	/* renamed from: a */
 	public static void checkBounceEventTrigger(EventObject[] events, BounceObject bounce) {
 		int bboxW = bounce.bboxMaxX - bounce.bboxMinX;
@@ -580,151 +722,11 @@ public final class EventObject extends GameObject {
 
 	/* renamed from: a */
 	private static boolean arrayContains(Object[] array, int count, Object obj) {
-		for (int i2 = 0; i2 < count; i2++) {
-			if (array[i2] == obj) {
+		for (int i = 0; i < count; i++) {
+			if (array[i] == obj) {
 				return true;
 			}
 		}
 		return false;
-	}
-
-	/* renamed from: b */
-	private void resetTransformEvents() {
-		this.currentEvent = -1;
-		for (int i = 0; i < this.events.length; i++) {
-			byte[] evt = this.events[i];
-			switch (evt[0]) {
-				case 6:
-					evt[3] = evt[1];
-					evt[4] = evt[2];
-					break;
-				case 16:
-					evt[15] = evt[11];
-					evt[16] = evt[12];
-					evt[17] = evt[13];
-					evt[18] = evt[14];
-					break;
-				case 17:
-					evt[11] = evt[7];
-					evt[12] = evt[8];
-					evt[13] = evt[9];
-					evt[14] = evt[10];
-					break;
-			}
-		}
-	}
-
-	/* renamed from: a */
-	private static float readFloat(byte[] arr, int offset) {
-		byte dataType = arr[offset];
-		readPtr = offset + 1;
-		switch (dataType) {
-			case 1:
-				readPtr++;
-				return getFloatEventVar(arr[offset + 1]);
-			case 2:
-				readPtr++;
-				return (float) eventVars[arr[offset + 1]];
-			case 16:
-				readPtr += 4;
-				return Float.intBitsToFloat(GameObject.read32(arr, offset + 1));
-			case 32:
-				readPtr += 4;
-				return (float) GameObject.read32(arr, offset + 1);
-			default:
-				return 0.0f;
-		}
-	}
-
-	/* renamed from: c */
-	private static int readInteger(byte[] data, int offset) {
-		byte size = data[offset];
-		readPtr = 4;
-		switch (size) {
-			case 2:
-				readPtr++;
-				return eventVars[data[offset + 1]];
-			case 32:
-				readPtr += 4;
-				return GameObject.read32(data, offset + 1);
-			default:
-				return 0;
-		}
-	}
-
-	// p000.GameObject
-	/* renamed from: a */
-	//@Override
-	public final int readData(byte[] b, int dataPos) {
-		dataPos = super.readData(b, dataPos);
-		this.bboxMinX = readShort(b, dataPos + 0) << 16;
-		this.bboxMaxY = readShort(b, dataPos + 2) << 16;
-		this.bboxMaxX = readShort(b, dataPos + 4) << 16;
-		this.bboxMinY = readShort(b, dataPos + 6) << 16;
-		dataPos += 8;
-		this.eventState = b[dataPos++];
-		if (this.eventState == STATE_ACTIVE) {
-			System.out.println("Event " + getObjectId() + " autostart!");
-			this.currentEvent = 0;
-		}
-		this.triggerByLeave = b[dataPos++];
-		this.repeatable = b[dataPos++];
-		this.triggerObjId = readShort(b, dataPos);
-		dataPos += 2;
-		this.eventCount = b[dataPos++];
-		this.events = new byte[this.eventCount][];
-		for (int eventIdx = 0; eventIdx < this.eventCount; eventIdx++) {
-			byte evCmdCount = b[dataPos++];
-			this.events[eventIdx] = new byte[evCmdCount];
-			for (int i = 0; i < evCmdCount; i++) {
-				this.events[eventIdx][i] = b[dataPos++];
-			}
-		}
-		if (!DEBUG_DRAW_ON) {
-			this.flags |= 128;
-		}
-		return dataPos;
-	}
-
-	/* access modifiers changed from: protected */
- /* renamed from: a */
-	public final void changeEventState(int newState) {
-		switch (this.eventState) {
-			case STATE_WAITING:
-				if (newState == STATE_ACTIVE) {
-					this.eventState = STATE_ACTIVE;
-					this.currentEvent = 0;
-				}
-				if (newState == STATE_TERMINATED) {
-					this.eventState = STATE_TERMINATED;
-				}
-				break;
-			case STATE_TERMINATED:
-				if (newState == STATE_WAITING) {
-					this.eventState = STATE_WAITING;
-					resetTransformEvents();
-				}
-				break;
-			case STATE_ACTIVE:
-				if (newState == STATE_TERMINATED || newState == STATE_PAUSED) {
-					this.eventState = (byte) newState;
-				}
-				break;
-			case STATE_PAUSED:
-				if (newState == STATE_ACTIVE) {
-					this.eventState = STATE_ACTIVE;
-				}
-				break;
-		}
-	}
-
-	// p000.GameObject
-	/* renamed from: a */
-	//@Override
-	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix rootMatrix) {
-		if (DEBUG_DRAW_ON) {
-			int[] colors = new int[]{0x0000FF, 0xFF0000, 0x00FF00, 0x00CC00};
-			debugDraw(graphics, colors[eventState], rootMatrix);
-		}
 	}
 }

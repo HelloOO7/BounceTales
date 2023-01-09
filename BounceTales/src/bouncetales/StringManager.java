@@ -8,11 +8,10 @@ import java.util.Vector;
 /* renamed from: q */
 public final class StringManager {
 
-	private static DataInputStream textReader = null; //renamed from: a
-
-	private static String localeProperty = null; //renamed from: a
-
 	private static StringManager mInstance = new StringManager(); //renamed from: a
+	private static String localeProperty = null; //renamed from: a
+	
+	private static DataInputStream textReader = null; //renamed from: a
 
 	static {
 		System.out.println("LocalizedData init...");

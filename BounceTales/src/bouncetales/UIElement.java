@@ -21,23 +21,15 @@ public final class UIElement {
 	public static final int COLOR1 = 21;
 	public static final int COLOR2 = 22;
 
-	/* renamed from: a */
-	public int action = -1;
+	public UILayout parentUI = null; //renamed from: a
 
-	/* renamed from: a */
-	public TextLabel label;
+	public boolean isEnabled = true; //renamed from: a
 
-	/* renamed from: a */
-	public UILayout parentUI = null;
+	public TextLabel label; //renamed from: a
+	public int action = -1; //renamed from: a
+	private int[] attributes; //renamed from: a
 
-	/* renamed from: a */
-	public String f99a = null;
-
-	/* renamed from: a */
-	public boolean isEnabled = true;
-
-	/* renamed from: a */
-	private int[] attributeBits;
+	public String unused_f99a = null; //renamed from: a
 
 	public UIElement() {
 	}
@@ -48,22 +40,22 @@ public final class UIElement {
 		setText(str, iconImageId);
 	}
 
-	public final int getColor(boolean selected) {
-		return getAttribute(
-				isEnabled ? (selected ? FONT_TEXT_COLOR_SELECTED : FONT_TEXT_COLOR) : (selected ? FONT_TEXT_COLOR_SELECTED_DISABLED : FONT_TEXT_COLOR_DISABLED)
-		);
-	}
-
 	/* renamed from: a */
 	public final int getAttribute(int aid) {
-		return (UILayout.attributeExists(aid, this.attributeBits) || this.parentUI == null)
-				? UILayout.readAttribute(aid, this.attributeBits, 1)
+		return (UILayout.attributeExists(aid, this.attributes) || this.parentUI == null)
+				? UILayout.readAttribute(aid, this.attributes, 1)
 				: UILayout.readAttribute(aid, this.parentUI.elemDefaultAttributes, 1);
 	}
 
 	/* renamed from: a */
 	public final void setAttribute(int aid, int value) {
-		this.attributeBits = UILayout.writeAttribute(aid, value, this.attributeBits, 1);
+		this.attributes = UILayout.writeAttribute(aid, value, this.attributes, 1);
+	}
+
+	public final int getColor(boolean selected) {
+		return getAttribute(
+				isEnabled ? (selected ? FONT_TEXT_COLOR_SELECTED : FONT_TEXT_COLOR) : (selected ? FONT_TEXT_COLOR_SELECTED_DISABLED : FONT_TEXT_COLOR_DISABLED)
+		);
 	}
 
 	/* renamed from: a */

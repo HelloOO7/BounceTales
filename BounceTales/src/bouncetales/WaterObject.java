@@ -5,158 +5,111 @@ import javax.microedition.lcdui.Graphics;
 
 /* renamed from: i */
 public final class WaterObject extends GameObject {
-	
+
 	public static final byte TYPEID = 6;
 
-	/* renamed from: a */
-	private byte f137a;
+	private static final int COLOR_WATER = 0x441111EE;
+	private static final int COLOR_AIR_TUNNEL = 0x44000000;
 
-	/* renamed from: a */
-	int vertexCount = 0;
+	public static final int REGION_SURFACE = 0;
+	public static final int REGION_DEPTHS = 1;
 
-	/* renamed from: a */
-	short areaMinX;
+	//Parameters - preset
+	private int color; //renamed from: d
 
-	/* renamed from: a */
-	private byte[] splashYOffsets;
+	short areaMinX; //renamed from: a
+	short areaMaxX; //renamed from: b
+	short areaMinY; //renamed from: c
+	private short areaMaxY; //renamed from: e
 
-	/* renamed from: a */
-	private int[] splashIntensity;
+	private byte gravityXLeft; //renamed from: f
+	private byte gravityXRight; //renamed from: d
+	private byte gravityYTop; //renamed from: a
+	private byte gravityYBottom; //renamed from: e
 
-	/* renamed from: b */
-	int surfaceY;
+	//Parameters - calculated
+	private byte region; //renamed from: g
+	int vertexCount = 0; //renamed from: a
+	private int maxSplashX; //renamed from: r
 
-	/* renamed from: b */
-	short areaMaxX;
+	int surfaceY; //renamed from: b
+	private short areaWidth; //renamed from: f
 
-	/* renamed from: b */
-	private byte[] splashDirections;
+	//State - splashes
+	private int splashTimer = 0; //renamed from: s
+	private byte[] splashYOffsets; //renamed from: a
+	private int splashLimit; //renamed from: c
 
-	/* renamed from: b */
-	private int[] splashSpread;
+	private int[] splashIntensity; //renamed from: a
+	private int[] splashSpread; //renamed from: b
+	private byte[] splashDirections; //renamed from: b
+	private byte[] splashPermanence; //renamed from: c
+	private int[] splashSpeeds; //renamed from: c
+	private int[] splashXPos; //renamed from: d
 
-	/* renamed from: c */
-	private int splashCount;
-
-	/* renamed from: c */
-	short areaMinY;
-
-	/* renamed from: c */
-	private byte[] splashPermanence;
-
-	/* renamed from: c */
-	private int[] splashSpeeds;
-
-	/* renamed from: d */
-	private byte f150d;
-
-	/* renamed from: d */
-	private int color;
-
-	/* renamed from: d */
-	private int[] splashXPos;
-
-	/* renamed from: e */
-	private byte f153e;
-
-	/* renamed from: e */
-	private short areaMaxY;
-
-	/* renamed from: f */
-	private byte f155f;
-
-	/* renamed from: f */
-	private short areaWidth;
-
-	/* renamed from: g */
-	private byte f157g;
-
-	/* renamed from: r */
-	private int f158r;
-
-	/* renamed from: s */
-	private int ripplingTimer = 0;
-
-	/* renamed from: t */
-	private int f160t;
-
-	/* renamed from: u */
-	private int f161u;
+	//State - particles
+	private int bounceBubbleTimer; //renamed from: t
+	private int ambientParticleTimer; //renamed from: u
 
 	public WaterObject() {
 		this.objType = TYPEID;
 	}
 
-	/* renamed from: a */
-	private void insertSplash(int intensity, int spread, int direction, int speed, int xPos, int permanence) {
-		for (int newIdx = 0; newIdx < this.splashCount; newIdx++) {
-			if (this.splashIntensity[newIdx] == 0) {
-				this.splashIntensity[newIdx] = (intensity * 50) / 100;
-				this.splashSpread[newIdx] = (spread * 50) / 100;
-				this.splashDirections[newIdx] = (byte) direction;
-				this.splashPermanence[newIdx] = (byte) permanence;
-				this.splashSpeeds[newIdx] = (speed * 50) / 100;
-				this.splashXPos[newIdx] = xPos;
-				return;
-			}
-		}
-	}
-
 	// p000.GameObject
 	/* renamed from: a */
 	//@Override
-	public final int readData(byte[] bArr, int dataPos) {
-		dataPos = super.readData(bArr, dataPos);
-		this.areaMinX = readShort(bArr, dataPos);
-		this.areaMaxY = readShort(bArr, dataPos + 2);
-		this.areaMaxX = readShort(bArr, dataPos + 4);
-		this.areaMinY = readShort(bArr, dataPos + 6);
+	public final int readData(byte[] data, int dataPos) {
+		dataPos = super.readData(data, dataPos);
+		this.areaMinX = readShort(data, dataPos);
+		this.areaMaxY = readShort(data, dataPos + 2);
+		this.areaMaxX = readShort(data, dataPos + 4);
+		this.areaMinY = readShort(data, dataPos + 6);
 		dataPos += 8;
-		this.f137a = bArr[dataPos++];
-		this.f150d = bArr[dataPos++];
-		this.f153e = bArr[dataPos++];
-		this.f155f = bArr[dataPos++];
+		this.gravityYTop = data[dataPos++];
+		this.gravityXRight = data[dataPos++];
+		this.gravityYBottom = data[dataPos++];
+		this.gravityXLeft = data[dataPos++];
 		dataPos++; //skip alpha
-		int i16 = 0x44000000
-				| ((bArr[dataPos++] & 255) << 16)
-				| ((bArr[dataPos++] & 255) << 8);
-		int red = bArr[dataPos++] & 255;
-		this.color = i16 | red;
+		int colorAGB = 0x44000000
+				| ((data[dataPos++] & 255) << 16)
+				| ((data[dataPos++] & 255) << 8);
+		int red = data[dataPos++] & 255;
+		this.color = colorAGB | red;
 		if (red == 16) {
-			this.f157g = 1;
+			this.region = REGION_DEPTHS;
 		} else {
-			this.f157g = 0;
+			this.region = REGION_SURFACE;
 		}
-		if (this.color != 0x44000000) {
-			this.color = 0x441111EE;
+		if (this.color != COLOR_AIR_TUNNEL) {
+			this.color = COLOR_WATER;
 		}
 		this.areaWidth = (short) (this.areaMaxX - this.areaMinX);
-		if (this.color != 0x44000000 && this.f157g == 0) {
+		if (isWater() && this.region == REGION_SURFACE) {
 			int maxSplashVerts = (this.areaWidth * 50) / 100;
 			this.splashYOffsets = new byte[maxSplashVerts];
-			this.f158r = maxSplashVerts << 12;
-			this.f161u = 0;
+			this.maxSplashX = maxSplashVerts << 12;
+			this.ambientParticleTimer = 0;
 			this.vertexCount = maxSplashVerts + 2;
-			for (int i20 = 0; i20 < maxSplashVerts; i20++) {
-				this.splashYOffsets[i20] = 0;
+			for (int i = 0; i < maxSplashVerts; i++) {
+				this.splashYOffsets[i] = 0;
 			}
-			int i22 = maxSplashVerts / 20;
-			this.splashCount = (i22 << 1) + 2;
-			this.splashIntensity = new int[this.splashCount];
-			this.splashSpread = new int[this.splashCount];
-			this.splashDirections = new byte[this.splashCount];
-			this.splashPermanence = new byte[this.splashCount];
-			this.splashSpeeds = new int[this.splashCount];
-			this.splashXPos = new int[this.splashCount];
-			for (int i = 0; i < this.splashCount; i++) {
+			int maxSplashX = maxSplashVerts / 20;
+			this.splashLimit = (maxSplashX << 1) + 2;
+			this.splashIntensity = new int[this.splashLimit];
+			this.splashSpread = new int[this.splashLimit];
+			this.splashDirections = new byte[this.splashLimit];
+			this.splashPermanence = new byte[this.splashLimit];
+			this.splashSpeeds = new int[this.splashLimit];
+			this.splashXPos = new int[this.splashLimit];
+			for (int i = 0; i < this.splashLimit; i++) {
 				this.splashIntensity[i] = 0;
 			}
-			for (int i = 2; i <= i22 - 2; i++) {
-				int length = (((this.splashYOffsets.length - 1) << 12) * i) / i22;
-				int abs = (((Math.abs(BounceGame.mRNG.nextInt() % 2) + 24) << 12) << 1) / 9;
-				insertSplash(abs, abs * 3, -1, ((Math.abs(BounceGame.mRNG.nextInt() % 2) + 10) << 12) / 3, length, 1);
-				int abs2 = (((Math.abs(BounceGame.mRNG.nextInt() % 2) + 24) << 12) << 1) / 9;
-				insertSplash(abs2, abs2 * 3, 1, ((Math.abs(BounceGame.mRNG.nextInt() % 2) + 10) << 12) / 3, length, 1);
+			for (int i = 2; i <= maxSplashX - 2; i++) {
+				int length = (((this.splashYOffsets.length - 1) << 12) * i) / maxSplashX;
+				int intensity1 = (((Math.abs(BounceGame.mRNG.nextInt() % 2) + 24) << 12) << 1) / 9;
+				insertSplash(intensity1, intensity1 * 3, -1, ((Math.abs(BounceGame.mRNG.nextInt() % 2) + 10) << 12) / 3, length, 1);
+				int intensity2 = (((Math.abs(BounceGame.mRNG.nextInt() % 2) + 24) << 12) << 1) / 9;
+				insertSplash(intensity2, intensity2 * 3, 1, ((Math.abs(BounceGame.mRNG.nextInt() % 2) + 10) << 12) / 3, length, 1);
 			}
 		}
 		return dataPos;
@@ -173,150 +126,37 @@ public final class WaterObject extends GameObject {
 		this.surfaceY = this.areaMinY << 16;
 	}
 
-	/* renamed from: a */
-	public final void onBounceSurfaceContact(int xposWeight, float splashIntensity, int i2, BounceObject bounce) {
-		if (this.color != 0x44000000) {
-			this.f160t = 0;
-			if (splashIntensity > 230.0f) {
-				splashIntensity = 230.0f;
-			} else if (splashIntensity < -230.0f) {
-				splashIntensity = -230.0f;
-			}
-			int intensityAbs = (int) Math.abs(splashIntensity);
-			if (this.f157g == 0) {
-				int length = (int) ((((long) ((this.splashYOffsets.length - 1) << 12)) * ((long) xposWeight)) >> 16L);
-				int i3 = (intensityAbs * 100 << 12) / 1500;
-				int i4 = i3 << 1;
-				insertSplash(i3, i4, -1, 20480, length - (i2 << 2), 0);
-				insertSplash(i3, i4, 1, 20480, length + (i2 << 2), 0);
-			}
-			bounce.f61j /= 3.0f;
-			bounce.f63k /= 3.0f;
-			if (this.f157g == 0) {
-				loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-				int i5 = GameObject.tmpObjMatrix.translationY + (this.areaMinY << 16);
-				int i6 = (intensityAbs * 500) / 230;
-				int i7 = (intensityAbs * 6) / 230;
-				int i8 = (intensityAbs * 800) / 230;
-				BounceGame.f267b.mo69a(i7, BounceGame.bounceObj.localObjectMatrix.translationX, i5, i6, i6 >> 2, 325, 30, i8, i8 / 6);
-				BounceGame.f267b.mo69a(i7, BounceGame.bounceObj.localObjectMatrix.translationX, i5, i6, i6 >> 2, 35, 30, i8, i8 / 6);
-			}
-		}
-	}
-
-	/* renamed from: a */
-	public final void updateBounceSwim(int x, int y, BounceObject bounce) {
-		int i3;
-		int i4;
-		this.f160t += GameRuntime.updateDelta;
-		if (!BounceGame.f255a) {
-			float xWeight = ((float) (x - this.bboxMinX)) / ((float) (this.bboxMaxX - this.bboxMinX));
-			float yWeight = ((float) (y - this.bboxMinY)) / ((float) (this.bboxMaxY - this.bboxMinY));
-			if (this.f155f < this.f150d) {
-				i3 = ((int) (xWeight * ((float) (this.f150d - this.f155f)))) + this.f155f;
-			} else {
-				i3 = ((int) ((1.0f - xWeight) * ((float) (this.f155f - this.f150d)))) + this.f150d;
-			}
-			if (this.f153e < this.f137a) {
-				i4 = ((int) (yWeight * ((float) (this.f137a - this.f153e)))) + this.f153e;
-			} else {
-				i4 = ((int) ((1.0f - yWeight) * ((float) (this.f153e - this.f137a)))) + this.f137a;
-			}
-			bounce.gravityX += (float) (i3 << 5);
-			bounce.gravityY += (float) (i4 << 5);
-			if (bounce.f61j > 0.0f) {
-				bounce.f61j -= (((float) GameRuntime.updateDelta) * bounce.f61j) / 400f;
-				if (bounce.f61j < 0.0f) {
-					bounce.f61j = 0.0f;
-				}
-			} else if (bounce.f61j < 0.0f) {
-				bounce.f61j -= (((float) GameRuntime.updateDelta) * bounce.f61j) / 400f;
-				if (bounce.f61j > 0.0f) {
-					bounce.f61j = 0.0f;
-				}
-			}
-			if (bounce.f63k > 0.0f) {
-				bounce.f63k -= (((float) GameRuntime.updateDelta) * bounce.f63k) / 400f;
-				if (bounce.f63k < 0.0f) {
-					bounce.f63k = 0.0f;
-				}
-			} else if (bounce.f63k < 0.0f) {
-				bounce.f63k -= (((float) GameRuntime.updateDelta) * bounce.f63k) / 400f;
-				if (bounce.f63k > 0.0f) {
-					bounce.f63k = 0.0f;
-				}
-			}
-			if (this.color != 0x44000000) {
-				float f3 = 1.0f / BounceObject.GRAVITY[BounceGame.bounceObj.ballForme];
-				float f4 = ((float) GameRuntime.updateDelta) * 0.0014f;
-				if (BounceGame.bounceObj.curXVelocity > 0.0f) {
-					BounceGame.bounceObj.curXVelocity -= (BounceGame.bounceObj.curXVelocity * f3) * f4;
-					if (BounceGame.bounceObj.curXVelocity < 0.0f) {
-						BounceGame.bounceObj.curXVelocity = 0.0f;
-					}
-				} else {
-					BounceGame.bounceObj.curXVelocity -= (BounceGame.bounceObj.curXVelocity * f3) * f4;
-					if (BounceGame.bounceObj.curXVelocity > 0.0f) {
-						BounceGame.bounceObj.curXVelocity = 0.0f;
-					}
-				}
-				if (BounceGame.bounceObj.curYVelocity > 0.0f) {
-					BounceGame.bounceObj.curYVelocity -= (f3 * BounceGame.bounceObj.curYVelocity) * f4;
-					if (BounceGame.bounceObj.curYVelocity < 0.0f) {
-						BounceGame.bounceObj.curYVelocity = 0.0f;
-					}
-				} else {
-					BounceGame.bounceObj.curYVelocity -= (f3 * BounceGame.bounceObj.curYVelocity) * f4;
-					if (BounceGame.bounceObj.curYVelocity > 0.0f) {
-						BounceGame.bounceObj.curYVelocity = 0.0f;
-					}
-				}
-			}
-			if (this.f160t > 150 && this.color != 0x44000000) {
-				loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-				BounceGame.swimParticle.f375b = GameObject.tmpObjMatrix.translationY + (this.areaMinY << 16);
-				BounceGame.swimParticle.f378c = 60000;
-				BounceGame.swimParticle.mo72b(EventObject.eventVars[4] / 60, BounceGame.bounceObj.localObjectMatrix.translationX, BounceGame.bounceObj.localObjectMatrix.translationY, BounceObject.BALL_DIMENS[0] << 15, 0, 0, 0, 0, 4000, 666);
-				this.f160t = 0;
-			}
-			if (this.color != 0x44000000) {
-				BounceGame.bounceObj.zCoord = 8;
-			}
-			BounceGame.f255a = true;
-		}
-	}
-
 	// p000.GameObject
 	/* renamed from: a */
 	//@Override
-	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix dVar) {
-		int i2;
-		int i3;
-		int i4;
-		int i5;
-		int i6;
+	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix rootMatrix) {
+		int airEmitDir;
+		int airYMax;
+		int airXMin;
+		int airYMin;
+		int airXMax;
 		int baseSplash;
 		int delta = GameRuntime.updateDelta * GameRuntime.getUpdatesPerDraw();
-		if (this.color != 0x44000000) {
+		if (isWater()) {
 			if (!BounceGame.levelPaused) {
-				this.f161u += delta;
-				if (this.f161u > 150) {
+				this.ambientParticleTimer += delta;
+				if (this.ambientParticleTimer > 150) {
 					loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-					int i8 = GameObject.tmpObjMatrix.translationX + (this.areaMinX << 16);
-					int i9 = GameObject.tmpObjMatrix.translationX + (this.areaMaxX << 16);
-					int i10 = GameObject.tmpObjMatrix.translationY + (this.areaMaxY << 16);
-					BounceGame.swimParticle.f375b = GameObject.tmpObjMatrix.translationY + (this.areaMinY << 16);
-					BounceGame.swimParticle.f378c = 60000;
-					BounceGame.swimParticle.mo71a(1, i8, i10, i9, i10, 0, 0, 0, 0, 4000, 666);
-					this.f161u = 0;
+					int swimPosXMin = GameObject.tmpObjMatrix.translationX + (this.areaMinX << 16);
+					int swimPosXMax = GameObject.tmpObjMatrix.translationX + (this.areaMaxX << 16);
+					int swimPosYMin = GameObject.tmpObjMatrix.translationY + (this.areaMaxY << 16);
+					BounceGame.bubbleParticle.bubblePopY = GameObject.tmpObjMatrix.translationY + (this.areaMinY << 16);
+					BounceGame.bubbleParticle.maxVelocityY = 60000;
+					BounceGame.bubbleParticle.emitIndependentBursts(1, swimPosXMin, swimPosYMin, swimPosXMax, swimPosYMin, 0, 0, 0, 0, 4000, 666);
+					this.ambientParticleTimer = 0;
 				}
 			}
-			if (!BounceGame.levelPaused && this.f157g == 0) {
-				this.ripplingTimer += delta;
+			if (!BounceGame.levelPaused && this.region == REGION_SURFACE) {
+				this.splashTimer += delta;
 				for (int i = 0; i < this.splashYOffsets.length; i++) {
 					this.splashYOffsets[i] = 0;
 				}
-				for (int splashIdx = 0; splashIdx < this.splashCount; splashIdx++) {
+				for (int splashIdx = 0; splashIdx < this.splashLimit; splashIdx++) {
 					if (this.splashIntensity[splashIdx] != 0) {
 						if (this.splashPermanence[splashIdx] != 1) {
 							this.splashIntensity[splashIdx] -= ((delta * 28) >> 3);
@@ -329,12 +169,12 @@ public final class WaterObject extends GameObject {
 						}
 						if (this.splashIntensity[splashIdx] <= 0) {
 							this.splashIntensity[splashIdx] = 0;
-						} else if (this.splashXPos[splashIdx] < 0 || (this.splashXPos[splashIdx] >> 12) >= (this.f158r >> 12)) {
+						} else if (this.splashXPos[splashIdx] < 0 || (this.splashXPos[splashIdx] >> 12) >= (this.maxSplashX >> 12)) {
 							this.splashDirections[splashIdx] = (byte) (-this.splashDirections[splashIdx]); //splash in the other direction
 							if (this.splashXPos[splashIdx] < 0) {
 								this.splashXPos[splashIdx] = 0;
-							} else if ((this.splashXPos[splashIdx] >> 12) >= (this.f158r >> 12)) {
-								this.splashXPos[splashIdx] = ((this.f158r >> 12) - 1) << 12;
+							} else if ((this.splashXPos[splashIdx] >> 12) >= (this.maxSplashX >> 12)) {
+								this.splashXPos[splashIdx] = ((this.maxSplashX >> 12) - 1) << 12;
 							}
 							if (this.splashPermanence[splashIdx] != 1) {
 								this.splashIntensity[splashIdx] -= (((delta << 1) * 28) >> 3);
@@ -371,7 +211,7 @@ public final class WaterObject extends GameObject {
 				}
 			}
 			loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-			Matrix.multMatrices(dVar, GameObject.tmpObjMatrix, Matrix.temp);
+			Matrix.multMatrices(rootMatrix, GameObject.tmpObjMatrix, Matrix.temp);
 			Matrix.temp.mulVector(this.areaMinX << 16, this.areaMinY << 16);
 			int minx = Matrix.vectorMulRslX >> 16;
 			int miny = Matrix.vectorMulRslY >> 16;
@@ -379,7 +219,7 @@ public final class WaterObject extends GameObject {
 			int maxx = Matrix.vectorMulRslX >> 16;
 			int maxy = Matrix.vectorMulRslY >> 16;
 			int width = maxx - minx;
-			if (this.f157g == 0) {
+			if (this.region == REGION_SURFACE) {
 				int length = (((width << 8) << 10) / this.splashYOffsets.length) >> 8;
 				int[] xPoints = GeometryObject.TEMP_QUAD_XS;
 				int[] yPoints = GeometryObject.TEMP_QUAD_YS;
@@ -409,68 +249,219 @@ public final class WaterObject extends GameObject {
 				}
 				directGraphics.fillPolygon(xPoints, 0, yPoints, 0, nPoints, BounceGame.getStolenColorIfApplicable(this.color));
 			} else {
-				int convColor = BounceGame.getStolenColorIfApplicable(this.color);
-				int[] iArr10 = GeometryObject.TEMP_QUAD_XS;
-				int[] iArr11 = GeometryObject.TEMP_QUAD_YS;
-				iArr10[0] = minx;
-				iArr11[0] = miny;
-				iArr10[1] = maxx;
-				iArr11[1] = miny;
-				iArr10[2] = maxx;
-				iArr11[2] = maxy;
-				iArr10[3] = minx;
-				iArr11[3] = maxy;
-				directGraphics.fillPolygon(iArr10, 0, iArr11, 0, 4, convColor);
+				int[] polyX = GeometryObject.TEMP_QUAD_XS;
+				int[] polyY = GeometryObject.TEMP_QUAD_YS;
+				polyX[0] = minx;
+				polyY[0] = miny;
+				polyX[1] = maxx;
+				polyY[1] = miny;
+				polyX[2] = maxx;
+				polyY[2] = maxy;
+				polyX[3] = minx;
+				polyY[3] = maxy;
+				directGraphics.fillPolygon(polyX, 0, polyY, 0, 4, BounceGame.getStolenColorIfApplicable(this.color));
 			}
-		} else if (!BounceGame.levelPaused) {
-			this.f161u += delta;
-			if (this.f161u > 150) {
+		} else if (!BounceGame.levelPaused) { //air tunnel
+			this.ambientParticleTimer += delta;
+			if (this.ambientParticleTimer > 150) {
 				loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-				int i29 = GameObject.tmpObjMatrix.translationX + (this.areaMinX << 16);
-				int i30 = GameObject.tmpObjMatrix.translationX + (this.areaMaxX << 16);
-				int i31 = GameObject.tmpObjMatrix.translationY + (this.areaMaxY << 16);
-				int i32 = GameObject.tmpObjMatrix.translationY + (this.areaMinY << 16);
-				int abs = Math.abs((int) this.f155f);
-				if (Math.abs((int) this.f150d) > abs) {
-					abs = Math.abs((int) this.f150d);
+				int leftX = GameObject.tmpObjMatrix.translationX + (this.areaMinX << 16);
+				int rightX = GameObject.tmpObjMatrix.translationX + (this.areaMaxX << 16);
+				int topY = GameObject.tmpObjMatrix.translationY + (this.areaMaxY << 16);
+				int bottomY = GameObject.tmpObjMatrix.translationY + (this.areaMinY << 16);
+				int horizontalGravity = Math.abs(this.gravityXLeft);
+				if (Math.abs(this.gravityXRight) > horizontalGravity) {
+					horizontalGravity = Math.abs(this.gravityXRight);
 				}
-				int abs2 = Math.abs((int) this.f137a);
-				if (Math.abs((int) this.f153e) > abs2) {
-					abs2 = Math.abs((int) this.f153e);
+				int verticalGravity = Math.abs(this.gravityYTop);
+				if (Math.abs(this.gravityYBottom) > verticalGravity) {
+					verticalGravity = Math.abs(this.gravityYBottom);
 				}
-				int i;
-				if (this.f155f + this.f150d > 0) {
-					i = abs << 7;
-					i2 = 90;
-					i3 = i32;
-					i4 = i29;
-					i5 = i31;
-					i6 = i29;
-				} else if (this.f155f + this.f150d < 0) {
-					i = abs << 7;
-					i2 = 270;
-					i3 = i32;
-					i4 = i30;
-					i5 = i31;
-					i6 = i30;
-				} else if (this.f137a + this.f153e > 0) {
-					i = abs2 << 7;
-					i2 = 0;
-					i3 = i31;
-					i4 = i29;
-					i5 = i31;
-					i6 = i30;
+				int dispBase;
+				if (this.gravityXLeft + this.gravityXRight > 0) {
+					dispBase = horizontalGravity << 7;
+					airEmitDir = 90;
+					airYMax = bottomY;
+					airXMin = leftX;
+					airYMin = topY;
+					airXMax = leftX;
+				} else if (this.gravityXLeft + this.gravityXRight < 0) {
+					dispBase = horizontalGravity << 7;
+					airEmitDir = 270;
+					airYMax = bottomY;
+					airXMin = rightX;
+					airYMin = topY;
+					airXMax = rightX;
+				} else if (this.gravityYTop + this.gravityYBottom > 0) {
+					dispBase = verticalGravity << 7;
+					airEmitDir = 0;
+					airYMax = topY;
+					airXMin = leftX;
+					airYMin = topY;
+					airXMax = rightX;
 				} else {
-					i = abs2 << 7;
-					i2 = 180;
-					i3 = i32;
-					i4 = i29;
-					i5 = i32;
-					i6 = i30;
+					dispBase = verticalGravity << 7;
+					airEmitDir = 180;
+					airYMax = bottomY;
+					airXMin = leftX;
+					airYMin = bottomY;
+					airXMax = rightX;
 				}
-				BounceGame.waterParticle.mo71a(1, i4, i5, i6, i3, i, i / 8, i2, 0, 2000, 333);
-				this.f161u = 0;
+				BounceGame.airTunnelParticle.emitIndependentBursts(1, airXMin, airYMin, airXMax, airYMax, dispBase, dispBase / 8, airEmitDir, 0, 2000, 333);
+				this.ambientParticleTimer = 0;
 			}
+		}
+	}
+
+	private boolean isWater() {
+		return color != COLOR_AIR_TUNNEL;
+	}
+
+	/* renamed from: a */
+	private void insertSplash(int intensity, int spread, int direction, int speed, int xPos, int permanence) {
+		for (int newIdx = 0; newIdx < this.splashLimit; newIdx++) {
+			if (this.splashIntensity[newIdx] == 0) {
+				this.splashIntensity[newIdx] = (intensity * 50) / 100;
+				this.splashSpread[newIdx] = (spread * 50) / 100;
+				this.splashDirections[newIdx] = (byte) direction;
+				this.splashPermanence[newIdx] = (byte) permanence;
+				this.splashSpeeds[newIdx] = (speed * 50) / 100;
+				this.splashXPos[newIdx] = xPos;
+				return;
+			}
+		}
+	}
+
+	/* renamed from: a */
+	public final void onBounceSurfaceContact(int xposWeight, float splashIntensity, int radius, BounceObject bounce) {
+		if (isWater()) {
+			this.bounceBubbleTimer = 0;
+			if (splashIntensity > 230.0f) {
+				splashIntensity = 230.0f;
+			} else if (splashIntensity < -230.0f) {
+				splashIntensity = -230.0f;
+			}
+			int intensityAbs = (int) Math.abs(splashIntensity);
+			if (this.region == 0) {
+				int length = (int) ((((long) ((this.splashYOffsets.length - 1) << 12)) * ((long) xposWeight)) >> 16L);
+				int i3 = (intensityAbs * 100 << 12) / 1500;
+				int i4 = i3 << 1;
+				insertSplash(i3, i4, -1, 20480, length - (radius << 2), 0);
+				insertSplash(i3, i4, 1, 20480, length + (radius << 2), 0);
+			}
+			bounce.torqueX /= 3.0f;
+			bounce.torqueY /= 3.0f;
+			if (this.region == REGION_SURFACE) {
+				loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
+				int splashY = GameObject.tmpObjMatrix.translationY + (this.areaMinY << 16);
+				int splashRange = (intensityAbs * 500) / 230;
+				int splashParticleCount = (intensityAbs * 6) / 230;
+				int splashLifespan = (intensityAbs * 800) / 230;
+				BounceGame.waterSplashParticle.emitBurst(
+						splashParticleCount,
+						bounce.localObjectMatrix.translationX, //bugfix replace BounceGame.bounceObj with param bounce
+						splashY,
+						splashRange,
+						splashRange >> 2,
+						325,
+						30,
+						splashLifespan,
+						splashLifespan / 6
+				);
+				BounceGame.waterSplashParticle.emitBurst(
+						splashParticleCount,
+						bounce.localObjectMatrix.translationX, //bugfix replace BounceGame.bounceObj with param bounce
+						splashY,
+						splashRange,
+						splashRange >> 2,
+						35,
+						30,
+						splashLifespan,
+						splashLifespan / 6
+				);
+			}
+		}
+	}
+
+	/* renamed from: a */
+	public final void updateBounceSwim(int x, int y, BounceObject bounce) {
+		this.bounceBubbleTimer += GameRuntime.updateDelta;
+		if (!BounceGame.waterSingletonFlag) { //force recalc only one water block per update
+			float xWeight = ((float) (x - this.bboxMinX)) / ((float) (this.bboxMaxX - this.bboxMinX));
+			float yWeight = ((float) (y - this.bboxMinY)) / ((float) (this.bboxMaxY - this.bboxMinY));
+			int antiGravityX;
+			int antiGravityY;
+			//This lerp may not seem very smart at first glance, but it reduces the number of floating point multiplications, which is actually great
+			if (this.gravityXLeft < this.gravityXRight) {
+				antiGravityX = ((int) (xWeight * (this.gravityXRight - this.gravityXLeft))) + this.gravityXLeft;
+			} else {
+				antiGravityX = ((int) ((1.0f - xWeight) * (this.gravityXLeft - this.gravityXRight))) + this.gravityXRight;
+			}
+			if (this.gravityYBottom < this.gravityYTop) {
+				antiGravityY = ((int) (yWeight * (this.gravityYTop - this.gravityYBottom))) + this.gravityYBottom;
+			} else {
+				antiGravityY = ((int) ((1.0f - yWeight) * (this.gravityYBottom - this.gravityYTop))) + this.gravityYTop;
+			}
+			bounce.gravityX += (float) (antiGravityX << 5);
+			bounce.gravityY += (float) (antiGravityY << 5);
+			if (bounce.torqueX > 0.0f) {
+				bounce.torqueX -= (GameRuntime.updateDelta * bounce.torqueX) / 400f;
+				if (bounce.torqueX < 0.0f) {
+					bounce.torqueX = 0.0f;
+				}
+			} else if (bounce.torqueX < 0.0f) {
+				bounce.torqueX -= (GameRuntime.updateDelta * bounce.torqueX) / 400f;
+				if (bounce.torqueX > 0.0f) {
+					bounce.torqueX = 0.0f;
+				}
+			}
+			if (bounce.torqueY > 0.0f) {
+				bounce.torqueY -= (GameRuntime.updateDelta * bounce.torqueY) / 400f;
+				if (bounce.torqueY < 0.0f) {
+					bounce.torqueY = 0.0f;
+				}
+			} else if (bounce.torqueY < 0.0f) {
+				bounce.torqueY -= (GameRuntime.updateDelta * bounce.torqueY) / 400f;
+				if (bounce.torqueY > 0.0f) {
+					bounce.torqueY = 0.0f;
+				}
+			}
+			if (isWater()) {
+				float invGravity = 1.0f / BounceObject.GRAVITY[bounce.ballForme];
+				float slowdown = GameRuntime.updateDelta * 0.0014f;
+				if (bounce.curXVelocity > 0.0f) {
+					bounce.curXVelocity -= (bounce.curXVelocity * invGravity) * slowdown;
+					if (bounce.curXVelocity < 0.0f) {
+						bounce.curXVelocity = 0.0f;
+					}
+				} else {
+					bounce.curXVelocity -= (bounce.curXVelocity * invGravity) * slowdown;
+					if (bounce.curXVelocity > 0.0f) {
+						bounce.curXVelocity = 0.0f;
+					}
+				}
+				if (bounce.curYVelocity > 0.0f) {
+					bounce.curYVelocity -= (invGravity * bounce.curYVelocity) * slowdown;
+					if (bounce.curYVelocity < 0.0f) {
+						bounce.curYVelocity = 0.0f;
+					}
+				} else {
+					bounce.curYVelocity -= (invGravity * bounce.curYVelocity) * slowdown;
+					if (bounce.curYVelocity > 0.0f) {
+						bounce.curYVelocity = 0.0f;
+					}
+				}
+
+				if (this.bounceBubbleTimer > 150) {
+					loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
+					BounceGame.bubbleParticle.bubblePopY = GameObject.tmpObjMatrix.translationY + (this.areaMinY << 16);
+					BounceGame.bubbleParticle.maxVelocityY = 60000;
+					BounceGame.bubbleParticle.emitTrail(EventObject.eventVars[4] / 60, bounce.localObjectMatrix.translationX, bounce.localObjectMatrix.translationY, BounceObject.BALL_DIMENS[0] << 15, 0, 0, 0, 0, 4000, 666);
+					this.bounceBubbleTimer = 0;
+				}
+				bounce.zCoord = 8;
+			}
+			BounceGame.waterSingletonFlag = true;
 		}
 	}
 }

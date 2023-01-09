@@ -5,7 +5,7 @@ import javax.microedition.lcdui.Graphics;
 
 /* renamed from: l */
 public final class EnemyObject extends GameObject {
-	
+
 	public static final byte TYPEID = 10;
 
 	public static final int TYPE_CANDLE = 0;
@@ -13,65 +13,41 @@ public final class EnemyObject extends GameObject {
 	public static final int TYPE_MOLE = 2;
 	public static final int TYPE_STALKER_UNUSED = 3;
 
-	/* renamed from: a */
-	private static int[] ENEMY_MOTION_SPEED = {6000, 4000, 4000, 10000};
+	private static final int[] ENEMY_MOTION_SPEEDS = {6000, 4000, 4000, 10000}; //renamed from: a
+	private static final int[] ENEMY_WIDTHS = {50, 100, 100, 150}; //renamed from: c
+	private static final int[] ENEMY_HEIGHTS = {100, 50, 80, 150}; //renamed from: b
 
-	/* renamed from: b */
-	private static int[] ENEMY_HEIGHTS = {100, 50, 80, 150};
+	private static final int STALKER_RECHARGE_TIME = 2000; //renamed from: x
 
-	/* renamed from: c */
-	private static int[] ENEMY_WIDTHS = {50, 100, 100, 150};
+	//Parameters
+	byte enemyType; //renamed from: a
 
-	/* renamed from: x */
-	private static int STALKER_RECHARGE_TIME = 2000;
+	private int movePoint1X; //renamed from: c
+	private int movePoint1Y; //renamed from: d
+	private int movePoint2X; //renamed from: r
+	private int movePoint2Y; //renamed from: s
 
-	/* renamed from: a */
-	byte enemyType;
+	//State - common
+	private byte state; //renamed from: f
 
-	/* renamed from: a */
-	int f222a;
+	byte propelType; //renamed from: d
 
-	/* renamed from: a */
-	boolean f223a;
+	private byte curMovePoint; //renamed from: e
+	private boolean facingLeft; //renamed from: b
 
-	/* renamed from: b */
-	int f224b;
+	private int rechargeTimer; //renamed from: v
 
-	/* renamed from: b */
-	private boolean facingLeft;
+	//State - mole
+	private int moleWaitTimer; //renamed from: w
 
-	/* renamed from: c */
-	private int movePoint1X;
+	int molePeekPeriod; //renamed from: b
+	int molePeekTimer; //renamed from: a
 
-	/* renamed from: d */
-	byte propelType;
+	boolean moleIsVulnerable; //renamed from: a
 
-	/* renamed from: d */
-	private int movePoint1Y;
-
-	/* renamed from: e */
-	private byte curMovePoint;
-
-	/* renamed from: f */
-	private byte state;
-
-	/* renamed from: r */
-	private int movePoint2X;
-
-	/* renamed from: s */
-	private int movePoint2Y;
-
-	/* renamed from: t */
-	private int f233t;
-
-	/* renamed from: u */
-	private int f234u;
-
-	/* renamed from: v */
-	private int rechargeTime;
-
-	/* renamed from: w */
-	private int f236w;
+	//State - stalker
+	private int stalkerInitX; //renamed from: t
+	private int stalkerInitY; //renamed from: u
 
 	public EnemyObject() {
 		this.objType = TYPEID;
@@ -82,7 +58,7 @@ public final class EnemyObject extends GameObject {
 		loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
 		int posX = GameObject.tmpObjMatrix.translationX;
 		int posY = GameObject.tmpObjMatrix.translationY;
-		BounceGame.enemyDeathParticle.startEmitter(10, posX, ((ENEMY_HEIGHTS[this.enemyType] << 16) >> 1) + posY, 370, 0, 920, 230);
+		BounceGame.enemyDeathParticle.emitCircle(10, posX, ((ENEMY_HEIGHTS[this.enemyType] << 16) >> 1) + posY, 370, 0, 920, 230);
 		despawn();
 		BounceGame.enemyDeadEgg.localObjectMatrix.translationX = posX;
 		BounceGame.enemyDeadEgg.localObjectMatrix.translationY = posY + LP32.Int32ToLP32(30);
@@ -114,25 +90,25 @@ public final class EnemyObject extends GameObject {
 		a += 8;
 		this.enemyType = data[a++];
 		this.curMovePoint = 0;
-		this.rechargeTime = 0;
-		this.f222a = 0;
+		this.rechargeTimer = 0;
+		this.molePeekTimer = 0;
 		this.facingLeft = false;
 		if (this.movePoint1X < this.movePoint2X) {
 			this.facingLeft = true;
 		}
 		this.propelType = 1;
-		this.f236w = 2000;
+		this.moleWaitTimer = 2000;
 		this.state = 1;
-		this.f224b = 800;
-		this.f223a = false;
+		this.molePeekPeriod = 800;
+		this.moleIsVulnerable = false;
 		if (this.enemyType == TYPE_STALKER_UNUSED) {
-			this.rechargeTime = STALKER_RECHARGE_TIME;
-			this.f233t = this.localObjectMatrix.translationX;
-			this.f234u = this.localObjectMatrix.translationY;
-			this.movePoint1X = this.f233t;
-			this.movePoint1Y = this.f234u;
-			this.movePoint2X = this.f233t;
-			this.movePoint2Y = this.f234u;
+			this.rechargeTimer = STALKER_RECHARGE_TIME;
+			this.stalkerInitX = this.localObjectMatrix.translationX;
+			this.stalkerInitY = this.localObjectMatrix.translationY;
+			this.movePoint1X = this.stalkerInitX;
+			this.movePoint1Y = this.stalkerInitY;
+			this.movePoint2X = this.stalkerInitX;
+			this.movePoint2Y = this.stalkerInitY;
 		}
 		return a;
 	}
@@ -177,11 +153,11 @@ public final class EnemyObject extends GameObject {
 						i3 = clipHeight;
 					}
 					graphics.setClip(clipX, clipY, clipWidth, i3);
-					int i4 = (this.f222a * 61) / this.f224b;
+					int molePeekY = (this.molePeekTimer * 61) / this.molePeekPeriod;
 					if (this.facingLeft) {
-						GameRuntime.drawImageRes(posX, (posY + 61) - i4, 189);
+						GameRuntime.drawImageRes(posX, (posY + 61) - molePeekY, 189);
 					} else {
-						GameRuntime.drawImageRes(posX, (posY + 61) - i4, 194);
+						GameRuntime.drawImageRes(posX, (posY + 61) - molePeekY, 194);
 					}
 					graphics.setClip(clipX, clipY, clipWidth, clipHeight);
 				}
@@ -201,22 +177,22 @@ public final class EnemyObject extends GameObject {
 		loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
 		int myX = GameObject.tmpObjMatrix.translationX;
 		int bounceX = BounceGame.bounceObj.localObjectMatrix.translationX;
-		if (this.rechargeTime <= 0 && this.propelType == 0 && this.state == 1) {
-			this.rechargeTime = 500;
+		if (this.rechargeTimer <= 0 && this.propelType == 0 && this.state == 1) {
+			this.rechargeTimer = 500;
 			if (myX < bounceX) {
-				BounceGame.bounceObj.horizontalPush += 200.0f;
-				BounceGame.bounceObj.verticalPush += 400.0f;
+				BounceGame.bounceObj.pushX += 200.0f;
+				BounceGame.bounceObj.pushY += 400.0f;
 			} else {
-				BounceGame.bounceObj.horizontalPush -= 200.0f;
-				BounceGame.bounceObj.verticalPush += 400.0f;
+				BounceGame.bounceObj.pushX -= 200.0f;
+				BounceGame.bounceObj.pushY += 400.0f;
 			}
 			BounceGame.bounceObj.curXVelocity = 0.0f;
 			BounceGame.bounceObj.curYVelocity = 0.0f;
 		} else if (this.propelType == 1) {
 			if (myX < bounceX) {
-				BounceGame.bounceObj.horizontalPush += 100.0f;
+				BounceGame.bounceObj.pushX += 100.0f;
 			} else {
-				BounceGame.bounceObj.horizontalPush -= 100.0f;
+				BounceGame.bounceObj.pushX -= 100.0f;
 			}
 			BounceGame.bounceObj.curXVelocity = 0.0f;
 			BounceGame.bounceObj.curYVelocity = 0.0f;
@@ -227,16 +203,16 @@ public final class EnemyObject extends GameObject {
 	public final void onPlayerHit() {
 		switch (this.enemyType) {
 			case TYPE_CANDLE:
-				if (this.rechargeTime <= 0) {
+				if (this.rechargeTimer <= 0) {
 					loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
 					if (GameObject.tmpObjMatrix.translationX < BounceGame.bounceObj.localObjectMatrix.translationX) {
-						BounceGame.bounceObj.horizontalPush += 500.0f;
+						BounceGame.bounceObj.pushX += 500.0f;
 					} else {
-						BounceGame.bounceObj.horizontalPush -= 500.0f;
+						BounceGame.bounceObj.pushX -= 500.0f;
 					}
 					BounceGame.bounceObj.curXVelocity = 0.0f;
 					BounceGame.bounceObj.curYVelocity = 0.0f;
-					this.rechargeTime = 500;
+					this.rechargeTimer = 500;
 				}
 				break;
 			case TYPE_BUMPER_UNUSED:
@@ -247,20 +223,20 @@ public final class EnemyObject extends GameObject {
 				}
 				break;
 			case TYPE_MOLE:
-				if (this.rechargeTime <= 0 && this.propelType == 0 && this.state == 0) {
-					this.f222a = 0;
+				if (this.rechargeTimer <= 0 && this.propelType == 0 && this.state == 0) {
+					this.molePeekTimer = 0;
 					this.state = 1;
-					this.f224b = 200;
+					this.molePeekPeriod = 200;
 				}
 				break;
 			case TYPE_STALKER_UNUSED:
 				BounceGame.setPlayerState(1);
-				this.localObjectMatrix.translationX = this.f233t;
-				this.localObjectMatrix.translationY = this.f234u;
-				this.movePoint1X = this.f233t;
-				this.movePoint1Y = this.f234u;
-				this.movePoint2X = this.f233t;
-				this.movePoint2Y = this.f234u;
+				this.localObjectMatrix.translationX = this.stalkerInitX;
+				this.localObjectMatrix.translationY = this.stalkerInitY;
+				this.movePoint1X = this.stalkerInitX;
+				this.movePoint1Y = this.stalkerInitY;
+				this.movePoint2X = this.stalkerInitX;
+				this.movePoint2Y = this.stalkerInitY;
 				break;
 		}
 	}
@@ -276,12 +252,12 @@ public final class EnemyObject extends GameObject {
 		super.updatePhysics();
 		int tx = this.localObjectMatrix.translationX;
 		int ty = this.localObjectMatrix.translationY;
-		if (this.rechargeTime > 0) {
-			this.rechargeTime -= GameRuntime.updateDelta;
-			if (this.rechargeTime <= 0) {
-				this.rechargeTime = 0;
+		if (this.rechargeTimer > 0) {
+			this.rechargeTimer -= GameRuntime.updateDelta;
+			if (this.rechargeTimer <= 0) {
+				this.rechargeTimer = 0;
 				if (this.enemyType == TYPE_STALKER_UNUSED) {
-					this.rechargeTime = STALKER_RECHARGE_TIME;
+					this.rechargeTimer = STALKER_RECHARGE_TIME;
 					this.movePoint2X = this.movePoint1X;
 					this.movePoint2Y = this.movePoint1Y;
 					int i7 = this.movePoint2X - tx;
@@ -289,7 +265,7 @@ public final class EnemyObject extends GameObject {
 					float f = (float) (i7 >> 16);
 					float f2 = (float) (i8 >> 16);
 					int sqrt = LP32.FP64ToLP32(Math.sqrt((f * f) + (f2 * f2)));
-					int i9 = (STALKER_RECHARGE_TIME << 1) * ENEMY_MOTION_SPEED[this.enemyType];
+					int i9 = (STALKER_RECHARGE_TIME << 1) * ENEMY_MOTION_SPEEDS[this.enemyType];
 					if (i9 > sqrt) {
 						double d = ((double) i9) / ((double) sqrt);
 						this.movePoint2X = ((int) (((double) i7) * (d - 1.0d))) + this.movePoint2X;
@@ -307,44 +283,44 @@ public final class EnemyObject extends GameObject {
 			float f4 = (float) (i11 >> 16);
 			int sqrt2 = LP32.FP64ToLP32(Math.sqrt((f3 * f3) + (f4 * f4)));
 			if (sqrt2 != 0) {
-				double d2 = ((double) (ENEMY_MOTION_SPEED[this.enemyType] * GameRuntime.updateDelta)) / ((double) sqrt2);
+				double d2 = ((double) (ENEMY_MOTION_SPEEDS[this.enemyType] * GameRuntime.updateDelta)) / ((double) sqrt2);
 				tx += (int) (((double) i10) * d2);
 				ty += (int) (((double) i11) * d2);
 			}
 		} else {
 			if (this.enemyType == TYPE_MOLE) {
-				if (this.f236w > 0) {
-					this.f236w -= GameRuntime.updateDelta;
-					if (this.f236w <= 0) {
+				if (this.moleWaitTimer > 0) {
+					this.moleWaitTimer -= GameRuntime.updateDelta;
+					if (this.moleWaitTimer <= 0) {
 						if (this.propelType == 0) {
 							this.propelType = 1;
-							this.f236w = 2000;
+							this.moleWaitTimer = 2000;
 							this.state = 1;
-							this.f224b = 800;
+							this.molePeekPeriod = 800;
 						} else {
 							this.propelType = 0;
-							this.f236w = 5000;
+							this.moleWaitTimer = 5000;
 							this.state = 2;
-							this.f224b = 800;
-							this.f223a = true;
+							this.molePeekPeriod = 800;
+							this.moleIsVulnerable = true;
 						}
 					}
 				}
 				if (this.state == 1) {
-					this.f222a += GameRuntime.updateDelta;
-					if (this.f222a >= this.f224b) {
+					this.molePeekTimer += GameRuntime.updateDelta;
+					if (this.molePeekTimer >= this.molePeekPeriod) {
 						if (this.propelType == 0) {
 							this.state = 2;
-							this.f224b = 200;
+							this.molePeekPeriod = 200;
 						}
-						this.f222a = this.f224b;
+						this.molePeekTimer = this.molePeekPeriod;
 					}
 				} else if (this.state == 2) {
-					this.f222a -= GameRuntime.updateDelta;
-					if (this.f222a <= 0) {
+					this.molePeekTimer -= GameRuntime.updateDelta;
+					if (this.molePeekTimer <= 0) {
 						this.state = 0;
-						this.f222a = 0;
-						this.f223a = false;
+						this.molePeekTimer = 0;
+						this.moleIsVulnerable = false;
 					}
 				}
 			}
@@ -381,7 +357,7 @@ public final class EnemyObject extends GameObject {
 			boolean xDone = false;
 			boolean yDone = false;
 			if (distToTarget != 0) {
-				double d3 = ((double) (GameRuntime.updateDelta * ENEMY_MOTION_SPEED[this.enemyType])) / ((double) distToTarget);
+				double d3 = ((double) (GameRuntime.updateDelta * ENEMY_MOTION_SPEEDS[this.enemyType])) / ((double) distToTarget);
 				int i16 = (int) (xdiff * d3);
 				int i17 = (int) (ydiff * d3);
 				tx += i16;

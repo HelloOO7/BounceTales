@@ -5,104 +5,160 @@ import javax.microedition.lcdui.Graphics;
 
 /* renamed from: n */
 public final class ParticleObject extends GameObject {
-	
+
+	public static final int TYPE_SPRITE_4DIR = 0; //up/down/left/right
+	public static final int TYPE_BUBBLES = 1;
+	public static final int TYPE_SPRITE_RANDOM = 2;
+	public static final int TYPE_SPRITE_BY_PARTICLE_NO = 3;
+	public static final int TYPE_SHOWER = 4;
+	public static final int TYPE_COLLAPSE = 5; //collapses back a little after expanding
+	public static final int TYPE_TRAIL = 6;
+	public static final int TYPE_SPRITE_2DIR = 7; //vertical/horizontal
+
 	public static final byte TYPEID = 11;
 
-	/* renamed from: a */
-	private static boolean f369a = false;
+	//Global state
+	private static boolean existAnyParticle = false; //renamed from: a
 
-	/* renamed from: g */
-	private static int[] pointRotationResult = new int[2];
+	private static int[] pointRotationResult = new int[2]; //renamed from: g
 
-	/* renamed from: a */
-	public int particleCount;
+	//Parameters
+	private int[] imageIDs; //renamed from: f
 
-	/* renamed from: a */
-	private byte[] f372a;
+	private int type; //renamed from: w
 
-	/* renamed from: a */
-	private int[] f373a;
+	private int accelX; //renamed from: d
+	private int accelY; //renamed from: r
+	private int ambientVelocityX; //renamed from: s
+	private int ambientVelocityY; //renamed from: t
+	private int falloff; //renamed from: u
 
-	/* renamed from: a */
-	private short[] f374a;
+	private int animationLifespan; //renamed from: x
 
-	/* renamed from: b */
-	public int f375b;
+	private int maxParticleCount; //renamed from: v
 
-	/* renamed from: b */
-	private byte[] f376b;
+	//State
+	public int particleCount; //renamed from: a
 
-	/* renamed from: b */
-	private int[] particlePositionsX;
+	private int[] particleLifespans; //renamed from: a
+	private int[] particlePositionsX; //renamed from: b
+	private int[] particlePositionsY; //renamed from: c
+	private int[] velocityX; //renamed from: d
+	private int[] velocityY; //renamed from: e
+	private byte[] particleImageIndices; //renamed from: b
 
-	/* renamed from: c */
-	public int f378c;
+	//State - shower
+	private byte[] showerDir; //renamed from: a
+	private short[] showerTimer; //renamed from: a
 
-	/* renamed from: c */
-	private int[] particlePositionsY;
+	//State - bubble
+	public int bubblePopY; //renamed from: b
+	public int maxVelocityY; //renamed from: c
 
-	/* renamed from: d */
-	private int f380d;
-
-	/* renamed from: d */
-	private int[] f381d;
-
-	/* renamed from: e */
-	private int[] f382e;
-
-	/* renamed from: f */
-	private int[] f383f;
-
-	/* renamed from: r */
-	private int f384r;
-
-	/* renamed from: s */
-	private int f385s;
-
-	/* renamed from: t */
-	private int f386t;
-
-	/* renamed from: u */
-	private int f387u;
-
-	/* renamed from: v */
-	private int maxParticleCount;
-
-	/* renamed from: w */
-	private int f389w;
-
-	/* renamed from: x */
-	private int f390x;
-
-	public ParticleObject(int i, int i2, int i3, int i4, int i5, int i6, int i7, int[] spriteIDs, int i8, int i9) {
-		if (!f369a) {
-			f369a = true;
+	public ParticleObject(int maxParticles, int accelX, int accelY, int ambientVelocityX, int ambientVelocityY, int falloff, int type, int[] spriteIDs, int animationLifespan, int zCoord) {
+		if (!existAnyParticle) {
+			existAnyParticle = true;
 		}
-		this.f373a = new int[i];
-		this.particlePositionsX = new int[i];
-		this.particlePositionsY = new int[i];
-		this.f381d = new int[i];
-		this.f382e = new int[i];
-		this.f376b = new byte[i];
-		if (i7 == 4) {
-			this.f374a = new short[i];
-			this.f372a = new byte[i];
-			for (int i10 = 0; i10 < i; i10++) {
-				this.f374a[i10] = 0;
+		this.particleLifespans = new int[maxParticles];
+		this.particlePositionsX = new int[maxParticles];
+		this.particlePositionsY = new int[maxParticles];
+		this.velocityX = new int[maxParticles];
+		this.velocityY = new int[maxParticles];
+		this.particleImageIndices = new byte[maxParticles];
+		if (type == TYPE_SHOWER) {
+			this.showerTimer = new short[maxParticles];
+			this.showerDir = new byte[maxParticles];
+			for (int i = 0; i < maxParticles; i++) {
+				this.showerTimer[i] = 0;
 			}
 		}
-		this.maxParticleCount = i;
-		this.f380d = 0;
-		this.f384r = i3;
-		this.f385s = 0;
-		this.f386t = 0;
-		this.f387u = i6;
+		this.maxParticleCount = maxParticles;
+		this.accelX = accelX;
+		this.accelY = accelY;
+		this.ambientVelocityX = ambientVelocityX;
+		this.ambientVelocityY = ambientVelocityY;
+		this.falloff = falloff;
 		this.particleCount = -1;
-		this.f389w = i7;
+		this.type = type;
 		this.objType = TYPEID;
-		this.f383f = spriteIDs;
-		this.f390x = i8;
-		this.zCoord = (byte) i9;
+		this.imageIDs = spriteIDs;
+		this.animationLifespan = animationLifespan;
+		this.zCoord = (byte) zCoord;
+	}
+
+	// p000.GameObject
+	/* renamed from: a */
+	//@Override
+	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix rootMatrix) {
+		boolean lifespanEnd;
+		int i;
+		int delta = GameRuntime.updateDelta * GameRuntime.getUpdatesPerDraw();
+		int particleIndex = 0;
+		while (particleIndex < this.particleCount + 1) {
+			particleLifespans[particleIndex] = particleLifespans[particleIndex] - delta;
+			if (this.particleLifespans[particleIndex] > 0) {
+				if (this.falloff != 0) {
+					this.velocityX[particleIndex] -= (((this.velocityX[particleIndex] * this.falloff) * delta) >> 14);
+					this.velocityY[particleIndex] -= (((this.velocityY[particleIndex] * this.falloff) * delta) >> 14);
+				}
+				this.velocityX[particleIndex] += (this.accelX * delta);
+				this.velocityY[particleIndex] += (this.accelY * delta);
+				if (this.type == TYPE_BUBBLES && this.velocityY[particleIndex] > this.maxVelocityY) {
+					this.velocityY[particleIndex] = this.maxVelocityY;
+				} else if (this.type == TYPE_SHOWER) {
+					this.showerTimer[particleIndex] -= delta;
+					if (this.showerTimer[particleIndex] <= 0) {
+						this.showerTimer[particleIndex] = (short) (Math.abs(BounceGame.mRNG.nextInt() % 200) + 300);
+						this.showerDir[particleIndex] = (byte) (Math.abs(BounceGame.mRNG.nextInt()) & 3);
+					}
+					int angle = delta / 2;
+					if (this.showerDir[particleIndex] == 1) {
+						rotatePoint(angle, this.velocityX[particleIndex], this.velocityY[particleIndex]);
+						this.velocityX[particleIndex] = pointRotationResult[0];
+						this.velocityY[particleIndex] = pointRotationResult[1];
+					} else if (this.showerDir[particleIndex] == 2) {
+						rotatePoint(359 - angle, this.velocityX[particleIndex], this.velocityY[particleIndex]);
+						this.velocityX[particleIndex] = pointRotationResult[0];
+						this.velocityY[particleIndex] = pointRotationResult[1];
+					}
+				} else if (this.type == TYPE_COLLAPSE) {
+					//FIXME: delta/5 will break on high framerates
+					rotatePoint(delta / 5, this.velocityX[particleIndex], this.velocityY[particleIndex]);
+					this.velocityX[particleIndex] = pointRotationResult[0];
+					this.velocityY[particleIndex] = pointRotationResult[1];
+				}
+				particlePositionsX[particleIndex] += (((this.velocityX[particleIndex] + this.ambientVelocityX) * delta) >> 4);
+				particlePositionsY[particleIndex] += (((this.velocityY[particleIndex] + this.ambientVelocityY) * delta) >> 4);
+				lifespanEnd = false;
+			} else {
+				lifespanEnd = true;
+			}
+			if (this.type == TYPE_BUBBLES && this.particlePositionsY[particleIndex] >= this.bubblePopY) {
+				lifespanEnd = true;
+			}
+			if (!lifespanEnd) {
+				int frameCount = GameRuntime.getImageAnimationFrameCount(this.imageIDs[this.particleImageIndices[particleIndex]]);
+				int frame = (this.particleLifespans[particleIndex] * frameCount) / this.animationLifespan;
+				if (frame > frameCount - 1) {
+					frame = frameCount - 1;
+				}
+				rootMatrix.mulVector(this.particlePositionsX[particleIndex], this.particlePositionsY[particleIndex]);
+				GameRuntime.drawAnimatedImageRes(Matrix.vectorMulRslX >> 16, Matrix.vectorMulRslY >> 16, this.imageIDs[this.particleImageIndices[particleIndex]], (frameCount - 1) - frame);
+				i = particleIndex;
+			} else if (particleIndex == this.particleCount) {
+				this.particleCount--;
+				i = particleIndex;
+			} else {
+				this.particleLifespans[particleIndex] = this.particleLifespans[this.particleCount];
+				this.particlePositionsX[particleIndex] = this.particlePositionsX[this.particleCount];
+				this.particlePositionsY[particleIndex] = this.particlePositionsY[this.particleCount];
+				this.velocityX[particleIndex] = this.velocityX[this.particleCount];
+				this.velocityY[particleIndex] = this.velocityY[this.particleCount];
+				this.particleCount--;
+				i = particleIndex - 1;
+			}
+			particleIndex = i + 1;
+		}
 	}
 
 	/* renamed from: a */
@@ -111,189 +167,6 @@ public final class ParticleObject extends GameObject {
 		short cos = BounceGame.SIN_COS_TABLE[(angleDeg + 90) % 360];
 		pointRotationResult[0] = ((x * cos) - (y * sin)) / 360;
 		pointRotationResult[1] = ((sin * x) + (cos * y)) / 360;
-	}
-
-	/* renamed from: a */
-	public final void startEmitter(int count, int posX, int posY, int i4, int i5, int i6, int i7) {
-		if (count + 1 + this.particleCount > this.maxParticleCount) {
-			count = (this.maxParticleCount - this.particleCount) - 1;
-		}
-		for (int i8 = 0; i8 < count; i8++) {
-			int i9 = (i8 * 360) / count;
-			int i10 = i9 + 90 >= 360 ? (i9 + 90) - 360 : i9 + 90;
-			this.particleCount++;
-			this.f373a[this.particleCount] = i7 != 0 ? (BounceGame.mRNG.nextInt() % i7) + i6 : i6;
-			this.particlePositionsX[this.particleCount] = posX;
-			this.particlePositionsY[this.particleCount] = posY;
-			this.f381d[this.particleCount] = BounceGame.SIN_COS_TABLE[i9] * i4;
-			this.f382e[this.particleCount] = BounceGame.SIN_COS_TABLE[i10] * i4;
-			if (this.f389w == 3) {
-				this.f376b[this.particleCount] = (byte) (i8 % this.f383f.length);
-			} else if (this.f389w != 4 || !equals(BounceGame.winParticle)) {
-				this.f376b[this.particleCount] = (byte) Math.abs(BounceGame.mRNG.nextInt() % this.f383f.length);
-			} else {
-				byte abs = (byte) Math.abs(BounceGame.mRNG.nextInt() % this.f383f.length);
-				if (abs > 1) {
-					abs = (byte) Math.abs(BounceGame.mRNG.nextInt() % this.f383f.length);
-				}
-				this.f376b[this.particleCount] = abs;
-			}
-		}
-	}
-
-	/* renamed from: a */
-	public final void mo69a(int i, int i2, int i3, int i4, int i5, int i6, int i7, int i8, int i9) {
-		if (i + 1 + this.particleCount > this.maxParticleCount) {
-			i = (this.maxParticleCount - this.particleCount) - 1;
-		}
-		for (int i10 = 0; i10 < i; i10++) {
-			int nextInt = i6 + (BounceGame.mRNG.nextInt() % ((i7 / 2) + 1));
-			int i11 = nextInt - (nextInt >= 360 ? 360 : 0);
-			int i12 = i11 + (i11 < 0 ? 360 : 0);
-			int i13 = i12 + 90 >= 360 ? i12 - 270 : i12 + 90;
-			int nextInt2 = i5 != 0 ? (BounceGame.mRNG.nextInt() % i5) + i4 : i4;
-			this.particleCount++;
-			this.f373a[this.particleCount] = i9 != 0 ? (BounceGame.mRNG.nextInt() % i9) + i8 : i8;
-			this.particlePositionsX[this.particleCount] = i2;
-			this.particlePositionsY[this.particleCount] = i3;
-			this.f381d[this.particleCount] = BounceGame.SIN_COS_TABLE[i12] * nextInt2;
-			this.f382e[this.particleCount] = nextInt2 * BounceGame.SIN_COS_TABLE[i13];
-			if (this.f389w == 0) {
-				if (i12 >= 35 && i12 <= 90) {
-					this.f376b[this.particleCount] = 2;
-				} else if (i12 < 35) {
-					this.f376b[this.particleCount] = 3;
-				} else if (i12 > 325) {
-					this.f376b[this.particleCount] = 1;
-				} else {
-					this.f376b[this.particleCount] = 0;
-				}
-			} else if (this.f389w != 7) {
-				this.f376b[this.particleCount] = (byte) Math.abs(BounceGame.mRNG.nextInt() % this.f383f.length);
-			} else if (i6 == 0 || i6 == 180) {
-				this.f376b[this.particleCount] = 0;
-			} else {
-				this.f376b[this.particleCount] = 1;
-			}
-		}
-	}
-
-	/* renamed from: a */
-	public final void mo70a(int i, int i2, int i3, int i4, int i5, int i6, int i7, int i8, int i9, int i10) {
-		if (this.particleCount + 11 > this.maxParticleCount) {
-			i = (this.maxParticleCount - this.particleCount) - 1;
-		}
-		for (int i11 = 0; i11 < i; i11++) {
-			int nextInt = (BounceGame.mRNG.nextInt() % 200) + 800;
-			this.particleCount++;
-			this.f373a[this.particleCount] = (BounceGame.mRNG.nextInt() % 200) + 800;
-			this.particlePositionsX[this.particleCount] = i2;
-			this.particlePositionsY[this.particleCount] = i3;
-			this.f381d[this.particleCount] = ((((BounceGame.mRNG.nextInt() % 30) << 10) + i6) * nextInt) >> 8;
-			this.f382e[this.particleCount] = (nextInt * (((BounceGame.mRNG.nextInt() % 30) << 10) + i7)) >> 8;
-			this.f376b[this.particleCount] = (byte) Math.abs(BounceGame.mRNG.nextInt() % this.f383f.length);
-		}
-	}
-
-	/* renamed from: a */
-	public final void mo71a(int i, int i2, int i3, int i4, int i5, int i6, int i7, int i8, int i9, int i10, int i11) {
-		for (int i12 = 0; i12 < i; i12++) {
-			mo69a(1, i2 + Math.abs(BounceGame.mRNG.nextInt() % ((i4 - i2) + 1)), i3 + Math.abs(BounceGame.mRNG.nextInt() % ((i5 - i3) + 1)), i6, i7, i8, i9, i10, i11);
-		}
-	}
-
-	// p000.GameObject
-	/* renamed from: a */
-	//@Override
-	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix rootMatrix) {
-		boolean z;
-		int i;
-		int a = GameRuntime.updateDelta * GameRuntime.getUpdatesPerDraw();
-		int particleIndex = 0;
-		while (particleIndex < this.particleCount + 1) {
-			f373a[particleIndex] = f373a[particleIndex] - a;
-			if (this.f373a[particleIndex] > 0) {
-				if (this.f387u != 0) {
-					int[] iArr2 = this.f381d;
-					iArr2[particleIndex] = iArr2[particleIndex] - (((this.f381d[particleIndex] * this.f387u) * a) >> 14);
-					int[] iArr3 = this.f382e;
-					iArr3[particleIndex] = iArr3[particleIndex] - (((this.f382e[particleIndex] * this.f387u) * a) >> 14);
-				}
-				int[] iArr4 = this.f381d;
-				iArr4[particleIndex] = iArr4[particleIndex] + (this.f380d * a);
-				int[] iArr5 = this.f382e;
-				iArr5[particleIndex] = iArr5[particleIndex] + (this.f384r * a);
-				if (this.f389w == 1 && this.f382e[particleIndex] > this.f378c) {
-					this.f382e[particleIndex] = this.f378c;
-				} else if (this.f389w == 4) {
-					short[] sArr = this.f374a;
-					sArr[particleIndex] = (short) (sArr[particleIndex] - a);
-					if (this.f374a[particleIndex] <= 0) {
-						this.f374a[particleIndex] = (short) (Math.abs(BounceGame.mRNG.nextInt() % 200) + 300);
-						this.f372a[particleIndex] = (byte) (Math.abs(BounceGame.mRNG.nextInt()) & 3);
-					}
-					int i3 = a / 2;
-					if (this.f372a[particleIndex] == 1) {
-						rotatePoint(i3, this.f381d[particleIndex], this.f382e[particleIndex]);
-						this.f381d[particleIndex] = pointRotationResult[0];
-						this.f382e[particleIndex] = pointRotationResult[1];
-					} else if (this.f372a[particleIndex] == 2) {
-						rotatePoint(359 - i3, this.f381d[particleIndex], this.f382e[particleIndex]);
-						this.f381d[particleIndex] = pointRotationResult[0];
-						this.f382e[particleIndex] = pointRotationResult[1];
-					}
-				} else if (this.f389w == 5) {
-					rotatePoint(a / 5, this.f381d[particleIndex], this.f382e[particleIndex]);
-					this.f381d[particleIndex] = pointRotationResult[0];
-					this.f382e[particleIndex] = pointRotationResult[1];
-				}
-				int[] iArr6 = this.particlePositionsX;
-				iArr6[particleIndex] = iArr6[particleIndex] + (((this.f381d[particleIndex] + this.f385s) * a) >> 4);
-				int[] iArr7 = this.particlePositionsY;
-				iArr7[particleIndex] = iArr7[particleIndex] + (((this.f382e[particleIndex] + this.f386t) * a) >> 4);
-				z = false;
-			} else {
-				z = true;
-			}
-			if (this.f389w == 1 && this.particlePositionsY[particleIndex] >= this.f375b) {
-				z = true;
-			}
-			if (!z) {
-				int b = GameRuntime.getImageAnimationFrameCount(this.f383f[this.f376b[particleIndex]]);
-				int i4 = (this.f373a[particleIndex] * b) / this.f390x;
-				if (i4 > b - 1) {
-					i4 = b - 1;
-				}
-				rootMatrix.mulVector(this.particlePositionsX[particleIndex], this.particlePositionsY[particleIndex]);
-				GameRuntime.drawAnimatedImageRes(Matrix.vectorMulRslX >> 16, Matrix.vectorMulRslY >> 16, this.f383f[this.f376b[particleIndex]], (b - 1) - i4);
-				i = particleIndex;
-			} else if (particleIndex == this.particleCount) {
-				this.particleCount--;
-				i = particleIndex;
-			} else {
-				this.f373a[particleIndex] = this.f373a[this.particleCount];
-				this.particlePositionsX[particleIndex] = this.particlePositionsX[this.particleCount];
-				this.particlePositionsY[particleIndex] = this.particlePositionsY[this.particleCount];
-				this.f381d[particleIndex] = this.f381d[this.particleCount];
-				this.f382e[particleIndex] = this.f382e[this.particleCount];
-				this.particleCount--;
-				i = particleIndex - 1;
-			}
-			particleIndex = i + 1;
-		}
-	}
-
-	/* renamed from: b */
-	public final void mo72b(int i, int i2, int i3, int i4, int i5, int i6, int i7, int i8, int i9, int i10) {
-		int nextInt;
-		int nextInt2;
-		for (int i11 = 0; i11 < i; i11++) {
-			do {
-				nextInt = BounceGame.mRNG.nextInt() % ((i4 * 2) + 1);
-				nextInt2 = BounceGame.mRNG.nextInt() % ((i4 * 2) + 1);
-			} while ((nextInt * nextInt) + (nextInt2 * nextInt2) > i4 * i4);
-			mo69a(1, i2 + nextInt, i3 + nextInt2, 0, 0, 0, 0, i9, i10);
-		}
 	}
 
 	/* renamed from: c */
@@ -307,5 +180,120 @@ public final class ParticleObject extends GameObject {
 		this.localObjectMatrix.translationY = 0;
 		this.renderCalcMatrix.setFromMatrix(this.localObjectMatrix);
 		initialize();
+	}
+
+	/* renamed from: a */
+	public final void emitCircle(int count, int posX, int posY, int dirScaleX, int dirScaleY, int lifespanBase, int lifespanRange) {
+		if (count + 1 + this.particleCount > this.maxParticleCount) {
+			count = (this.maxParticleCount - this.particleCount) - 1;
+		}
+		for (int i = 0; i < count; i++) {
+			int sinIdx = (i * 360) / count;
+			int cosIdx = sinIdx + 90 >= 360 ? (sinIdx + 90) - 360 : sinIdx + 90;
+			this.particleCount++;
+			this.particleLifespans[this.particleCount] = lifespanRange != 0 ? (BounceGame.mRNG.nextInt() % lifespanRange) + lifespanBase : lifespanBase;
+			this.particlePositionsX[this.particleCount] = posX;
+			this.particlePositionsY[this.particleCount] = posY;
+			this.velocityX[this.particleCount] = BounceGame.SIN_COS_TABLE[sinIdx] * dirScaleX;
+			this.velocityY[this.particleCount] = BounceGame.SIN_COS_TABLE[cosIdx] * dirScaleX;
+			if (this.type == TYPE_SPRITE_BY_PARTICLE_NO) {
+				this.particleImageIndices[this.particleCount] = (byte) (i % this.imageIDs.length);
+			} else if (this.type == TYPE_SHOWER && equals(BounceGame.winParticle)) {
+				byte abs = (byte) Math.abs(BounceGame.mRNG.nextInt() % this.imageIDs.length);
+				if (abs > 1) {
+					abs = (byte) Math.abs(BounceGame.mRNG.nextInt() % this.imageIDs.length);
+				}
+				this.particleImageIndices[this.particleCount] = abs;
+			} else {
+				this.particleImageIndices[this.particleCount] = (byte) Math.abs(BounceGame.mRNG.nextInt() % this.imageIDs.length);
+			}
+		}
+	}
+
+	/* renamed from: a */
+	public final void emitBlast(
+			int count,
+			int posX,
+			int posY,
+			int directionScaleBase,
+			int directionScaleRange,
+			int directionX,
+			int directionY,
+			int directionBias,
+			int lifespanBase,
+			int lifespanRange
+	) {
+		if (this.particleCount + count + 1 > this.maxParticleCount) {
+			count = (this.maxParticleCount - this.particleCount) - 1;
+		}
+		for (int i = 0; i < count; i++) {
+			int velocityScale = directionScaleRange != 0 ? (BounceGame.mRNG.nextInt() % directionScaleRange) + directionScaleBase : directionScaleBase;
+			this.particleCount++;
+			this.particleLifespans[this.particleCount] = lifespanRange != 0 ? (BounceGame.mRNG.nextInt() % lifespanRange) + lifespanBase : lifespanBase;
+			this.particlePositionsX[this.particleCount] = posX;
+			this.particlePositionsY[this.particleCount] = posY;
+			this.velocityX[this.particleCount] = ((((BounceGame.mRNG.nextInt() % directionBias) << 10) + directionX) * velocityScale) >> 8;
+			this.velocityY[this.particleCount] = ((((BounceGame.mRNG.nextInt() % directionBias) << 10) + directionY) * velocityScale) >> 8;
+			this.particleImageIndices[this.particleCount] = (byte) Math.abs(BounceGame.mRNG.nextInt() % this.imageIDs.length);
+		}
+	}
+
+	/* renamed from: a */
+	public final void emitBurst(int count, int posX, int posY, int dispBase, int dispRange, int dirAngleBase, int dirAngleRange, int lifespanBase, int lifespanRange) {
+		if (count + 1 + this.particleCount > this.maxParticleCount) {
+			count = (this.maxParticleCount - this.particleCount) - 1;
+		}
+		for (int i = 0; i < count; i++) {
+			int dirAngleRng = dirAngleBase + (BounceGame.mRNG.nextInt() % ((dirAngleRange / 2) + 1)); //divide by two in order to make negative/positive add up to range
+			int dirAngleNormTemp = dirAngleRng - (dirAngleRng >= 360 ? 360 : 0);
+			int dirAngle = dirAngleNormTemp + (dirAngleNormTemp < 0 ? 360 : 0);
+			int dirAngleCosIdx = dirAngle + 90 >= 360 ? dirAngle - 270 : dirAngle + 90;
+			int rndDirScale = dispRange != 0 ? (BounceGame.mRNG.nextInt() % dispRange) + dispBase : dispBase;
+			this.particleCount++;
+			this.particleLifespans[this.particleCount] = lifespanRange != 0 ? (BounceGame.mRNG.nextInt() % lifespanRange) + lifespanBase : lifespanBase;
+			this.particlePositionsX[this.particleCount] = posX;
+			this.particlePositionsY[this.particleCount] = posY;
+			this.velocityX[this.particleCount] = BounceGame.SIN_COS_TABLE[dirAngle] * rndDirScale;
+			this.velocityY[this.particleCount] = BounceGame.SIN_COS_TABLE[dirAngleCosIdx] * rndDirScale;
+			if (this.type == TYPE_SPRITE_4DIR) {
+				if (dirAngle >= 35 && dirAngle <= 90) {
+					this.particleImageIndices[this.particleCount] = 2;
+				} else if (dirAngle < 35) {
+					this.particleImageIndices[this.particleCount] = 3;
+				} else if (dirAngle > 325) {
+					this.particleImageIndices[this.particleCount] = 1;
+				} else {
+					this.particleImageIndices[this.particleCount] = 0;
+				}
+			} else if (this.type == TYPE_SPRITE_2DIR) {
+				if (dirAngleBase == 0 || dirAngleBase == 180) {
+					this.particleImageIndices[this.particleCount] = 0;
+				} else {
+					this.particleImageIndices[this.particleCount] = 1;
+				}
+			} else {
+				this.particleImageIndices[this.particleCount] = (byte) Math.abs(BounceGame.mRNG.nextInt() % this.imageIDs.length);
+			}
+		}
+	}
+
+	/* renamed from: a */
+	public final void emitIndependentBursts(int count, int posXMin, int posYMin, int posXMax, int posYMax, int dispBase, int dispRange, int dirAngleBase, int dirAngleRange, int lifespanBase, int lifespanRange) {
+		for (int i = 0; i < count; i++) {
+			emitBurst(1, posXMin + Math.abs(BounceGame.mRNG.nextInt() % ((posXMax - posXMin) + 1)), posYMin + Math.abs(BounceGame.mRNG.nextInt() % ((posYMax - posYMin) + 1)), dispBase, dispRange, dirAngleBase, dirAngleRange, lifespanBase, lifespanRange);
+		}
+	}
+
+	/* renamed from: b */
+	public final void emitTrail(int count, int posX, int posY, int dim, int dispBase, int dispRange, int dirAngleBase, int dirAngleRange, int lifespanBase, int lifespanRange) {
+		int dispX;
+		int dispY;
+		for (int i = 0; i < count; i++) {
+			do {
+				dispX = BounceGame.mRNG.nextInt() % ((dim * 2) + 1);
+				dispY = BounceGame.mRNG.nextInt() % ((dim * 2) + 1);
+			} while ((dispX * dispX) + (dispY * dispY) > dim * dim);
+			emitBurst(1, posX + dispX, posY + dispY, dispBase, dispRange, dirAngleBase, dirAngleRange, lifespanBase, lifespanRange);
+		}
 	}
 }

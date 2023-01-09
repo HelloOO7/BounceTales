@@ -16,183 +16,71 @@ public final class BounceGame {
 	public static final int CONTROLLER_DISABLED = 2;
 	public static final int CONTROLLER_FROZEN = 3;
 
-	/* renamed from: A */
-	private static int mainMenuReturnUI = 17;
+	/*
+	Constants
+	 */
+	public static short[] SIN_COS_TABLE = new short[360]; //renamed from: b
 
-	/* renamed from: D */
-	private static int objectCount;
+	private static final byte[] CHEAT_COMBO_ALL_UNLOCK = {KeyCode.NUM0, KeyCode.NUM0, KeyCode.NUM0}; //renamed from: a
+	private static final byte[] CHEAT_COMBO_ALL_COMPLETE = {KeyCode.NUM1, KeyCode.NUM1, KeyCode.NUM1}; //renamed from: b
 
-	/* renamed from: E */
-	private static int eventCount;
+	public static final int CANNON_LEVEL_INDEX = 15;
 
-	/* renamed from: F */
-	private static int f240F;
+	private static final short[] LEVEL_RESIDS = {
+		39,
+		40,
+		41,
+		42,
+		51,
+		43,
+		44,
+		45,
+		46,
+		52,
+		47,
+		48,
+		49,
+		50,
+		53,
+		54
+	}; //renamed from: v
 
-	/* renamed from: G */
-	private static int bonusLevelEggLimit;
+	private static final short[] LEVEL_NAME_MESSAGE_IDS = {
+		MessageID.LEVEL_MISTY_MORNING,
+		MessageID.LEVEL_UNFRIENDLY_FRIENDS,
+		MessageID.LEVEL_SEEKING_ANSWERS,
+		MessageID.LEVEL_BUMPY_CRACKS,
+		MessageID.LEVEL_SECRET_STALKWAY,
+		MessageID.LEVEL_INTO_THE_MINES,
+		MessageID.LEVEL_A_GLOOMY_PATH,
+		MessageID.LEVEL_RUMBLING_SOUNDS,
+		MessageID.LEVEL_TRAPPED_IN_MACHINE,
+		MessageID.LEVEL_TUNNEL_OF_TREASURES,
+		MessageID.LEVEL_WICKED_CIRCUS,
+		MessageID.LEVEL_HUNTING_COLOURS,
+		MessageID.LEVEL_ALMOST_THERE,
+		MessageID.LEVEL_FINAL_RIDE,
+		MessageID.LEVEL_FANTASTIC_FAIR
+	}; //renamed from: h
 
-	/* renamed from: H */
-	private static int stolenColorsAnimationCountdown;
+	private static final short[] LEVEL_COVER_ART_IMAGE_IDS = {
+		359,
+		363,
+		364,
+		365,
+		328,
+		366,
+		367,
+		368,
+		369,
+		329,
+		370,
+		360,
+		361,
+		362,
+		330
+	}; //renamed from: g
 
-	/* renamed from: I */
-	private static int stolenColorsFlashCountdown;
-
-	/* renamed from: a */
-	private static byte cheatComboIndex;
-
-	/* renamed from: a */
-	public static int levelTimer;
-
-	/* renamed from: a */
-	public static EggObject enemyDeadEgg;
-
-	/* renamed from: a */
-	public static BounceObject bounceObj;
-
-	/* renamed from: a */
-	public static GameObject rootLevelObj;
-
-	/* renamed from: a */
-	private static String lastFieldMsg;
-
-	/* renamed from: a */
-	public static Random mRNG = new Random(System.currentTimeMillis());
-
-	/* renamed from: a */
-	public static Graphics ballGraphics;
-
-	/* renamed from: a */
-	public static Image ballFramebuffer;
-
-	//LEVEL ACTORS
-	private static EventObject[] events;
-
-	private static GameObject[] levelObjects;
-
-	public static GameObject[] cannonModels;
-
-	public static CannonObject currentCannon;
-
-	/* renamed from: j */
-	private static int[] f310j = {420, 426, 402, 408};
-
-	/* renamed from: a */
-	public static ParticleObject winParticle = new ParticleObject(20, 0, 0, 0, 0, 35, 4, f310j, 1840, -4);
-
-	/* renamed from: a */
-	public static boolean f255a;
-
-	/* renamed from: a */
-	private static final byte[] CHEAT_COMBO_ALL_UNLOCK = {KeyCode.NUM0, KeyCode.NUM0, KeyCode.NUM0};
-
-	/* renamed from: a */
-	private static final float[] EGG_SCORE_MULTIPLIER_BY_LEVEL = {
-		0.937f,
-		0.969f,
-		0.659f,
-		0.937f,
-		1.412f,
-		0.969f,
-		2.121f,
-		1.298f,
-		1.298f,
-		1.011f,
-		1.298f,
-		1.921f,
-		1.298f,
-		0.712f,
-		1.195f
-	};
-
-	/* renamed from: a */
-	public static int[] ballFramebufferRGB;
-
-	/* renamed from: a */
-	private static String[] fieldMessageParam = null;
-
-	/* renamed from: a */
-	private static Image[] parallaxImagesRegColors;
-
-	/* renamed from: a */
-	public static final short[] SCRIPT_MESSAGE_IDS = {48, 44, 43, 46, 49, 45, 47, 36, 84, 19, 18, 17, 4, 12, 13, 11, 14, 15, 83, 80, 37, 85, 38, 39, 87, 2, 3, 35, 16, 0, 1, 20, 24, 25, 32, 26, 27, 28, 29, 33, 30, 31, 21, 22, 34, 23, 86, 81, 82, 5, 6, 8, 7, 41, 9, 10, 40, 42, 51, 52, 53, 50, 54, 55, 56, 57, 58, 59, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 60, 61, 62, 63, 64, 88, 89, 90};
-
-	/* renamed from: l */
-	private static int[] f317l = {390, 414, 396};
-
-	/* renamed from: f */
-	private static int[] f292f = {526, 516, 531, 521};
-
-	private static int[] f287e = {536};
-
-	private static int[] f313k = {420, 426};
-
-	private static int[] f297g = {390, 420};
-
-	private static int[] f302h = {420, 426};
-
-	private static int[] f306i = {414, 396, 420};
-
-	private static int[] f321m = {437, 432};
-
-	/* renamed from: b */
-	public static int exitWaitTimer;
-
-	/* renamed from: b */
-	public static Graphics f265b;
-
-	/* renamed from: b */
-	public static Image f266b;
-
-	/* renamed from: b */
-	public static ParticleObject f267b = new ParticleObject(20, 0, -200, 0, 0, 0, 0, f292f, 800, 7);
-
-	/* renamed from: b */
-	public static boolean levelPaused;
-
-	/* renamed from: b */
-	private static final byte[] CHEAT_COMBO_ALL_COMPLETE = {KeyCode.NUM1, KeyCode.NUM1, KeyCode.NUM1};
-
-	/* renamed from: b */
-	public static int[] f270b;
-
-	/* renamed from: b */
-	private static Image[] parallaxImagesStolenColors;
-
-	/* renamed from: b */
-	public static short[] SIN_COS_TABLE = new short[360];
-
-	/* renamed from: c */
-	public static int f274c;
-
-	/* renamed from: c */
-	public static ParticleObject swimParticle = new ParticleObject(150, 0, 80, 0, 0, 0, 1, f287e, 4000, 7);
-
-	/* renamed from: c */
-	public static boolean reqCameraSnap = false;
-
-	/* renamed from: c */
-	private static int[] BONUS_LEVEL_INFO = {
-		LevelID.SECRET_STALKWAY, 60,
-		LevelID.TUNNEL_OF_TREASURES, 200,
-		LevelID.FANTASTIC_FAIR, 400
-	};
-
-	/* renamed from: c */
-	private static short[] TROPHY_IMAGE_IDS = {314, 315, 389};
-
-	/* renamed from: d */
-	public static final int f279d = 0;
-
-	/* renamed from: d */
-	public static ParticleObject f280d = new ParticleObject(10, 0, 0, 0, 0, 0, 6, f313k, 1000, -5);
-
-	/* renamed from: d */
-	public static boolean isSuperBounceUnlocked;
-
-	/* renamed from: d */
-	private static final int[] FORME_UNLOCK_LEVELS = {3, 8};
-
-	/* renamed from: d */
 	private static final short[] LEVEL_EGG_TROPHY_REQUIREMENTS = {
 		30, 29, 26,
 		30, 28, 26,
@@ -209,16 +97,7 @@ public final class BounceGame {
 		30, 25, 20,
 		30, 25, 20,
 		30, 30, 30
-	};
-
-	/* renamed from: e */
-	public static int currentLevel;
-
-	/* renamed from: e */
-	public static ParticleObject f285e = new ParticleObject(10, 0, 0, 0, 0, 30, 2, f297g, 800, -1);
-
-	/* renamed from: e */
-	private static boolean isTextRightToLeft = StringManager.getMessage(90).equals("1");
+	}; //renamed from: d
 
 	/* renamed from: e */
 	private static final short[] LEVEL_TIMER_TROPHY_REQUIREMENTS = {
@@ -237,281 +116,218 @@ public final class BounceGame {
 		48, 54, 60,
 		24, 34, 44,
 		9999, 9999, 9999
-	};
-
-	/* renamed from: f */
-	public static int eggCount;
-
-	/* renamed from: f */
-	public static ParticleObject f290f = new ParticleObject(50, 0, 0, 0, 0, 85, 3, f302h, 540, -2);
-
-	/* renamed from: f */
-	private static final boolean enableCheats;
-
-	/* renamed from: f */
-	private static short[] levelSaveData = new short[60];
-
-	/* renamed from: g */
-	public static int checkpointPosX;
+	}; //renamed from: e
+
+	private static final float[] EGG_SCORE_MULTIPLIER_BY_LEVEL = {
+		0.937f,
+		0.969f,
+		0.659f,
+		0.937f,
+		1.412f,
+		0.969f,
+		2.121f,
+		1.298f,
+		1.298f,
+		1.011f,
+		1.298f,
+		1.921f,
+		1.298f,
+		0.712f,
+		1.195f
+	}; //renamed from: a
+
+	private static final int[] BONUS_LEVEL_INFO = {
+		LevelID.SECRET_STALKWAY, 60,
+		LevelID.TUNNEL_OF_TREASURES, 200,
+		LevelID.FANTASTIC_FAIR, 400
+	}; //renamed from: c
+
+	private static final int[] FORME_UNLOCK_LEVELS = {3, 8}; //renamed from: d
+
+	private static final short[] NUMBER_FONT_IMAGE_IDS = {90, 91, 92, 93, 94, 95, 96, 97, 98, 99}; //renamed from: w
+
+	private static final short[] ALL_PARALLAX_IMAGE_IDS = {388, 373, 145, 313, 265, 157, 174, 55, 345, 243, 78, 317, 176, 267}; //renamed from: u
+	private static short[] f307i = {388}; //renamed from: i
+	private static short[] f311j = {251}; //renamed from: j
+	private static short[] f314k = {252}; //renamed from: k
+	private static short[] f318l = new short[0]; //renamed from: l
+	private static short[] f322m = {373}; //renamed from: m
+	private static short[] f325n = {161}; //renamed from: n
+	private static short[] f328o = {159, 160}; //renamed from: o
+	private static short[] f331p = new short[0]; //renamed from: p
+	private static short[] f334q = {352}; //renamed from: q
+	private static short[] f337r = {113}; //renamed from: r
+	private static short[] f340s = {114}; //renamed from: s
+	private static short[] f343t = {353}; //renamed from: t
+
+	private static final int[] WIN_PARTICLE_IMAGE_IDS = {420, 426, 402, 408}; //renamed from: j
+	private static final int[] SPLASH_PARTICLE_IMAGE_IDS = {526, 516, 531, 521}; //renamed from: f
+	private static final int[] BUBBLE_PARTICLE_IMAGE_IDS = {536}; //renamed from: e
+	private static final int[] COLOR_MACHINE_DESTROY_PARTICLE_IMAGE_IDS = {390, 414, 396}; //renamed from: l
+	private static final int[] SUPER_BOUNCE_PARTICLE_IMAGE_IDS = {420, 426}; //renamed from: k
+	private static final int[] CANNON_PARTICLE_IMAGE_IDS = {390, 420}; //renamed from: g
+	private static final int[] EGG_COLLECT_PARTICLE_IMAGE_IDS = {420, 426}; //renamed from: h
+	private static final int[] ENEMY_DEATH_PARTICLE_IMAGE_IDS = {414, 396, 420}; //renamed from: i
+	private static final int[] AIR_PARTICLE_IMAGE_IDS = {437, 432}; //renamed from: m
+
+	private static final short[] TROPHY_IMAGE_IDS = {314, 315, 389}; //renamed from: c
+
+	public static final short[] SCRIPT_MESSAGE_IDS = {48, 44, 43, 46, 49, 45, 47, 36, 84, 19, 18, 17, 4, 12, 13, 11, 14, 15, 83, 80, 37, 85, 38, 39, 87, 2, 3, 35, 16, 0, 1, 20, 24, 25, 32, 26, 27, 28, 29, 33, 30, 31, 21, 22, 34, 23, 86, 81, 82, 5, 6, 8, 7, 41, 9, 10, 40, 42, 51, 52, 53, 50, 54, 55, 56, 57, 58, 59, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 60, 61, 62, 63, 64, 88, 89, 90}; //renamed from: a
+
+	private static final int[] SPLASH_SCREEN_LAYOUT_RESIDS = {7}; //renamed from: o
+	private static final int[] SPLASH_SCREEN_DURATIONS = {100}; //renamed from: q
+	private static final int[] SPLASH_BG_COLORS = {0xFFFFFF}; //renamed from: r
+	private static final int[] SPLASH_IMAGE_IDS = {1}; //renamed from: p
+
+	private static final int LAYOUT_MAIN_MENU_TITLE_PADDING = 129; //renamed from: q
+	private static final int LAYOUT_DEFAULT_TITLE_PADDING_TOP = 40; //renamed from: r
+	private static final int LAYOUT_DEFAULT_TITLE_PADDING_BOTTOM = 5; //renamed from: s
+	private static final int LAYOUT_DEFAULT_VERTICAL_MARGIN = 56; //renamed from: t
+	private static final int LAYOUT_DEFAULT_HORIZONTAL_MARGIN = 20; //renamed from: u
+	private static final int LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME = 40; //renamed from: v
+
+	//State - root
+	public static Random mRNG = new Random(System.currentTimeMillis()); //renamed from: a
+
+	private static short[] levelSaveData = new short[60]; //renamed from: f
+	public static boolean isSuperBounceUnlocked; //renamed from: d
+
+	private static int totalGameTime; //renamed from: j
+	private int gameMainState = 1; //renamed from: i
+
+	private static final boolean enableCheats; //renamed from: f
+	private static byte cheatComboIndex; //renamed from: a
+
+	//State - text
+	private static boolean isTextRightToLeft = StringManager.getMessage(90).equals("1"); //renamed from: e
+
+	//State - layout core
+	private final UILayout ui = new UILayout(); //renamed from: b
+	private UILayout drawUI = null; //renamed from: a
+
+	//State - loading
+	private int curSplashId; //renamed from: C
+	private long splashScreenStartTime; //renamed from: a
+
+	private static boolean hasLoadingProgressBar = false; //renamed from: j
+	private int loadingProgressBar = 0; //renamed from: B
+
+	//State - menus
+	private static int mainMenuReturnUI = 17; //renamed from: A
+	private static int lastMainMenuOption = 0; //renamed from: o
+	private static int selectedLevelId = 0; //renamed from: k
+
+	private static int f315l = 0; //renamed from: l
 
-	/* renamed from: h */
-	public static int checkpointPosY;
-
-	/* renamed from: g */
-	public static ParticleObject enemyDeathParticle = new ParticleObject(50, 0, 0, 0, 0, 35, 4, f306i, 1840, -3);
-
-	/* renamed from: g */
-	private static boolean isFieldMessageShowing;
-
-	/* renamed from: g */
+	private static int f319m = 0; //renamed from: m
+	private static int f323n = 0; //renamed from: n
 
- /* renamed from: g */
-	private static final short[] LEVEL_COVER_ART_IMAGE_IDS = {
-		359,
-		363,
-		364,
-		365,
-		328,
-		366,
-		367,
-		368,
-		369,
-		329,
-		370,
-		360,
-		361,
-		362,
-		330
-	};
+	//State - softkey bar polygon coordinates
+	private static int[] xluSoftkeyBarXs = new int[4]; //renamed from: v
+	private static int[] xluSoftkeyBarYs = new int[4]; //renamed from: w
 
-	/* renamed from: h */
-	public static ParticleObject f300h = new ParticleObject(24, 0, 0, 0, 0, 35, 4, f317l, 2040, -6);
+	//State - framebuffers
+	public static Graphics ballGraphics; //renamed from: a
+	public static Image ballFramebuffer; //renamed from: a
+	public static int[] ballFramebufferRGB; //renamed from: a
 
-	/* renamed from: h */
-	private static boolean isBlockingEvent;
+	public static Graphics spriteOffscreenGraphics; //renamed from: b
+	public static Image spriteFB; //renamed from: b
+	public static int[] spriteFBRGB; //renamed from: b
 
-	/* renamed from: h */
+	//State - level
+	private boolean isLevelActive = false; //renamed from: k
 
- /* renamed from: h */
-	private static final short[] LEVEL_NAME_MESSAGE_IDS = {
-		MessageID.LEVEL_MLHAVE_RANO,
-		MessageID.LEVEL_NEVLIDNI_KAMARADI,
-		MessageID.LEVEL_HLEDANI_ODPOVEDI,
-		MessageID.LEVEL_BUMPY_CRACKS,
-		MessageID.LEVEL_TAJNE_SLEDOVANI,
-		MessageID.LEVEL_DO_DOLU,
-		MessageID.LEVEL_TEMNA_CESTICKA,
-		MessageID.LEVEL_BURACIVE_ZVUKY,
-		MessageID.LEVEL_LAPEN_VE_STROJI,
-		MessageID.LEVEL_TUNEL_POKLADU,
-		MessageID.LEVEL_ZLOLAJNY_CIRKUS,
-		MessageID.LEVEL_LOVECKE_BARVY,
-		MessageID.LEVEL_SKORO_TAM,
-		MessageID.LEVEL_POSLEDNI_CESTA,
-		MessageID.LEVEL_FANTASTICKY_PARK
-	};
+	private static boolean isBlockingEvent; //renamed from: h
 
-	/* renamed from: i */
-	public static ParticleObject waterParticle = new ParticleObject(150, 0, 0, 0, 0, 0, 7, f321m, 2000, 15);
+	public static boolean reqCameraSnap = false; //renamed from: c
 
-	/* renamed from: i */
-	private static boolean reqReloadFieldMsg = false;
+	public static boolean levelPaused; //renamed from: b
 
-	/* renamed from: i */
- /* renamed from: i */
-	private static short[] f307i = {388};
+	public static int currentLevel; //renamed from: e
+	private static int objectCount; //renamed from: D
+	private static int eventCount; //renamed from: E
 
-	/* renamed from: j */
-	private static int totalGameTime;
+	private static EventObject[] events; //renamed from: a
+	private static GameObject[] levelObjects; //renamed from: a
+	public static GameObject[] cannonModels; //renamed from: b
 
-	/* renamed from: j */
-	private static boolean hasLoadingProgressBar = false;
+	public static GameObject rootLevelObj; //renamed from: a
 
-	/* renamed from: j */
-	private static short[] f311j = {251};
+	public static BounceObject bounceObj; //renamed from: a
+	public static CannonObject currentCannon; //renamed from: a
 
-	/* renamed from: k */
-	private static int selectedLevelId = 0;
+	private static int bonusLevelEggLimit; //renamed from: G
 
-	/* renamed from: k */
+	//State - level progress
+	public static int levelTimer; //renamed from: a
+	public static int eggCount; //renamed from: f
 
- /* renamed from: k */
-	private static short[] f314k = {252};
+	public static int checkpointPosX; //renamed from: g
+	public static int checkpointPosY; //renamed from: h
 
-	/* renamed from: l */
-	private static int f315l = 0;
+	public static boolean waterSingletonFlag; //renamed from: a
 
-	/* renamed from: l */
-	private static boolean isFlashToOtherColorMode;
+	//State - stolen colors
+	private static boolean isFlashToOtherColorMode; //renamed from: l
+	private static boolean isColorsAreStolen; //renamed from: m
+	private static int stolenColorsAnimationCountdown; //renamed from: H
+	private static int stolenColorsFlashCountdown; //renamed from: I
 
-	/* renamed from: l */
-	private static short[] f318l = new short[0];
+	//Particles
+	public static ParticleObject winParticle = new ParticleObject(20, 0, 0, 0, 0, 35, 4, WIN_PARTICLE_IMAGE_IDS, 1840, -4); //renamed from: a
+	public static ParticleObject waterSplashParticle = new ParticleObject(20, 0, -200, 0, 0, 0, 0, SPLASH_PARTICLE_IMAGE_IDS, 800, 7); //renamed from: b
+	public static ParticleObject bubbleParticle = new ParticleObject(150, 0, 80, 0, 0, 0, 1, BUBBLE_PARTICLE_IMAGE_IDS, 4000, 7); //renamed from: c
+	public static ParticleObject superBounceParticle = new ParticleObject(10, 0, 0, 0, 0, 0, 6, SUPER_BOUNCE_PARTICLE_IMAGE_IDS, 1000, -5); //renamed from: d
+	public static ParticleObject cannonParticle = new ParticleObject(10, 0, 0, 0, 0, 30, 2, CANNON_PARTICLE_IMAGE_IDS, 800, -1); //renamed from: e
+	public static ParticleObject eggCollectParticle = new ParticleObject(50, 0, 0, 0, 0, 85, 3, EGG_COLLECT_PARTICLE_IMAGE_IDS, 540, -2); //renamed from: f
+	public static ParticleObject enemyDeathParticle = new ParticleObject(50, 0, 0, 0, 0, 35, 4, ENEMY_DEATH_PARTICLE_IMAGE_IDS, 1840, -3); //renamed from: g
+	public static ParticleObject colorMachineDestroyParticle = new ParticleObject(24, 0, 0, 0, 0, 35, 4, COLOR_MACHINE_DESTROY_PARTICLE_IMAGE_IDS, 2040, -6); //renamed from: h
+	public static ParticleObject airTunnelParticle = new ParticleObject(150, 0, 0, 0, 0, 0, 7, AIR_PARTICLE_IMAGE_IDS, 2000, 15); //renamed from: i
 
-	/* renamed from: m */
-	private static int f319m = 0;
+	//Extra entities
+	public static EggObject enemyDeadEgg; //renamed from: a
 
-	/* renamed from: m */
-	private static boolean isColorsAreStolen;
+	//State - level exit
+	public static int exitWaitTimer; //renamed from: b
+	public static int deathBaseY; //renamed from: c
 
-	/* renamed from: m */
- /* renamed from: m */
-	private static short[] f322m = {373};
+	//State - field message
+	private static boolean isFieldMessageShowing; //renamed from: g
+	private static String lastFieldMsg; //renamed from: a
 
-	/* renamed from: n */
-	private static int f323n = 0;
+	private static int[] fieldMessageQueue = new int[5]; //renamed from: n
+	private static int fieldMessagePointer; //renamed from: z
+	private static String[] fieldMessageParam = null; //renamed from: a
 
-	/* renamed from: n */
-	private static int[] fieldMessageQueue = new int[5];
+	private boolean reqQuitLevelAfterFieldMessage = false; //renamed from: p
+	private static boolean reqReloadFieldMsg = false; //renamed from: i
 
-	/* renamed from: n */
-	private static short[] f325n = {161};
+	//State - parallax
+	private static Image[] parallaxImagesRegColors; //renamed from: a
+	private static Image[] parallaxImagesStolenColors; //renamed from: b
 
-	/* renamed from: o */
-	private static int lastMainMenuOption = 0;
+	private static int f353x = GameRuntime.currentWidth; //renamed from: x
+	private static int f354y = GameRuntime.currentHeight; //renamed from: y
 
-	/* renamed from: o */
-	private static final int[] SPLASH_SCREEN_LAYOUT_RESIDS = {7};
+	private static int f240F; //renamed from: F
 
-	/* renamed from: o */
-	private static short[] f328o = {159, 160};
+	private static int[] paralaxXOffsets = new int[10]; //renamed from: s
+	private static int[] parallaxYOffsets = new int[10]; //renamed from: t
+	private static int[] parallaxImageIndices = new int[10]; //renamed from: u
 
-	/* renamed from: p */
-	private static int calcScore;
+	//State - after level cleared
+	private static int calcScore; //renamed from: p
 
-	/* renamed from: p */
-	private static final int[] SPLASH_IMAGE_IDS = {1};
+	private int timerChallengeTrophy = -1; //renamed from: J
+	private int collectionChallengeTrophy = -1; //renamed from: K
 
-	/* renamed from: p */
-	private static short[] f331p = new short[0];
+	private boolean wasFinalLevelJustBeaten = false; //renamed from: n
+	private boolean wasSuperBounceJustUnlocked = false; //renamed from: o
+	private boolean highScoreBeaten = false; //renamed from: q
 
-	/* renamed from: q */
-	private static int f332q = 129;
-
-	/* renamed from: q */
-	private static final int[] SPLASH_SCREEN_DURATIONS = {100};
-
-	/* renamed from: q */
-	private static short[] f334q = {352};
-
-	/* renamed from: r */
-	private static int f335r = 40;
-
-	/* renamed from: r */
-	private static final int[] BACKGROUND_COLORS = {0xFFFFFF};
-
-	/* renamed from: r */
-	private static short[] f337r = {113};
-
-	/* renamed from: s */
-	private static int f338s = 5;
-
-	/* renamed from: s */
-	private static int[] paralaxXOffsets = new int[10];
-
-	/* renamed from: s */
-	private static short[] f340s = {114};
-
-	/* renamed from: t */
-	private static int f341t = 56;
-
-	/* renamed from: t */
-	private static int[] parallaxYOffsets = new int[10];
-
-	/* renamed from: t */
-	private static short[] f343t = {353};
-
-	/* renamed from: u */
-	private static int f344u = 20;
-
-	/* renamed from: u */
-	private static int[] parallaxImageIndices = new int[10];
-
-	/* renamed from: u */
-	private static short[] ALL_PARALLAX_IMAGE_IDS = {388, 373, 145, 313, 265, 157, 174, 55, 345, 243, 78, 317, 176, 267};
-
-	/* renamed from: v */
-	private static int f347v = 40;
-
-	/* renamed from: v */
-	private static int[] xluSoftkeyBarXs = new int[4];
-
-	public static final int CANNON_LEVEL_INDEX = 15;
-
-	private static short[] LEVEL_RESIDS = {
-		39,
-		40,
-		41,
-		42,
-		51,
-		43,
-		44,
-		45,
-		46,
-		52,
-		47,
-		48,
-		49,
-		50,
-		53,
-		54
-	};
-
-	/* renamed from: w */
-	private static int f350w = 0;
-
-	/* renamed from: w */
-	private static int[] xluSoftkeyBarYs = new int[4];
-
-	/* renamed from: w */
-	private static short[] NUMBER_FONT_IMAGE_IDS = {90, 91, 92, 93, 94, 95, 96, 97, 98, 99};
-
-	/* renamed from: x */
-	private static int f353x = GameRuntime.currentWidth;
-
-	/* renamed from: y */
-	private static int f354y = GameRuntime.currentHeight;
-
-	/* renamed from: z */
-	private static int fieldMessagePointer;
-
-	/* renamed from: B */
-	private int loadingProgressBar = 0;
-
-	/* renamed from: C */
-	private int curSplashId;
-
-	/* renamed from: J */
-	private int timerChallengeTrophy = -1;
-
-	/* renamed from: K */
-	private int collectionChallengeTrophy = -1;
-
-	/* renamed from: a */
-	private long splashScreenStartTime;
-
-	/* renamed from: a */
-	private UILayout drawUI = null;
-
-	/* renamed from: b */
-	private final UILayout ui = new UILayout();
-
-	/* renamed from: i */
-	private int gameMainState = 1;
-
-	/* renamed from: k */
-	private boolean isLevelActive = false;
-
-	/* renamed from: n */
-	private boolean wasFinalLevelJustBeaten = false;
-
-	/* renamed from: o */
-	private boolean wasSuperBounceJustUnlocked = false;
-
-	/* renamed from: p */
-	private boolean reqQuitLevelAfterFieldMessage = false;
-
-	/* renamed from: q */
-	private boolean highScoreBeaten = false;
+	public static final int unused_f279d = 0; //renamed from: d
+	private static int unused_f350w = 0; //renamed from: w
 
 	static {
 		enableCheats = GameRuntime.getAppFlag("Cheats");
@@ -519,15 +335,26 @@ public final class BounceGame {
 	}
 
 	/* renamed from: a */
-	public static int getUnlockedFormeCount() {
-		int i = 0;
-		if (wasLevelBeaten(FORME_UNLOCK_LEVELS[0]) || (currentLevel == FORME_UNLOCK_LEVELS[0] && EventObject.eventVars[2] > 0)) {
-			i = 1;
+	private static void generateSinCosTable() {
+		int curve = 0;
+		int tangent = 57 * 360;
+		for (int angle = 0; angle < 360; angle++) {
+			int sin = curve / 57;
+			SIN_COS_TABLE[angle] = (short) sin;
+			tangent -= sin;
+			curve += tangent / 57;
 		}
-		if (wasLevelBeaten(FORME_UNLOCK_LEVELS[1]) || (currentLevel == FORME_UNLOCK_LEVELS[1] && EventObject.eventVars[2] > 0)) {
-			return 2;
+	}
+
+	/* renamed from: a */
+	private static void setBGColor(int rgb, Graphics graphics) {
+		if ((isColorsAreStolen && !isFlashToOtherColorMode) || (!isColorsAreStolen && isFlashToOtherColorMode)) {
+			int red = (rgb >> 16) & 255;
+			int green = (rgb >> 8) & 255;
+			int blue = rgb & 255;
+			rgb = (((green + blue) >> 1) << 16) + (((blue + red) >> 1) << 8) + ((red + green) >> 1);
 		}
-		return i;
+		graphics.setColor(rgb);
 	}
 
 	/* renamed from: a */
@@ -568,45 +395,6 @@ public final class BounceGame {
 		}
 		GameRuntime.drawImageResAnchored(xOffset - drawnWidth, y, NUMBER_FONT_IMAGE_IDS[0], Graphics.TOP | Graphics.RIGHT); //leading zero
 		return GameRuntime.getImageMapParam(NUMBER_FONT_IMAGE_IDS[0], ImageMap.PARAM_WIDTH) + drawnWidth;
-	}
-
-	/* renamed from: a */
-	private static String getLevelChapterNumber(int levelId) {
-		int countOfBonusChaptersBefore = 0;
-		int bonusStructIdx = 0;
-		while (bonusStructIdx < BONUS_LEVEL_INFO.length && levelId >= BONUS_LEVEL_INFO[bonusStructIdx]) {
-			countOfBonusChaptersBefore++;
-			bonusStructIdx += 2;
-		}
-		return isBonusLevel(levelId) ? String.valueOf(countOfBonusChaptersBefore) : String.valueOf((levelId + 1) - countOfBonusChaptersBefore);
-	}
-
-	/* renamed from: a */
-	private static void generateSinCosTable() {
-		int curve = 0;
-		int tangent = 57 * 360;
-		for (int angle = 0; angle < 360; angle++) {
-			int sin = curve / 57;
-			SIN_COS_TABLE[angle] = (short) sin;
-			tangent -= sin;
-			curve += tangent / 57;
-		}
-	}
-
-	/* renamed from: a */
-	public static final void pushFieldMessage(int msgId) {
-		if (fieldMessagePointer < 5) {
-			fieldMessageQueue[fieldMessagePointer] = msgId;
-			fieldMessagePointer++;
-		}
-	}
-
-	public static final void setPlayerState(int state) {
-		EventObject.eventVars[0] = state;
-	}
-
-	public static final int getPlayerState() {
-		return EventObject.eventVars[0];
 	}
 
 	/* renamed from: a */
@@ -731,14 +519,75 @@ public final class BounceGame {
 	}
 
 	/* renamed from: a */
-	private static void setBGColor(int rgb, Graphics graphics) {
-		if ((isColorsAreStolen && !isFlashToOtherColorMode) || (!isColorsAreStolen && isFlashToOtherColorMode)) {
-			int red = (rgb >> 16) & 255;
-			int green = (rgb >> 8) & 255;
-			int blue = rgb & 255;
-			rgb = (((green + blue) >> 1) << 16) + (((blue + red) >> 1) << 8) + ((red + green) >> 1);
+	private static String getLevelChapterNumber(int levelId) {
+		int countOfBonusChaptersBefore = 0;
+		int bonusStructIdx = 0;
+		while (bonusStructIdx < BONUS_LEVEL_INFO.length && levelId >= BONUS_LEVEL_INFO[bonusStructIdx]) {
+			countOfBonusChaptersBefore++;
+			bonusStructIdx += 2;
 		}
-		graphics.setColor(rgb);
+		return isBonusLevel(levelId) ? String.valueOf(countOfBonusChaptersBefore) : String.valueOf((levelId + 1) - countOfBonusChaptersBefore);
+	}
+
+	/* renamed from: c */
+	private static boolean isBonusLevel(int i) {
+		for (int i2 = 0; i2 < BONUS_LEVEL_INFO.length; i2 += 2) {
+			if (i == BONUS_LEVEL_INFO[i2]) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/* renamed from: d */
+	private static int getLevelMusicID() {
+		switch (currentLevel) {
+			case LevelID.SECRET_STALKWAY:
+			case LevelID.TUNNEL_OF_TREASURES:
+			case LevelID.FANTASTIC_FAIR:
+				return SoundID.LEVEL_BONUS;
+			case LevelID.BUMPY_CRACKS:
+			case LevelID.TRAPPED_IN_MACHINE:
+			case LevelID.FINAL_RIDE:
+				return SoundID.LEVEL_BOSS;
+		}
+		switch (getLevelType(currentLevel)) {
+			case 0:
+				return SoundID.LEVEL_ACT_1;
+			case 1:
+				return SoundID.LEVEL_ACT_2;
+			default:
+				return SoundID.LEVEL_ACT_3;
+		}
+	}
+
+	/* renamed from: a */
+	public static final void pushFieldMessage(int msgId) {
+		if (fieldMessagePointer < 5) {
+			fieldMessageQueue[fieldMessagePointer] = msgId;
+			fieldMessagePointer++;
+		}
+	}
+
+	/* renamed from: c */
+	private void popFieldMessage() {
+		if (!isFieldMessageShowing && fieldMessagePointer > 0) {
+			setUI(34);
+			isBlockingEvent = true;
+			isFieldMessageShowing = true;
+			for (int i = 0; i < 4; i++) {
+				fieldMessageQueue[i] = fieldMessageQueue[i + 1];
+			}
+			fieldMessagePointer--;
+		}
+	}
+
+	public static final void setPlayerState(int state) {
+		EventObject.eventVars[0] = state;
+	}
+
+	public static final int getPlayerState() {
+		return EventObject.eventVars[0];
 	}
 
 	/* renamed from: a */
@@ -772,6 +621,18 @@ public final class BounceGame {
 		xluSoftkeyBarXs[3] = 0;
 		xluSoftkeyBarYs[3] = skbHeight + height;
 		directGraphics.fillPolygon(xluSoftkeyBarXs, 0, xluSoftkeyBarYs, 0, 4, 0x55000000);
+	}
+
+	/* renamed from: a */
+	public static void drawSoftkeyUI(String str, int type, int xpos, int ypos, int flags) {
+		if (type == 1) {
+			GameRuntime.drawImageResAnchored(xpos, ypos, (flags | Graphics.TOP) == Graphics.TOP ? 151 : 150, flags);
+		} else {
+			GameRuntime.setTextStyle(-3, 3);
+			GameRuntime.setTextColor(0, 0xFF7800);
+			GameRuntime.setTextColor(1, 0);
+			GameRuntime.drawText(str, 0, str.length(), xpos, ypos, flags);
+		}
 	}
 
 	/* renamed from: a */
@@ -811,18 +672,6 @@ public final class BounceGame {
 			if (z) {
 				updateLevelStartSoftkeyByUnlock(layout);
 			}
-		}
-	}
-
-	/* renamed from: a */
-	public static void drawSoftkeyUI(String str, int type, int xpos, int ypos, int flags) {
-		if (type == 1) {
-			GameRuntime.drawImageResAnchored(xpos, ypos, (flags | Graphics.TOP) == Graphics.TOP ? 151 : 150, flags);
-		} else {
-			GameRuntime.setTextStyle(-3, 3);
-			GameRuntime.setTextColor(0, 0xFF7800);
-			GameRuntime.setTextColor(1, 0);
-			GameRuntime.drawText(str, 0, str.length(), xpos, ypos, flags);
 		}
 	}
 
@@ -878,28 +727,12 @@ public final class BounceGame {
 	}
 
 	/* renamed from: a */
-	private static boolean checkSuperBounceUnlocked() {
-		for (int i = 0; i < 15; i++) {
-			if (getLevelEggCount(i) < LEVEL_EGG_TROPHY_REQUIREMENTS[i * 3] || getLevelClearTime(i) > LEVEL_TIMER_TROPHY_REQUIREMENTS[i * 3]) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	/* renamed from: a */
-	public static boolean wasLevelBeaten(int levelId) {
-		int clearTime = getLevelClearTime(levelId);
-		return clearTime > 0 && clearTime < 9999;
-	}
-
-	/* renamed from: a */
 	public static boolean drawUIGraphics(UILayout ui, int type, int xpos, int ypos, int width, int height) {
 		GameRuntime.setBacklight(true);
 		Graphics grp = GameRuntime.getGraphicsObj();
 		int a2 = GameRuntime.updateDelta * GameRuntime.getUpdatesPerDraw();
 		DirectGraphics directGraphics = DirectUtils.getDirectGraphics(grp);
-		if ((ui.currentStage == 34 || ui.currentStage == 25 || ui.currentStage == 28 || ui.currentStage == 29 || ui.currentStage == 30) && type == 1) {
+		if ((ui.uiID == 34 || ui.uiID == 25 || ui.uiID == 28 || ui.uiID == 29 || ui.uiID == 30) && type == 1) {
 			int[] xpoints = GeometryObject.TEMP_QUAD_XS;
 			int[] ypoints = GeometryObject.TEMP_QUAD_YS;
 			xpoints[0] = xpos;
@@ -917,7 +750,7 @@ public final class BounceGame {
 			GameRuntime.drawImageRes(xpos + width, ypos + height, 310);
 			drawTranslucentSoftkeyBar(directGraphics);
 			return false;
-		} else if (ui.currentStage == 18) {
+		} else if (ui.uiID == 18) {
 			if (type == 1) {
 				clearUIBackground(grp);
 				int i6 = GameRuntime.currentWidth >> 1;
@@ -986,14 +819,14 @@ public final class BounceGame {
 				drawTranslucentSoftkeyBar(directGraphics);
 			}
 			return false;
-		} else if (ui.currentStage == 25 || ui.currentStage == 28 || ui.currentStage == 29 || ui.currentStage == 30 || ui.currentStage == 15 || ui.currentStage == 34 || type != 1) {
+		} else if (ui.uiID == 25 || ui.uiID == 28 || ui.uiID == 29 || ui.uiID == 30 || ui.uiID == 15 || ui.uiID == 34 || type != 1) {
 			if (type == 1) {
 				drawTranslucentSoftkeyBar(directGraphics);
 			}
 			if (type == 4 || type == 2 || type == 9) {
 				return false;
 			}
-			if (ui.currentStage == 25 || ui.currentStage == 28 || ui.currentStage == 29 || ui.currentStage == 30 || ui.currentStage == 34 || type != 10) {
+			if (ui.uiID == 25 || ui.uiID == 28 || ui.uiID == 29 || ui.uiID == 30 || ui.uiID == 34 || type != 10) {
 				return true;
 			}
 			grp.setClip(0, 0, GameRuntime.currentWidth, GameRuntime.currentHeight);
@@ -1015,7 +848,7 @@ public final class BounceGame {
 			clearUIBackground(grp);
 			int i20 = GameRuntime.currentWidth >> 1;
 			int i21 = GameRuntime.currentHeight >> 1;
-			if (ui.currentStage == 17) {
+			if (ui.uiID == 17) {
 				int b3 = GameRuntime.getImageAnimParamEx(332, 0);
 				int i22 = b3 >> 16;
 				short s = (short) b3;
@@ -1100,9 +933,40 @@ public final class BounceGame {
 		graphics.fillRect(0, 0, GameRuntime.currentWidth, GameRuntime.currentHeight);
 	}
 
+	/* renamed from: a */
+	private static boolean checkSuperBounceUnlocked() {
+		for (int i = 0; i < 15; i++) {
+			if (getLevelEggCount(i) < LEVEL_EGG_TROPHY_REQUIREMENTS[i * 3] || getLevelClearTime(i) > LEVEL_TIMER_TROPHY_REQUIREMENTS[i * 3]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/* renamed from: a */
+	public static boolean wasLevelBeaten(int levelId) {
+		int clearTime = getLevelClearTime(levelId);
+		return clearTime > 0 && clearTime < 9999;
+	}
+
 	/* renamed from: b */
 	private static boolean isLevelUnlocked(int levelId) {
 		return getLevelClearTime(levelId) > 0;
+	}
+
+	/* renamed from: e */
+	private static void unlockLevel(int levelId) {
+		if (getLevelClearTime(levelId) == 0) {
+			setLevelClearTime(levelId, 9999);
+		}
+	}
+
+	/* renamed from: f */
+	private static void debugLevelUnlock(int levelId) {
+		int status = getLevelClearTime(levelId);
+		if (status == 0 || status == 9999) {
+			setLevelClearTime(levelId, 300);
+		}
 	}
 
 	/* renamed from: c */
@@ -1112,18 +976,6 @@ public final class BounceGame {
 			totalEggs += getLevelEggCount(levelIdx);
 		}
 		return totalEggs;
-	}
-
-	private static void deserializeSaveData(byte[] save) {
-		for (int saveDataInIdx = 0, saveDataOutIdx = 0; saveDataOutIdx < levelSaveData.length; saveDataOutIdx++, saveDataInIdx += 2) {
-			levelSaveData[saveDataOutIdx] = GameObject.readShort(save, saveDataInIdx);
-		}
-	}
-
-	private static void clearSaveData() {
-		for (int i = 0; i < levelSaveData.length; i++) {
-			levelSaveData[i] = 0;
-		}
 	}
 
 	private static void setLevelEggCount(int levelId, int eggCount) {
@@ -1150,66 +1002,6 @@ public final class BounceGame {
 		return levelSaveData[(levelId << 2) + 3];
 	}
 
-	/* renamed from: c */
-	public static int getStolenColorIfApplicable(int i) {
-		//10 - false
-		//01 - false
-		//11 - true
-		//00 - true
-		if ((isColorsAreStolen && isFlashToOtherColorMode) || (!isColorsAreStolen && !isFlashToOtherColorMode)) {
-			return i;
-		}
-		int i2 = (i >> 16) & 255;
-		int i3 = (i >> 8) & 255;
-		int i4 = i & 255;
-		return ((i >>> 24) << 24) + (((i3 + i4) >> 1) << 16) + (((i4 + i2) >> 1) << 8) + ((i2 + i3) >> 1);
-	}
-
-	/* renamed from: c */
-	private void popFieldMessage() {
-		if (!isFieldMessageShowing && fieldMessagePointer > 0) {
-			setUI(34);
-			isBlockingEvent = true;
-			isFieldMessageShowing = true;
-			for (int i = 0; i < 4; i++) {
-				fieldMessageQueue[i] = fieldMessageQueue[i + 1];
-			}
-			fieldMessagePointer--;
-		}
-	}
-
-	/* renamed from: c */
-	private static boolean isBonusLevel(int i) {
-		for (int i2 = 0; i2 < BONUS_LEVEL_INFO.length; i2 += 2) {
-			if (i == BONUS_LEVEL_INFO[i2]) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/* renamed from: d */
-	private static int getLevelMusicID() {
-		switch (currentLevel) {
-			case LevelID.SECRET_STALKWAY:
-			case LevelID.TUNNEL_OF_TREASURES:
-			case LevelID.FANTASTIC_FAIR:
-				return SoundID.LEVEL_BONUS;
-			case LevelID.BUMPY_CRACKS:
-			case LevelID.TRAPPED_IN_MACHINE:
-			case LevelID.FINAL_RIDE:
-				return SoundID.LEVEL_BOSS;
-		}
-		switch (getLevelType(currentLevel)) {
-			case 0:
-				return SoundID.LEVEL_ACT_1;
-			case 1:
-				return SoundID.LEVEL_ACT_2;
-			default:
-				return SoundID.LEVEL_ACT_3;
-		}
-	}
-
 	/* renamed from: d */
 	private static int getCollectionChallengeRank(int levelId) {
 		int collectedEggs = getLevelEggCount(levelId);
@@ -1223,16 +1015,6 @@ public final class BounceGame {
 			return 0;
 		}
 		return -1;
-	}
-
-	/* renamed from: d */
-	private static void serializeSaveData() {
-		byte[] savedata = new byte[(levelSaveData.length << 1)];
-		for (int i = 0; i < levelSaveData.length; i++) {
-			savedata[i << 1] = (byte) (levelSaveData[i] >> 8);
-			savedata[(i << 1) + 1] = (byte) levelSaveData[i];
-		}
-		GameRuntime.saveToRecordStore("game", savedata);
 	}
 
 	/* renamed from: e */
@@ -1250,6 +1032,101 @@ public final class BounceGame {
 		return -1;
 	}
 
+	/* renamed from: a */
+	public static int getUnlockedFormeCount() {
+		int i = 0;
+		if (wasLevelBeaten(FORME_UNLOCK_LEVELS[0]) || (currentLevel == FORME_UNLOCK_LEVELS[0] && EventObject.eventVars[2] > 0)) {
+			i = 1;
+		}
+		if (wasLevelBeaten(FORME_UNLOCK_LEVELS[1]) || (currentLevel == FORME_UNLOCK_LEVELS[1] && EventObject.eventVars[2] > 0)) {
+			return 2;
+		}
+		return i;
+	}
+
+	private static void deserializeSaveData(byte[] save) {
+		for (int saveDataInIdx = 0, saveDataOutIdx = 0; saveDataOutIdx < levelSaveData.length; saveDataOutIdx++, saveDataInIdx += 2) {
+			levelSaveData[saveDataOutIdx] = GameObject.readShort(save, saveDataInIdx);
+		}
+	}
+
+	private static void clearSaveData() {
+		for (int i = 0; i < levelSaveData.length; i++) {
+			levelSaveData[i] = 0;
+		}
+	}
+
+	/* renamed from: d */
+	private static void serializeSaveData() {
+		byte[] savedata = new byte[(levelSaveData.length << 1)];
+		for (int i = 0; i < levelSaveData.length; i++) {
+			savedata[i << 1] = (byte) (levelSaveData[i] >> 8);
+			savedata[(i << 1) + 1] = (byte) levelSaveData[i];
+		}
+		GameRuntime.saveToRecordStore("game", savedata);
+	}
+
+	/* renamed from: g */
+	private static void initStolenColorData() {
+		stolenColorsAnimationCountdown = 0;
+		stolenColorsFlashCountdown = 0;
+		isFlashToOtherColorMode = false;
+		isColorsAreStolen = false;
+		try {
+			parallaxImagesRegColors = new Image[ALL_PARALLAX_IMAGE_IDS.length];
+			parallaxImagesStolenColors = new Image[ALL_PARALLAX_IMAGE_IDS.length];
+			for (int i = 0; i < ALL_PARALLAX_IMAGE_IDS.length; i++) {
+				if (GameRuntime.getImageResource(ALL_PARALLAX_IMAGE_IDS[i]) != null) {
+					parallaxImagesRegColors[i] = GameRuntime.getImageResource(ALL_PARALLAX_IMAGE_IDS[i]);
+					parallaxImagesStolenColors[i] = Image.createImage(parallaxImagesRegColors[i]);
+					int[] stolenRGB = new int[(parallaxImagesStolenColors[i].getWidth() * parallaxImagesStolenColors[i].getHeight())];
+					parallaxImagesStolenColors[i].getRGB(
+							stolenRGB,
+							0,
+							parallaxImagesStolenColors[i].getWidth(),
+							0,
+							0,
+							parallaxImagesStolenColors[i].getWidth(),
+							parallaxImagesStolenColors[i].getHeight()
+					);
+					for (int rgbIdx = 0; rgbIdx < stolenRGB.length; rgbIdx++) {
+						int r = (stolenRGB[rgbIdx] >> 16) & 255;
+						int g = (stolenRGB[rgbIdx] >> 8) & 255;
+						int b = stolenRGB[rgbIdx] & 255;
+						stolenRGB[rgbIdx] = ((stolenRGB[rgbIdx] >>> 24) << 24) + (((g + b) >> 1) << 16) + (((b + r) >> 1) << 8) + ((r + g) >> 1);
+					}
+					parallaxImagesStolenColors[i] = Image.createRGBImage(stolenRGB, parallaxImagesStolenColors[i].getWidth(), parallaxImagesStolenColors[i].getHeight(), true);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/* renamed from: h */
+	private static void resetParallaxStolenColors() {
+		for (int i = 0; i < ALL_PARALLAX_IMAGE_IDS.length; i++) {
+			if (!(GameRuntime.getImageResource(ALL_PARALLAX_IMAGE_IDS[i]) == null || parallaxImagesRegColors[i] == null)) {
+				GameRuntime.replaceImageResource(ALL_PARALLAX_IMAGE_IDS[i], parallaxImagesRegColors[i]);
+			}
+		}
+	}
+
+	/* renamed from: c */
+	public static int getStolenColorIfApplicable(int argb) {
+		//10 - false
+		//01 - false
+		//11 - true
+		//00 - true
+		if ((isColorsAreStolen && isFlashToOtherColorMode) || (!isColorsAreStolen && !isFlashToOtherColorMode)) {
+			return argb;
+		}
+		int i2 = (argb >> 16) & 255;
+		int i3 = (argb >> 8) & 255;
+		int i4 = argb & 255;
+		return ((argb >>> 24) << 24) + (((i3 + i4) >> 1) << 16) + (((i4 + i2) >> 1) << 8) + ((i2 + i3) >> 1);
+	}
+
 	/* renamed from: e */
 	private void updateLoadingScreen() {
 		if (this.curSplashId + 1 >= SPLASH_SCREEN_LAYOUT_RESIDS.length) {
@@ -1264,11 +1141,13 @@ public final class BounceGame {
 		}
 	}
 
-	/* renamed from: e */
-	private static void unlockLevel(int levelId) {
-		if (getLevelClearTime(levelId) == 0) {
-			setLevelClearTime(levelId, 9999);
-		}
+	/* renamed from: j */
+	private void levelEnded() {
+		resetParallaxStolenColors();
+		this.isLevelActive = false;
+		GameRuntime.startLoadScene(5);
+		mainMenuReturnUI = 31;
+		setPlayerState(0);
 	}
 
 	/* renamed from: f */
@@ -1276,9 +1155,9 @@ public final class BounceGame {
 		ballFramebuffer = null;
 		ballGraphics = null;
 		ballFramebufferRGB = null;
-		f266b = null;
-		f265b = null;
-		f270b = null;
+		spriteFB = null;
+		spriteOffscreenGraphics = null;
+		spriteFBRGB = null;
 		GeometryObject.TEMP_QUAD_XS = null;
 		GeometryObject.TEMP_QUAD_YS = null;
 		rootLevelObj = null;
@@ -1323,51 +1202,6 @@ public final class BounceGame {
 		GameRuntime.loadResource(13);
 	}
 
-	/* renamed from: f */
-	private static void debugLevelUnlock(int levelId) {
-		int status = getLevelClearTime(levelId);
-		if (status == 0 || status == 9999) {
-			setLevelClearTime(levelId, 300);
-		}
-	}
-
-	/* renamed from: g */
-	private static void initStolenColorData() {
-		stolenColorsAnimationCountdown = 0;
-		stolenColorsFlashCountdown = 0;
-		isFlashToOtherColorMode = false;
-		isColorsAreStolen = false;
-		try {
-			parallaxImagesRegColors = new Image[ALL_PARALLAX_IMAGE_IDS.length];
-			parallaxImagesStolenColors = new Image[ALL_PARALLAX_IMAGE_IDS.length];
-			for (int i = 0; i < ALL_PARALLAX_IMAGE_IDS.length; i++) {
-				if (GameRuntime.getImageResource(ALL_PARALLAX_IMAGE_IDS[i]) != null) {
-					parallaxImagesRegColors[i] = GameRuntime.getImageResource(ALL_PARALLAX_IMAGE_IDS[i]);
-					parallaxImagesStolenColors[i] = Image.createImage(parallaxImagesRegColors[i]);
-					int[] stolenRGB = new int[(parallaxImagesStolenColors[i].getWidth() * parallaxImagesStolenColors[i].getHeight())];
-					parallaxImagesStolenColors[i].getRGB(
-							stolenRGB,
-							0,
-							parallaxImagesStolenColors[i].getWidth(),
-							0,
-							0,
-							parallaxImagesStolenColors[i].getWidth(),
-							parallaxImagesStolenColors[i].getHeight()
-					);
-					for (int rgbIdx = 0; rgbIdx < stolenRGB.length; rgbIdx++) {
-						int r = (stolenRGB[rgbIdx] >> 16) & 255;
-						int g = (stolenRGB[rgbIdx] >> 8) & 255;
-						int b = stolenRGB[rgbIdx] & 255;
-						stolenRGB[rgbIdx] = ((stolenRGB[rgbIdx] >>> 24) << 24) + (((g + b) >> 1) << 16) + (((b + r) >> 1) << 8) + ((r + g) >> 1);
-					}
-					parallaxImagesStolenColors[i] = Image.createRGBImage(stolenRGB, parallaxImagesStolenColors[i].getWidth(), parallaxImagesStolenColors[i].getHeight(), true);
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 	/* renamed from: g */
 	private void setUI(int uiID) {
 		System.out.println("Bounce setUI " + uiID);
@@ -1376,7 +1210,7 @@ public final class BounceGame {
 		this.ui.disableSoftkey(1);
 		this.ui.layoutAttributes = null;
 		this.ui.elemDefaultAttributes = null;
-		this.ui.currentStage = uiID;
+		this.ui.uiID = uiID;
 		this.ui.setElemDefaultAttribute(UIElement.FONT, -2);
 		this.ui.setAttribute(UILayout.FONT, -2);
 		switch (uiID) {
@@ -1386,11 +1220,11 @@ public final class BounceGame {
 				this.ui.setAttribute(UILayout.FONT, -2);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
-				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, f335r);
-				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, f338s);
-				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - f341t);
-				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (f344u << 1)) + 4);
-				this.ui.setAttribute(UILayout.OFFSET_LEFT, f344u - 2);
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, LAYOUT_DEFAULT_TITLE_PADDING_TOP);
+				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, LAYOUT_DEFAULT_TITLE_PADDING_BOTTOM);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_VERTICAL_MARGIN);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
+				this.ui.setAttribute(UILayout.OFFSET_LEFT, LAYOUT_DEFAULT_HORIZONTAL_MARGIN - 2);
 
 				//HD stuff
 				//ui.setAttribute(UILayout.SOFTKEY_BAR, 64);
@@ -1431,7 +1265,7 @@ public final class BounceGame {
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -2); //font
 				this.ui.setAttribute(UILayout.FONT, -2);
 				this.ui.setElemDefaultAttribute(UIElement.AUTO_WIDTH, 256);
-				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, f332q);
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, LAYOUT_MAIN_MENU_TITLE_PADDING);
 				this.ui.setAttribute(5, 128);
 
 				//for center
@@ -1463,8 +1297,8 @@ public final class BounceGame {
 				this.ui.loadFromResource(37);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
-				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, f335r);
-				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, f338s);
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, LAYOUT_DEFAULT_TITLE_PADDING_TOP);
+				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, LAYOUT_DEFAULT_TITLE_PADDING_BOTTOM);
 				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_NEW_GAME), -1, 1);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_YES), 0, 11, false);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_NO), 0, 17, true);
@@ -1476,11 +1310,11 @@ public final class BounceGame {
 				this.ui.setAttribute(UILayout.FONT, -2);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
-				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, f335r);
-				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, f338s);
-				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (f344u << 1)) + 4);
-				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - f341t);
-				this.ui.setAttribute(UILayout.OFFSET_LEFT, f344u - 2);
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, LAYOUT_DEFAULT_TITLE_PADDING_TOP);
+				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, LAYOUT_DEFAULT_TITLE_PADDING_BOTTOM);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_VERTICAL_MARGIN);
+				this.ui.setAttribute(UILayout.OFFSET_LEFT, LAYOUT_DEFAULT_HORIZONTAL_MARGIN - 2);
 				this.ui.setElemDefaultAttribute(3, 0);
 				this.ui.setElemDefaultAttribute(2, 32);
 				this.ui.setAttribute(UILayout.BLOCK_INCREMENT, GameRuntime.getFontHeight(-3) << 1);
@@ -1504,8 +1338,8 @@ public final class BounceGame {
 				this.ui.setElemDefaultAttribute(UIElement.AUTO_WIDTH, 256);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
-				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - f347v) + 4);
-				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentWidth - f347v);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME) + 4);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentWidth - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME);
 				this.ui.setAttribute(4, 64);
 				this.ui.setAttribute(3, 32);
 				this.ui.setAttribute(5, 128);
@@ -1526,8 +1360,8 @@ public final class BounceGame {
 				this.ui.setElemDefaultAttribute(UIElement.AUTO_WIDTH, 256);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
-				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - f347v) + 4);
-				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - f347v);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME) + 4);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME);
 				this.ui.setAttribute(4, 64);
 				this.ui.setAttribute(3, 32);
 				this.ui.setAttribute(2, 0);
@@ -1544,8 +1378,8 @@ public final class BounceGame {
 				this.ui.setElemDefaultAttribute(UIElement.AUTO_WIDTH, 256);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
-				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - f347v) + 4);
-				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - f347v);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME) + 4);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME);
 				this.ui.setAttribute(4, 64);
 				this.ui.setAttribute(3, 32);
 				this.ui.setAttribute(2, 0);
@@ -1562,8 +1396,8 @@ public final class BounceGame {
 				this.ui.setElemDefaultAttribute(UIElement.AUTO_WIDTH, 256);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
-				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - f347v) + 4);
-				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - f347v);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME) + 4);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME);
 				this.ui.setAttribute(4, 64);
 				this.ui.setAttribute(3, 32);
 				this.ui.setAttribute(2, 0);
@@ -1576,13 +1410,13 @@ public final class BounceGame {
 				this.ui.loadFromResource(36);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
-				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, f335r);
-				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, f338s);
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, LAYOUT_DEFAULT_TITLE_PADDING_TOP);
+				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, LAYOUT_DEFAULT_TITLE_PADDING_BOTTOM);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
-				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (f344u << 1)) + 4);
-				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - f341t);
-				this.ui.setAttribute(UILayout.OFFSET_LEFT, f344u - 2);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_VERTICAL_MARGIN);
+				this.ui.setAttribute(UILayout.OFFSET_LEFT, LAYOUT_DEFAULT_HORIZONTAL_MARGIN - 2);
 				this.ui.setTitle(StringManager.getMessage(MessageID.CHAPTER_COMPLETE), -1, 1);
 				if (this.wasSuperBounceJustUnlocked) {
 					this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(46), 0, 33, true);
@@ -1652,13 +1486,13 @@ public final class BounceGame {
 				this.ui.loadFromResource(36);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
-				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, f335r);
-				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, f338s);
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, LAYOUT_DEFAULT_TITLE_PADDING_TOP);
+				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, LAYOUT_DEFAULT_TITLE_PADDING_BOTTOM);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
-				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - f341t);
-				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (f344u << 1)) + 4);
-				this.ui.setAttribute(UILayout.OFFSET_LEFT, f344u - 2);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_VERTICAL_MARGIN);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
+				this.ui.setAttribute(UILayout.OFFSET_LEFT, LAYOUT_DEFAULT_HORIZONTAL_MARGIN - 2);
 				this.ui.setTitle(StringManager.getMessage(81), -1, 1);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_OK), 0, 18, true);
 				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.ALL_LEVELS_BEATEN), -1, this.ui, -1));
@@ -1667,13 +1501,13 @@ public final class BounceGame {
 				this.ui.loadFromResource(36);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
-				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, f335r);
-				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, f338s);
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, LAYOUT_DEFAULT_TITLE_PADDING_TOP);
+				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, LAYOUT_DEFAULT_TITLE_PADDING_BOTTOM);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
-				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - f341t);
-				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (f344u << 1)) + 4);
-				this.ui.setAttribute(UILayout.OFFSET_LEFT, f344u - 2);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_VERTICAL_MARGIN);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
+				this.ui.setAttribute(UILayout.OFFSET_LEFT, LAYOUT_DEFAULT_HORIZONTAL_MARGIN - 2);
 				this.ui.setTitle(StringManager.getMessage(82), -1, 1);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_OK), 0, 18, true);
 				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.ALL_LEVELS_COMPLETED), -1, this.ui, -1));
@@ -1683,8 +1517,8 @@ public final class BounceGame {
 				this.ui.setAttribute(UILayout.FONT, -1);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
-				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - f347v) + 4);
-				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - f347v);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME) + 4);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME);
 				this.ui.setAttribute(4, 64);
 				this.ui.setAttribute(3, 32);
 				this.ui.setAttribute(2, 0);
@@ -1717,15 +1551,6 @@ public final class BounceGame {
 		GameRuntime.resetHID();
 	}
 
-	/* renamed from: h */
-	private static void resetParallaxStolenColors() {
-		for (int i = 0; i < ALL_PARALLAX_IMAGE_IDS.length; i++) {
-			if (!(GameRuntime.getImageResource(ALL_PARALLAX_IMAGE_IDS[i]) == null || parallaxImagesRegColors[i] == null)) {
-				GameRuntime.replaceImageResource(ALL_PARALLAX_IMAGE_IDS[i], parallaxImagesRegColors[i]);
-			}
-		}
-	}
-
 	/* renamed from: i */
 	private static void updateEvents() {
 		if (isBlockingEvent) {
@@ -1748,23 +1573,14 @@ public final class BounceGame {
 				collider.checkCollisions(rootLevelObj);
 			}
 			if (reqCameraSnap) {
-				GameObject.f174n = 0;
-				GameObject.f175o = 0;
+				GameObject.cameraVelocityX = 0;
+				GameObject.cameraVelocityY = 0;
 				GameObject.updateCamera(true);
 				reqCameraSnap = false;
 			} else {
 				GameObject.updateCamera(false);
 			}
 		}
-	}
-
-	/* renamed from: j */
-	private void levelEnded() {
-		resetParallaxStolenColors();
-		this.isLevelActive = false;
-		GameRuntime.startLoadScene(5);
-		mainMenuReturnUI = 31;
-		setPlayerState(0);
 	}
 
 	/* renamed from: a */
@@ -1783,7 +1599,7 @@ public final class BounceGame {
 				isFieldMessageShowing = true;
 			} else {
 				totalGameTime += GameRuntime.updateDelta;
-				f255a = false;
+				waterSingletonFlag = false;
 				switch (getPlayerState()) {
 					case 0:
 						bounceObj.zCoord = 0;
@@ -1870,7 +1686,7 @@ public final class BounceGame {
 						GameRuntime.playMusic(SoundID.ME_LOSE, 1);
 						setPlayerState(3);
 						exitWaitTimer = 3000;
-						f274c = bounceObj.localObjectMatrix.translationY;
+						deathBaseY = bounceObj.localObjectMatrix.translationY;
 						if (currentLevel == LevelID.FINAL_RIDE) {
 							EventObject.finalBossTimer = 0;
 						}
@@ -1883,7 +1699,7 @@ public final class BounceGame {
 						if (isBonusLevel(currentLevel)) {
 							bounceObj.enablePhysics = false;
 						}
-						winParticle.startEmitter(20, bounceObj.localObjectMatrix.translationX, bounceObj.localObjectMatrix.translationY, 740, 0, 1840, 230);
+						winParticle.emitCircle(20, bounceObj.localObjectMatrix.translationX, bounceObj.localObjectMatrix.translationY, 740, 0, 1840, 230);
 						break;
 					case 3: //dying -> return to checkpoint
 						exitWaitTimer -= GameRuntime.updateDelta;
@@ -1983,7 +1799,7 @@ public final class BounceGame {
 				drawLoadingBar(grp);
 				updateLoadingScreen();
 			} else {
-				grp.setColor(BACKGROUND_COLORS[this.curSplashId]);
+				grp.setColor(SPLASH_BG_COLORS[this.curSplashId]);
 				grp.fillRect(0, 0, GameRuntime.currentWidth, GameRuntime.currentHeight);
 				int splashImageId = SPLASH_IMAGE_IDS[this.curSplashId];
 				GameRuntime.drawImageRes(
@@ -2070,7 +1886,7 @@ public final class BounceGame {
 					drawBGParallax(sArr3, 80, 100, 150, 100, -70, 300, 5, -1, graphics);
 				}
 				mRNG.setSeed(System.currentTimeMillis());
-				GameObject.drawRootObject(rootLevelObj, graphics, directGraphics);
+				GameObject.drawSceneTree(rootLevelObj, graphics, directGraphics);
 				graphics.setClip(0, 0, GameRuntime.currentWidth, GameRuntime.currentHeight);
 				GameRuntime.setTextStyle(-3, 1);
 				GameRuntime.setTextColor(0, 0);
@@ -2154,7 +1970,7 @@ public final class BounceGame {
 				if (sceneResult != 2) {
 					return 0;
 				}
-				if (this.drawUI == null || this.drawUI.currentStage == 14) {
+				if (this.drawUI == null || this.drawUI.uiID == 14) {
 					GameRuntime.setMusicEnabled(true);
 					GameRuntime.startLoadScene(1);
 				} else {
@@ -2218,9 +2034,9 @@ public final class BounceGame {
 					ballGraphics = ballFramebuffer.getGraphics();
 					ballFramebufferRGB = new int[(ballFramebuffer.getWidth() * ballFramebuffer.getHeight())];
 					Image createImage2 = Image.createImage(112, 26);
-					f266b = createImage2;
-					f265b = createImage2.getGraphics();
-					f270b = new int[(f266b.getWidth() * f266b.getHeight())];
+					spriteFB = createImage2;
+					spriteOffscreenGraphics = createImage2.getGraphics();
+					spriteFBRGB = new int[(spriteFB.getWidth() * spriteFB.getHeight())];
 					return 1;
 				} else if (sceneResult != 1) {
 					return 0;
@@ -2238,7 +2054,7 @@ public final class BounceGame {
 						eggCount = 0;
 						calcScore = 0;
 						isFieldMessageShowing = false;
-						f255a = false;
+						waterSingletonFlag = false;
 						isBlockingEvent = false;
 						GameObject.screenSpaceMatrix.translationX = GameRuntime.currentWidth << 15;
 						GameObject.screenSpaceMatrix.translationY = GameRuntime.currentHeight << 15;
@@ -2403,24 +2219,24 @@ public final class BounceGame {
 							enemyDeadEgg.localObjectMatrix.translationY = Integer.MAX_VALUE;
 							enemyDeadEgg.renderCalcMatrix.setFromMatrix(enemyDeadEgg.localObjectMatrix);
 							enemyDeadEgg.initialize();
-							swimParticle.setObjectId(objID++);
-							swimParticle.attachToObject(rootLevelObj);
-							f267b.setObjectId(objID++);
-							f267b.attachToObject(rootLevelObj);
-							f285e.setObjectId(objID++);
-							f285e.attachToObject(rootLevelObj);
-							f290f.setObjectId(objID++);
-							f290f.attachToObject(rootLevelObj);
+							bubbleParticle.setObjectId(objID++);
+							bubbleParticle.attachToObject(rootLevelObj);
+							waterSplashParticle.setObjectId(objID++);
+							waterSplashParticle.attachToObject(rootLevelObj);
+							cannonParticle.setObjectId(objID++);
+							cannonParticle.attachToObject(rootLevelObj);
+							eggCollectParticle.setObjectId(objID++);
+							eggCollectParticle.attachToObject(rootLevelObj);
 							enemyDeathParticle.setObjectId(objID++);
 							enemyDeathParticle.attachToObject(rootLevelObj);
 							winParticle.setObjectId(objID++);
 							winParticle.attachToObject(rootLevelObj);
-							f280d.setObjectId(objID++);
-							f280d.attachToObject(rootLevelObj);
-							f300h.setObjectId(objID++);
-							f300h.attachToObject(rootLevelObj);
-							waterParticle.setObjectId(objID++);
-							waterParticle.attachToObject(rootLevelObj);
+							superBounceParticle.setObjectId(objID++);
+							superBounceParticle.attachToObject(rootLevelObj);
+							colorMachineDestroyParticle.setObjectId(objID++);
+							colorMachineDestroyParticle.attachToObject(rootLevelObj);
+							airTunnelParticle.setObjectId(objID++);
+							airTunnelParticle.attachToObject(rootLevelObj);
 							GameObject.allocateRenderPool(objID); //okay to be a bit much, it's just a pointer array
 							GeometryObject.TEMP_QUAD_XS = new int[maxVerticesPerObj];
 							GeometryObject.TEMP_QUAD_YS = new int[maxVerticesPerObj];
@@ -2436,15 +2252,15 @@ public final class BounceGame {
 							GameObject.snapCameraToTarget();
 							f240F = GameObject.cameraMatrix.translationY;
 							initStolenColorData();
-							f267b.particleCount = -1;
-							swimParticle.particleCount = -1;
-							f285e.particleCount = -1;
-							f290f.particleCount = -1;
+							waterSplashParticle.particleCount = -1;
+							bubbleParticle.particleCount = -1;
+							cannonParticle.particleCount = -1;
+							eggCollectParticle.particleCount = -1;
 							enemyDeathParticle.particleCount = -1;
 							winParticle.particleCount = -1;
-							f280d.particleCount = -1;
-							f300h.particleCount = -1;
-							waterParticle.particleCount = -1;
+							superBounceParticle.particleCount = -1;
+							colorMachineDestroyParticle.particleCount = -1;
+							airTunnelParticle.particleCount = -1;
 							bounceObj.fadeColor = 0xFF000000;
 							boolean noBonusLevelsBeaten = true;
 							for (int bonusLevelIdx = 0; bonusLevelIdx < BONUS_LEVEL_INFO.length; bonusLevelIdx += 2) {
@@ -2506,7 +2322,7 @@ public final class BounceGame {
 	public final void handleKeyPress(int keyCode) {
 		if (this.drawUI != null) {
 			UILayout ui = this.drawUI;
-			if (ui.currentStage == 18) {
+			if (ui.uiID == 18) {
 				if (enableCheats) {
 					if (CHEAT_COMBO_ALL_UNLOCK[cheatComboIndex] == keyCode) {
 						if (++cheatComboIndex == CHEAT_COMBO_ALL_UNLOCK.length) {
@@ -2542,7 +2358,7 @@ public final class BounceGame {
 						break;
 				}
 			}
-			this.drawUI.handleKeyCode(keyCode);
+			ui.handleKeyCode(keyCode);
 		} else if (this.gameMainState == 2) {
 			updateLoadingScreen();
 		} else if (this.gameMainState == 4) {
@@ -2654,7 +2470,7 @@ public final class BounceGame {
 			}
 			case 7: {
 				if (isLevelUnlocked(selectedLevelId)) { //enter level
-					f321m = fieldMessageQueue;
+					f319m = f323n;
 					this.isLevelActive = false;
 					currentLevel = selectedLevelId;
 					GameRuntime.startLoadScene(6); //load level

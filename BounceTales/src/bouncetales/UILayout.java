@@ -39,55 +39,42 @@ public final class UILayout {
 	private static final int[] LAYOUT_FLAG_MASKS = {3, 12, 16, 32, 64, 128}; //renamed from: h
 	private static final int[] DEFAULT_LAYOUT_ATTRIBUTES = {-1, 8, 2, 2, 2, 0, 0, -1, -1, -1, 20, 12, 12, 2, 6, 1, 0x440000, 0x5E2601, 68, 0xA0A0A0, 0, 0x990000, 0}; //renamed from: i 
 
-	/* renamed from: a */
-	public int currentStage = 0;
+	public int uiID = 0; //renamed from: a
+	public int[] elemDefaultAttributes = null; //renamed from: a
+	public int[] layoutAttributes = null; //renamed from: b
+
+	private final Vector elements = new Vector(); //renamed from: a
+	private int selectedElemIdx = -1; //renamed from: b
+	private int focusStartY = 0; //renamed from: c
+
+	private TextLabel titleLabel = null; //renamed from: a
+	private int titleImageId = -1; //renamed from: d
+	private int titleAnimTimer = 0; //renamed from: e
+	private int titleXScroll = 0; //renamed from: f
+	private int titleScrollDirection = 1; //renamed from: g
+
+	private final String[] softkeyTexts = new String[3]; //renamed from: a
+	private final int[] softkeyActions = new int[3]; //renamed from: d
+	private final int[] softkeyTypes = new int[3]; //renamed from: d
 
 	/* renamed from: a */
-	private TextLabel titleElement = null;
-
-	/* renamed from: a */
-	private Vector elements = new Vector();
-
-	/* renamed from: a */
-	public int[] elemDefaultAttributes = null;
-
-	/* renamed from: a */
-	private String[] softkeyTexts = new String[3];
-
-	/* renamed from: b */
-	private int selectedElemIdx = -1;
-
-	/* renamed from: b */
-	public int[] layoutAttributes = null;
+	public static boolean attributeExists(int aid, int[] arr) {
+		return (arr != null && (arr[0] & (1 << aid)) != 0);
+	}
 
 	/* renamed from: c */
-	private int focusStartY = 0;
-
-	/* renamed from: c */
-	private int[] softkeyActions = new int[3];
-
-	/* renamed from: d */
-	private int titleImageId = -1;
-
-	/* renamed from: d */
-	private int[] softkeyTypes = new int[3];
-
-	/* renamed from: e */
-	private int titleAnimTimer = 0;
-
-	/* renamed from: f */
-	private int titleXScroll = 0;
-
-	/* renamed from: g */
-	private int titleScrollDirection = 1;
+	private int getAttribute(int aid) {
+		return readAttribute(aid, this.layoutAttributes, 2);
+	}
 
 	/* renamed from: a */
-	private int getElemStartY(int elemIdx) {
-		int totalHeight = 0;
-		for (int i = 0; i < elemIdx; i++) {
-			totalHeight += ((UIElement) this.elements.elementAt(i)).getHeight() + getAttribute(VERTICAL_SPACING);
-		}
-		return totalHeight;
+	public final void setElemDefaultAttribute(int aid, int value) {
+		this.elemDefaultAttributes = writeAttribute(aid, value, this.elemDefaultAttributes, 1);
+	}
+
+	/* renamed from: b */
+	public final void setAttribute(int aid, int value) {
+		this.layoutAttributes = writeAttribute(aid, value, this.layoutAttributes, 2);
 	}
 
 	/* renamed from: a */
@@ -109,39 +96,6 @@ public final class UILayout {
 			return srcArr[(aid + 2) - flagCount];
 		}
 		return flagAttrMasks[aid] & srcArr[1];
-	}
-
-	/* renamed from: a */
-	private static int getElemXAnchor(UIElement elem, int parentWidth) {
-		int anchor = elem.getAttribute(UIElement.ANCHOR_H);
-		if (anchor == 512) {
-			return parentWidth - elem.getWidth();
-		}
-		if (anchor == 1024) {
-			return (parentWidth - elem.getWidth()) >> 1;
-		}
-		return 0;
-	}
-
-	/* renamed from: a */
-	private UIElement getSelectedElement() {
-		UIElement elem = this.selectedElemIdx != -1 ? (UIElement) this.elements.elementAt(this.selectedElemIdx) : null;
-		if (elem == null || !elem.isEnabled) {
-			return null;
-		}
-		return elem;
-	}
-
-	/* renamed from: a */
-	private boolean isElemInFocus(int elemIdx) {
-		UIElement elem = (UIElement) this.elements.elementAt(elemIdx);
-		int startY = getElemStartY(elemIdx);
-		return startY >= this.focusStartY && elem.getHeight() + startY <= this.focusStartY + getFocusHeight();
-	}
-
-	/* renamed from: a */
-	public static boolean attributeExists(int aid, int[] arr) {
-		return (arr != null && (arr[0] & (1 << aid)) != 0);
 	}
 
 	/* renamed from: a */
@@ -173,113 +127,13 @@ public final class UILayout {
 	}
 
 	/* renamed from: a */
-	private static int[] readAttributesFromStream(DataInputStream dis, int[] flagMasks, int regularAttrEnd, int colorAttrEnd) throws IOException {
-		int existingParamMask = dis.readInt();
-		int flagCount = flagMasks.length;
-		if (existingParamMask == 0) {
-			return null;
+	public final void addElement(UIElement option) {
+		int size = this.elements.size();
+		this.elements.insertElementAt(option, size);
+		option.parentUI = this;
+		if (this.selectedElemIdx == -1 && isElemInFocus(size)) {
+			setSelectedOption(size);
 		}
-		int clzIndex = flagCount;
-		int paramCount = 0;
-		while ((existingParamMask >>> (clzIndex - 1)) != 0) {
-			paramCount = clzIndex - flagCount;
-			clzIndex++;
-		}
-		int[] result = new int[(paramCount + 2)];
-		result[0] = existingParamMask;
-		result[1] = 0;
-		if (((0xFFFFFFFF >>> (32 - flagCount)) & existingParamMask) != 0) {
-			result[1] = dis.readInt();
-		}
-		for (int paramIdx = 0; paramIdx < paramCount; paramIdx++) {
-			if ((result[0] & (1 << (paramIdx + flagCount))) != 0) {
-				result[paramIdx + 2] = dis.readShort();
-			}
-		}
-		
-		for (int colorIdx = (regularAttrEnd + 2) - flagCount; colorIdx <= (colorAttrEnd + 2) - flagCount && colorIdx < result.length; colorIdx++) {
-			int colorRgb555 = result[colorIdx];
-			result[colorIdx] = ((colorRgb555 & 0x7C00) << 9) | 0 | ((colorRgb555 & 0x3E0) << 6) | ((colorRgb555 & 31) << 3);
-		}
-		return result;
-	}
-
-	/* renamed from: b */
-	private int getLayoutVDim(int i) {
-		switch (i) {
-			case 1: //max content Y
-				int layoutYMax = GameRuntime.currentHeight;
-				if (GameRuntime.isScreenPortrait()) {
-					layoutYMax -= GameRuntime.getSoftkeyBarHeight();
-				}
-				if (getAttribute(3) == 32) {
-					return Math.min(getLayoutVDim(2) + getTotalHeight() + getAttribute(MARGIN_TOP) + getAttribute(MARGIN_BOTTOM), layoutYMax);
-				} else {
-					int c = getAttribute(FIXED_HEIGHT);
-					return c <= 0 ? layoutYMax : c;
-				}
-			case 2: //min content Y
-				int titleYEnd = this.titleElement != null ? this.titleElement.textBlockHeight : 0;
-				int imgHeight = 0;
-				if (this.titleImageId != -1) {
-					imgHeight = GameRuntime.getImageMapParam(this.titleImageId, ImageMap.PARAM_HEIGHT);
-				}
-				return Math.max(titleYEnd, imgHeight) + getAttribute(TITLE_PADDING_TOP) + getAttribute(TITLE_PADDING_BOTTOM);
-			case 3:
-			default:
-				return 0;
-			case 4: //content max height
-				return getLayoutVDim(1) - getLayoutVDim(2);
-			case 5:
-				return (getLayoutVDim(4) - getAttribute(MARGIN_TOP)) - getAttribute(MARGIN_BOTTOM);
-			case 6:
-				return GameRuntime.getImageMapParam(151, ImageMap.PARAM_HEIGHT) + 1;
-			case 7:
-				return GameRuntime.getImageMapParam(150, ImageMap.PARAM_HEIGHT) + 1;
-		}
-	}
-
-	/* renamed from: c */
-	private int getLayoutHDim() {
-		int c = getAttribute(FIXED_WIDTH);
-		if (c > 0) {
-			return c;
-		}
-		return GameRuntime.getCurrentWidth() - (GameRuntime.isScreenLandscape() ? GameRuntime.getSoftkeyBarWidth() : 0);
-	}
-
-	/* renamed from: c */
-	private int getAttribute(int aid) {
-		return readAttribute(aid, this.layoutAttributes, 2);
-	}
-
-	/* renamed from: a */
-	public final void setElemDefaultAttribute(int aid, int value) {
-		this.elemDefaultAttributes = writeAttribute(aid, value, this.elemDefaultAttributes, 1);
-	}
-
-	/* renamed from: b */
-	public final void setAttribute(int aid, int value) {
-		this.layoutAttributes = writeAttribute(aid, value, this.layoutAttributes, 2);
-	}
-
-	/* renamed from: d */
-	private int getTotalHeight() {
-		if (this.elements.size() <= 0) {
-			return 0;
-		}
-		return ((UIElement) this.elements.lastElement()).getHeight() + getElemStartY(this.elements.size() - 1);
-	}
-
-	/* renamed from: e */
-	private int getFocusHeight() {
-		int b = getLayoutVDim(5);
-		return getTotalHeight() > b ? (b - getLayoutVDim(TITLE_PADDING_TOP)) - getLayoutVDim(7) : b;
-	}
-
-	/* renamed from: a */
-	public final int getSelectedOption() {
-		return this.selectedElemIdx;
 	}
 
 	/* renamed from: a */
@@ -287,6 +141,20 @@ public final class UILayout {
 		this.elements.removeAllElements();
 		this.focusStartY = 0;
 		this.selectedElemIdx = -1;
+	}
+
+	/* renamed from: a */
+	private UIElement getSelectedElement() {
+		UIElement elem = this.selectedElemIdx != -1 ? (UIElement) this.elements.elementAt(this.selectedElemIdx) : null;
+		if (elem == null || !elem.isEnabled) {
+			return null;
+		}
+		return elem;
+	}
+
+	/* renamed from: a */
+	public final int getSelectedOption() {
+		return this.selectedElemIdx;
 	}
 
 	/* renamed from: a */
@@ -319,6 +187,97 @@ public final class UILayout {
 	}
 
 	/* renamed from: a */
+	private boolean isElemInFocus(int elemIdx) {
+		UIElement elem = (UIElement) this.elements.elementAt(elemIdx);
+		int startY = getElemStartY(elemIdx);
+		return startY >= this.focusStartY && elem.getHeight() + startY <= this.focusStartY + getFocusHeight();
+	}
+
+	/* renamed from: a */
+	private int getElemStartY(int elemIdx) {
+		int totalHeight = 0;
+		for (int i = 0; i < elemIdx; i++) {
+			totalHeight += ((UIElement) this.elements.elementAt(i)).getHeight() + getAttribute(VERTICAL_SPACING);
+		}
+		return totalHeight;
+	}
+
+	/* renamed from: a */
+	private static int getElemXAnchor(UIElement elem, int parentWidth) {
+		int anchor = elem.getAttribute(UIElement.ANCHOR_H);
+		if (anchor == 512) {
+			return parentWidth - elem.getWidth();
+		}
+		if (anchor == 1024) {
+			return (parentWidth - elem.getWidth()) >> 1;
+		}
+		return 0;
+	}
+
+	/* renamed from: b */
+	private int getLayoutVDim(int i) {
+		switch (i) {
+			case 1: //max content Y
+				int layoutYMax = GameRuntime.currentHeight;
+				if (GameRuntime.isScreenPortrait()) {
+					layoutYMax -= GameRuntime.getSoftkeyBarHeight();
+				}
+				if (getAttribute(3) == 32) {
+					return Math.min(getLayoutVDim(2) + getTotalHeight() + getAttribute(MARGIN_TOP) + getAttribute(MARGIN_BOTTOM), layoutYMax);
+				} else {
+					int c = getAttribute(FIXED_HEIGHT);
+					return c <= 0 ? layoutYMax : c;
+				}
+			case 2: //min content Y
+				int titleYEnd = this.titleLabel != null ? this.titleLabel.textBlockHeight : 0;
+				int imgHeight = 0;
+				if (this.titleImageId != -1) {
+					imgHeight = GameRuntime.getImageMapParam(this.titleImageId, ImageMap.PARAM_HEIGHT);
+				}
+				return Math.max(titleYEnd, imgHeight) + getAttribute(TITLE_PADDING_TOP) + getAttribute(TITLE_PADDING_BOTTOM);
+			case 3:
+			default:
+				return 0;
+			case 4: //content max height
+				return getLayoutVDim(1) - getLayoutVDim(2);
+			case 5:
+				return (getLayoutVDim(4) - getAttribute(MARGIN_TOP)) - getAttribute(MARGIN_BOTTOM);
+			case 6:
+				return GameRuntime.getImageMapParam(151, ImageMap.PARAM_HEIGHT) + 1;
+			case 7:
+				return GameRuntime.getImageMapParam(150, ImageMap.PARAM_HEIGHT) + 1;
+		}
+	}
+
+	/* renamed from: c */
+	private int getLayoutHDim() {
+		int c = getAttribute(FIXED_WIDTH);
+		if (c > 0) {
+			return c;
+		}
+		return GameRuntime.getCurrentWidth() - (GameRuntime.isScreenLandscape() ? GameRuntime.getSoftkeyBarWidth() : 0);
+	}
+
+	/* renamed from: d */
+	private int getTotalHeight() {
+		if (this.elements.size() <= 0) {
+			return 0;
+		}
+		return ((UIElement) this.elements.lastElement()).getHeight() + getElemStartY(this.elements.size() - 1);
+	}
+
+	/* renamed from: b */
+	public final int getFocusWidth() {
+		return (getLayoutHDim() - getAttribute(MARGIN_LEFT)) - getAttribute(MARGIN_RIGHT);
+	}
+
+	/* renamed from: e */
+	private int getFocusHeight() {
+		int b = getLayoutVDim(5);
+		return getTotalHeight() > b ? (b - getLayoutVDim(TITLE_PADDING_TOP)) - getLayoutVDim(7) : b;
+	}
+
+	/* renamed from: a */
 	public final void changeSoftkey(int softkey, String text, int type) {
 		if ((this.softkeyActions[softkey] & 0xFFFF) == 0xFFFF) {
 			this.softkeyTexts[softkey] = text;
@@ -333,26 +292,11 @@ public final class UILayout {
 		this.softkeyTypes[softkey] = 0;
 	}
 
-	/* renamed from: a */
-	public final void addElement(UIElement option) {
-		int size = this.elements.size();
-		this.elements.insertElementAt(option, size);
-		option.parentUI = this;
-		if (this.selectedElemIdx == -1 && isElemInFocus(size)) {
-			setSelectedOption(size);
-		}
-	}
-
-	/* renamed from: a */
-	public final void setTitle(String str, int bgImage, int i2) {
-		this.titleElement = (str == null || str.length() <= 0) ? null : new TextLabel(str, Integer.MAX_VALUE, getAttribute(FONT), getAttribute(0) | 256, -1);
-		this.titleImageId = -1;
-		this.titleXScroll = 0;
-	}
-
 	/* renamed from: b */
-	public final int getFocusWidth() {
-		return (getLayoutHDim() - getAttribute(MARGIN_LEFT)) - getAttribute(MARGIN_RIGHT);
+	public final void disableSoftkey(int buttonIdx) {
+		this.softkeyActions[buttonIdx] = 0;
+		this.softkeyTexts[buttonIdx] = null;
+		this.softkeyTypes[buttonIdx] = 0;
 	}
 
 	/* renamed from: b */
@@ -368,30 +312,30 @@ public final class UILayout {
 		}
 	}
 
-	/* renamed from: b */
-	public final void disableSoftkey(int buttonIdx) {
-		this.softkeyActions[buttonIdx] = 0;
-		this.softkeyTexts[buttonIdx] = null;
-		this.softkeyTypes[buttonIdx] = 0;
+	/* renamed from: a */
+	public final void setTitle(String str, int bgImage, int i2) {
+		this.titleLabel = (str == null || str.length() <= 0) ? null : new TextLabel(str, Integer.MAX_VALUE, getAttribute(FONT), getAttribute(0) | 256, -1);
+		this.titleImageId = -1;
+		this.titleXScroll = 0;
 	}
 
 	/* renamed from: c */
 	public final void updateTitleScroll() {
-		if (this.titleElement != null) {
+		if (this.titleLabel != null) {
 			int titleImageWidth = this.titleImageId != -1 ? GameRuntime.getImageMapParam(this.titleImageId, ImageMap.PARAM_WIDTH) : 0;
 			int c = getLayoutHDim() - (getAttribute(TITLE_PADDING_SIDE) << 1);
 			int i = getAttribute(1) != 8 ? c - titleImageWidth : c;
-			if (i < this.titleElement.textBlockWidth) {
+			if (i < this.titleLabel.textBlockWidth) {
 				if (this.titleAnimTimer >= 3000) {
 					if (this.titleScrollDirection > 0) {
 						this.titleXScroll = ((this.titleAnimTimer - 3000) * 20) / 1000;
-						if (this.titleXScroll > this.titleElement.textBlockWidth - i) {
-							this.titleXScroll = this.titleElement.textBlockWidth - i;
+						if (this.titleXScroll > this.titleLabel.textBlockWidth - i) {
+							this.titleXScroll = this.titleLabel.textBlockWidth - i;
 							this.titleAnimTimer = 0;
 							this.titleScrollDirection = -1;
 						}
 					} else {
-						this.titleXScroll = (this.titleElement.textBlockWidth - i) - (((this.titleAnimTimer - 3000) * 20) / 1000);
+						this.titleXScroll = (this.titleLabel.textBlockWidth - i) - (((this.titleAnimTimer - 3000) * 20) / 1000);
 						if (this.titleXScroll <= 0) {
 							this.titleXScroll = 0;
 							this.titleAnimTimer = 0;
@@ -405,7 +349,7 @@ public final class UILayout {
 	}
 
 	/* renamed from: c */
-	/**
+ /*
 	 * FIXME. THIS METHOD WAS DECOMPILED REAAAAALLY BADLY!!!
 	 */
 	public final void handleKeyCode(int keyCode) {
@@ -606,7 +550,7 @@ public final class UILayout {
 				grp.setClip(lytX, lytY, lytW, b);
 				int c4 = getAttribute(8);
 				int a2 = this.titleImageId != -1 ? GameRuntime.getImageMapParam(this.titleImageId, 0) : 0;
-				int i2 = this.titleElement != null ? this.titleElement.textBlockWidth : 0;
+				int i2 = this.titleLabel != null ? this.titleLabel.textBlockWidth : 0;
 				int i3 = lytW - (c4 << 1);
 				int i4 = getAttribute(1) != 8 ? i3 - a2 : i3;
 				if (this.titleImageId != -1) {
@@ -623,7 +567,7 @@ public final class UILayout {
 					}
 					GameRuntime.drawImageResAnchored(i + lytX, getAttribute(TITLE_PADDING_TOP) + lytY, this.titleImageId, 20);
 				}
-				if (this.titleElement != null) {
+				if (this.titleLabel != null) {
 					switch (getAttribute(1)) {
 						case 0:
 							c4 += a2;
@@ -640,7 +584,7 @@ public final class UILayout {
 						i5 = ((GameRuntime.currentWidth - lytW) - (GameRuntime.isScreenLandscape() ? GameRuntime.getSoftkeyBarWidth() : 0)) >> 1;
 					}
 					grp.setClip(i5 + (c4 - 1), lytY - 1, i4 + 2, b + 2);
-					this.titleElement.draw((lytX + c4) - this.titleXScroll,
+					this.titleLabel.draw((lytX + c4) - this.titleXScroll,
 							getAttribute(TITLE_PADDING_TOP) + lytY,
 							getAttribute(FONT_TEXT_COLOR),
 							getAttribute(FONT_SHADOW_COLOR)
@@ -758,5 +702,37 @@ public final class UILayout {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	/* renamed from: a */
+	private static int[] readAttributesFromStream(DataInputStream dis, int[] flagMasks, int regularAttrEnd, int colorAttrEnd) throws IOException {
+		int existingParamMask = dis.readInt();
+		int flagCount = flagMasks.length;
+		if (existingParamMask == 0) {
+			return null;
+		}
+		int clzIndex = flagCount;
+		int paramCount = 0;
+		while ((existingParamMask >>> (clzIndex - 1)) != 0) {
+			paramCount = clzIndex - flagCount;
+			clzIndex++;
+		}
+		int[] result = new int[(paramCount + 2)];
+		result[0] = existingParamMask;
+		result[1] = 0;
+		if (((0xFFFFFFFF >>> (32 - flagCount)) & existingParamMask) != 0) {
+			result[1] = dis.readInt();
+		}
+		for (int paramIdx = 0; paramIdx < paramCount; paramIdx++) {
+			if ((result[0] & (1 << (paramIdx + flagCount))) != 0) {
+				result[paramIdx + 2] = dis.readShort();
+			}
+		}
+
+		for (int colorIdx = (regularAttrEnd + 2) - flagCount; colorIdx <= (colorAttrEnd + 2) - flagCount && colorIdx < result.length; colorIdx++) {
+			int colorRgb555 = result[colorIdx];
+			result[colorIdx] = ((colorRgb555 & 0x7C00) << 9) | 0 | ((colorRgb555 & 0x3E0) << 6) | ((colorRgb555 & 31) << 3);
+		}
+		return result;
 	}
 }

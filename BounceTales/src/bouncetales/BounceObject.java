@@ -12,205 +12,140 @@ public final class BounceObject extends GameObject {
 	public static final int FORME_BUMPY_CRACKS = 1;
 	public static final int FORME_WOLLY = 2;
 
-	private static final int MAX_COLLISION_POINTS = 32;
+	/*
+	Constants
+	 */
+	//Draw - eyes
+	private static final int[] EYE_ANIMATION_IMAGE_IDS = {458, 460, 454, 452, 456}; //renamed from: c
 
-	/* renamed from: a */
-	public static final float[] GRAVITY = {1.0f, 1.4f, 0.5f};
+	//Draw - bounce
+	private final int BOUNCE_PRIMARY_COLOR = 0xED1C24; //renamed from: u
+	private final int BOUNCE_SECONDARY_COLOR = 0xAF1100; //renamed from: w
+	private final int BOUNCE_HIGHLIGHT_COLOR = 0xFFFFFF; //renamed from: v
 
-	/* renamed from: a */
-	public static final int[] BALL_DIMENS = {20, 20, 20};
+	//Draw - Bumpy Cracks
+	private static final short[] BUMPY_CRACKS_ROTATION_SPRITES = {
+		211, 212, 223, 234, 237, 238, 239, 240, 241, 242, 213,
+		214, 215, 216, 217, 218, 219, 220, 221, 222, 224, 225,
+		226, 227, 228, 229, 230, 231, 232, 233, 235, 236
+	}; //renamed from: a
 
-	/* renamed from: a */
-	private static final short[] BUMPY_CRACKS_ROTATION_SPRITES = {211, 212, 223, 234, 237, 238, 239, 240, 241, 242, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 235, 236};
+	//Draw - Wolly
+	private static final int[] WOLLY_SEGMENT_COLORS = {
+		0xEDEDED,
+		0x0064BC,
+		0xEDEDED,
+		0xE11900,
+		0xEDEDED,
+		0xE8DF05
+	}; //renamed from: p
 
-	/* renamed from: b */
-	private static final float[] f19b = {0.6f, 0.3f, 0.6f};
+	//Collisions
+	private static final int MAX_COLLISION_POINTS = 16;
+	private static final float LP32_TO_FP32_MULTIPLIER = 1.5258789E-5f; //renamed from: s
 
-	/* renamed from: b */
-	public static int[] BALL_DIMENS_SCREENSPACE = new int[3];
+	//Dimensions
+	public static final int[] BALL_DIMENS = {20, 20, 20}; //renamed from: a
+	public static int[] BALL_DIMENS_SCREENSPACE = new int[3]; //renamed from: b
 
-	/* renamed from: c */
-	private static final float[] f22c = {0.1f, 0.1f, 0.1f};
+	//Physics
+	private static final float BASE_GRAVITY_X = 0.0f; //renamed from: l
+	private static final float BASE_GRAVITY_Y = -400.0f; //renamed from: m
+	public static final float[] GRAVITY = {1.0f, 1.4f, 0.5f}; //renamed from: a
 
-	/* renamed from: c */
-	private static final int[] f23c = {458, 460, 454, 452, 456};
+	private static final float[] f19b = {0.6f, 0.3f, 0.6f}; //renamed from: b
+	private static final float[] f22c = {0.1f, 0.1f, 0.1f}; //renamed from: c
 
-	/* renamed from: d */
 	private static final float[] MAX_JUMP_SLOPE_INV = {
 		(float) Math.cos(0.9599310755729675d), //cos 55deg
 		(float) Math.cos(0.9599310755729675d),
 		(float) Math.cos(0.9599310755729675d)
-	};
+	}; //renamed from: d
 
-	/* renamed from: e */
-	private static final float[] MOVEMENT_TRACTIONS = {500.0f, 350.0f, 312.5f};
+	private static final float[] MOVEMENT_TRACTIONS = {500.0f, 350.0f, 312.5f}; //renamed from: e
+	private static final float[] MOVEMENT_SPEEDS = {280.0f, 350.0f, 150.0f}; //renamed from: f
+	private static final float[] MIDAIR_MOVEMENT_SUPPRESSION = {1.5f, 2.5f, 1.2f}; //renamed from: g
 
-	/* renamed from: f */
-	private static final float[] MOVEMENT_SPEEDS = {280.0f, 350.0f, 150.0f};
+	private static final float[] JUMP_MODIFIERS = {288.0f, 255.0f, 162.5f}; //renamed from: h
 
-	/* renamed from: g */
-	private static float[] MIDAIR_MOVEMENT_SUPPRESSION = {1.5f, 2.5f, 1.2f};
+	//Global state - AABB collisions
+	private static boolean aabbRayResult; //renamed from: i
+	private static int aabbRayX; //renamed from: x
+	private static int aabbRayY; //renamed from: y
+	private static int aabbRayWeight; //renamed from: z
 
-	/* renamed from: h */
-	private static float[] JUMP_MODIFIERS = {288.0f, 255.0f, 162.5f};
+	//Parameters
+	private boolean isPlayer = false; //renamed from: h
 
-	/* renamed from: l */
-	private static float BASE_GRAVITY_X = 0.0f;
-
-	/* renamed from: m */
-	private static float BASE_GRAVITY_Y = -400.0f;
-
-	/* renamed from: p */
-	private static int[] WOLLY_SEGMENT_COLORS = {0xEDEDED, 0x0064BC, 0xEDEDED, 0xE11900, 0xEDEDED, 0xE8DF05};
-
-	/* renamed from: s */
-	private static float f33s = 1.5258789E-5f;
-
-	/* renamed from: i */
-	private static boolean aabbRayResult;
-
-	/* renamed from: x */
-	private static int aabbRayX;
-
-	/* renamed from: y */
-	private static int aabbRayY;
-
-	/* renamed from: z */
-	private static int aabbRayWeight;
-
+	//State - eye animation
 	//made these non-static to allow for more BounceObjects
-	
-	/* renamed from: b */
-	public int idleAnimStartTimer;
+	public int idleAnimStartTimer; //renamed from: b
+	public int eyeFrame; //renamed from: c
+	private int idleAnimTimer; //renamed from: s
 
-	/* renamed from: c */
-	public int eyeFrame;
+	//State - visuals
+	public boolean isVisible = true; //renamed from: b
+	public int fadeColor = 0; //renamed from: a
 
-	/* renamed from: s */
-	private int idleAnimTimer;
+	//State - physics
+	public boolean enablePhysics = true; //renamed from: a
 
-	/* renamed from: a */
-	public int fadeColor = 0;
+	public boolean isGrounded = false; //renamed from: d
 
-	/* renamed from: a */
-	public boolean enablePhysics = true;
+	private float airTimeCounter; //renamed from: p
 
-	/* renamed from: a */
-	public float curXVelocity;
+	public float curXVelocity; //renamed from: a
+	public float curYVelocity; //renamed from: b
+	public float curVelocity; //renamed from: c
 
-	/* renamed from: b */
-	public float curYVelocity;
+	public float lastXVelocity; //renamed from: h
+	public float lastYVelocity; //renamed from: i
 
-	/* renamed from: b */
-	public boolean isVisible = true;
+	private float slopeSinAbs; //renamed from: q
+	private float slopeCosAbs; //renamed from: r
 
-	/* renamed from: c */
-	public float curVelocity;
+	private float torqueFalloff = 0.5f; //renamed from: o
 
-	/* renamed from: c */
-	public boolean reqSkipAccelStretch = false;
+	public float torqueX; //renamed from: j
+	public float torqueY; //renamed from: k
+	private float rotation; //renamed from: n
 
-	/* renamed from: d */
-	public float gravityX;
+	public float gravityX; //renamed from: d
+	public float gravityY; //renamed from: e
 
-	/* renamed from: d */
-	public int ballForme = 0;
+	public float pushX; //renamed from: f
+	public float pushY; //renamed from: g
 
-	/* renamed from: d */
-	public boolean isGrounded = false;
+	public int ballForme = 0; //renamed from: d
 
-	/* renamed from: d */
-	private int[] reqStretchMagnitudes;
+	//State - stretch
+	public boolean reqSkipAccelStretch = false; //renamed from: c
 
-	/* renamed from: e */
-	public float gravityY;
+	private int[] reqStretchMagnitudes; //renamed from: d
+	private int[] stretchMagnitudes; //renamed from: g
 
-	/* renamed from: e */
-	private int[] stretchResults;
+	private int[] stretchResults; //renamed from: e
+	private int[] stretchResultsAbs; //renamed from: f
 
-	/* renamed from: f */
-	public float horizontalPush;
+	private int[] stretchDirBalance; //renamed from: h
+	private int[] stretchBuffer; //renamed from: i
 
-	/* renamed from: f */
-	private int[] stretchResultsAbs;
+	//State - collision
+	private int collPointCount; //renamed from: t
 
-	/* renamed from: g */
-	public float verticalPush;
+	private final boolean[] f41a = new boolean[MAX_COLLISION_POINTS]; //renamed from: a
 
-	/* renamed from: g */
-	private int[] stretchMagnitudes;
+	private final int[] collPointsX = new int[MAX_COLLISION_POINTS]; //renamed from: j
+	private final int[] collPointsY = new int[MAX_COLLISION_POINTS]; //renamed from: k
 
-	/* renamed from: h */
-	public float lastXVelocity;
+	private final int[] f65l = new int[MAX_COLLISION_POINTS]; //renamed from: l
+	private final int[] f66m = new int[MAX_COLLISION_POINTS]; //renamed from: m
 
-	/* renamed from: h */
-	private boolean isPlayer = false;
+	private final int[] f68n = new int[MAX_COLLISION_POINTS]; //renamed from: n
+	private final int[] f70o = new int[MAX_COLLISION_POINTS]; //renamed from: o
 
-	/* renamed from: h */
-	private int[] f58h;
-
-	/* renamed from: i */
-	public float lastYVelocity;
-
-	/* renamed from: i */
-	private int[] f60i;
-
-	/* renamed from: j */
-	public float f61j;
-
-	/* renamed from: a */
-	private final boolean[] f41a = new boolean[MAX_COLLISION_POINTS];
-
-	/* renamed from: j */
-	private final int[] collPointsX = new int[MAX_COLLISION_POINTS];
-
-	/* renamed from: k */
-	private final int[] collPointsY = new int[MAX_COLLISION_POINTS];
-
-	/* renamed from: l */
-	private final int[] f65l = new int[MAX_COLLISION_POINTS];
-
-	/* renamed from: m */
-	private final int[] f66m = new int[MAX_COLLISION_POINTS];
-
-	/* renamed from: n */
-	private final int[] f68n = new int[MAX_COLLISION_POINTS];
-
-	/* renamed from: o */
-	private final int[] f70o = new int[MAX_COLLISION_POINTS];
-
-	/* renamed from: k */
-	public float f63k;
-
-	/* renamed from: n */
-	private float rotation;
-
-	/* renamed from: o */
-	private float f69o = 0.5f;
-
-	/* renamed from: p */
-	private float airTimeCounter;
-
-	/* renamed from: q */
-	private float slopeSinAbs;
-
-	/* renamed from: r */
-	private float slopeCosAbs;
-
-	/* renamed from: r */
-	private int f74r = 0;
-
-	/* renamed from: t */
-	private int collPointCount;
-
-	/* renamed from: u */
-	private int defaultBallColor = 0xED1C24;
-
-	/* renamed from: v */
-	private int f77v = 16777215;
-
-	/* renamed from: w */
-	private int f78w = 11473152;
+	//State - Super Bounce
+	private int superBounceParticleTimer = 0; //renamed from: r
 
 	static {
 		BALL_DIMENS_SCREENSPACE[0] = ((BALL_DIMENS[0] * GameObject.screenSpaceMatrix.m00) >> 16) + 1;
@@ -226,188 +161,9 @@ public final class BounceObject extends GameObject {
 			this.stretchResults = new int[4];
 			this.stretchResultsAbs = new int[4];
 			this.stretchMagnitudes = new int[4];
-			this.f58h = new int[4];
-			this.f60i = new int[4];
+			this.stretchDirBalance = new int[4];
+			this.stretchBuffer = new int[4];
 			resetStretch();
-		}
-	}
-
-	/* renamed from: a */
-	private void m5a(int cx, int cy, int width, int height, int color, Graphics graphics, boolean z, boolean z2) {
-		graphics.setColor(color);
-		int i6 = 2;
-		int i7 = 0;
-		while (i7 < 4) {
-			int i8 = width - (((this.stretchResultsAbs[i6] + this.f58h[i6]) >> 10) * width / height);
-			int i9 = width - (((this.stretchResultsAbs[i7 >> 1] + this.f58h[i7 >> 1]) >> 10) * width / height);
-			if (z2) {
-				i8++;
-			}
-			if (z) {
-				this.f60i[i7] = i8;
-				if (i9 < i8) {
-					this.f60i[i7] = i9;
-				}
-			}
-			graphics.fillArc(cx - i8, (cy - i9) + ((this.stretchResultsAbs[1] + this.f58h[1]) >> 10), i8 << 1, i9 << 1, i7 * 90, 90);
-			int i10 = i7 == 0 ? i6 + 1 : i6;
-			if (i7 == 2) {
-				i10--;
-			}
-			i7++;
-			i6 = i10;
-		}
-	}
-
-	/* renamed from: a */
-	private void registCollPoint(GeometryObject geometry, int t, int x, int y, int x2, int y2, boolean z) {
-		if (t > 0) {
-			this.collPointsX[this.collPointCount] = this.renderCalcMatrix.translationX + ((int) ((((long) x) * ((long) t)) >> 16));
-			this.collPointsY[this.collPointCount] = this.renderCalcMatrix.translationY + ((int) ((((long) y) * ((long) t)) >> 16));
-			this.f41a[this.collPointCount] = z;
-			geometry.renderCalcMatrix.mulDirection(x2, y2);
-			int i6 = Matrix.vectorMulRslX;
-			int i7 = Matrix.vectorMulRslY;
-			geometry.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-			GameObject.tmpObjMatrix.mulDirection(x2, y2);
-			int i8 = Matrix.vectorMulRslX;
-			int i9 = Matrix.vectorMulRslY;
-			this.f65l[this.collPointCount] = (int) (((((long) i6) * ((long) (LP32.ONE - t))) + (((long) i8) * ((long) t))) >> 16);
-			this.f66m[this.collPointCount] = (int) (((((long) i7) * ((long) (LP32.ONE - t))) + (((long) i9) * ((long) t))) >> 16);
-		} else if (t < 0) {
-			throw new IllegalStateException("t < 0, t: " + t);
-		} else {
-			geometry.renderCalcMatrix.mulVector(aabbRayX, aabbRayY);
-			this.collPointsX[this.collPointCount] = Matrix.vectorMulRslX;
-			this.collPointsY[this.collPointCount] = Matrix.vectorMulRslY;
-			this.f41a[this.collPointCount] = z;
-			geometry.renderCalcMatrix.mulVector(x2, y2);
-			this.f65l[this.collPointCount] = Matrix.vectorMulRslX;
-			this.f66m[this.collPointCount] = Matrix.vectorMulRslY;
-		}
-		geometry.renderCalcMatrix.mulVector(aabbRayX, aabbRayY);
-		int i10 = Matrix.vectorMulRslX;
-		int i11 = Matrix.vectorMulRslY;
-		geometry.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-		GameObject.tmpObjMatrix.mulVector(aabbRayX, aabbRayY);
-		int i12 = (int) ((float) GameRuntime.updateDelta * 6553.6f);
-		this.f68n[this.collPointCount] = (Matrix.vectorMulRslX - i10) + (i12 * 0);
-		this.f70o[this.collPointCount] = (Matrix.vectorMulRslY - i11) + (i12 * 0);
-		this.collPointCount++;
-		if (geometry.event > -1) {
-			System.out.println("Geometry " + getObjectId() + " started event " + geometry.event);
-			((EventObject) getObjectRoot().searchByObjId(geometry.event)).changeEventState(EventObject.STATE_ACTIVE);
-		}
-	}
-
-	private static boolean aabbIntersectRay(int minX, int minY, int width, int height, int rayx1, int rayy1, int rayx2, int rayy2, int epsilon) {
-		long l2 = (long) rayx1 * (long) height >> 16;
-		long l3 = (long) rayy1 * (long) width >> 16;
-		long l4 = (long) rayx2 * (long) height >> 16;
-		long l5 = (long) rayy2 * (long) width >> 16;
-		long l6 = l2 - l3 - l4 + l5;
-		if (l6 == 0L) {
-			return false;
-		}
-		long l7 = (l2 - l3 + ((long) width * (long) minY >> 16) - ((long) height * (long) minX >> 16) << 16) / l6;
-		if (l7 < 0L || l7 > LP32.ONE) {
-			return false;
-		}
-		long weight = ((long) rayx1 * (long) (rayy2 - minY) + (long) rayy1 * (long) (minX - rayx2) + (long) rayx2 * (long) minY - (long) rayy2 * (long) minX) / l6;
-		if (weight >= 0L && weight <= LP32.ONE) {
-			aabbRayWeight = (int) weight;
-			aabbRayX = (int) ((long) minX + (weight * (long) width >> 16));
-			aabbRayY = (int) ((long) minY + (weight * (long) height >> 16));
-			aabbRayResult = false;
-			return true;
-		}
-		if (weight < 0L) {
-			long l9 = minX - rayx1;
-			long l10 = rayx2 - rayx1;
-			long l11 = minY - rayy1;
-			long l12 = rayy2 - rayy1;
-			long l13 = l9 * l10 + l11 * l12 >> 16;
-			if (l13 <= 0L) {
-				return false;
-			}
-			long l14 = l10 * l10 + l12 * l12 >> 16;
-			if (l13 >= l14) {
-				return false;
-			}
-			long l15 = (long) rayx1 + ((l13 = (l13 << 16) / l14) * l10 >> 16);
-			long l16 = l15 - (long) minX;
-			long l17 = (long) rayy1 + (l13 * l12 >> 16);
-			long l18 = l17 - (long) minY;
-			long l19 = l16 * l16 + l18 * l18 >> 16;
-			if (l19 > (long) epsilon) {
-				return false;
-			}
-			aabbRayWeight = 0;
-			aabbRayX = (int) l15;
-			aabbRayY = (int) l17;
-			aabbRayResult = true;
-			return true;
-		}
-		return false;
-	}
-
-	/* renamed from: b */
-	private void stretchInDirection(int dir, int magnitude) {
-		if (magnitude > 0) {
-			if (magnitude > 70) {
-				magnitude = 70;
-			}
-		} else if (magnitude < 0 && magnitude < -70) {
-			magnitude = -70;
-		}
-		this.reqStretchMagnitudes[dir] += magnitude;
-	}
-
-	/* renamed from: c */
-	private static boolean m9c(int i, int i2, int i3, int i4, int i5, int i6, int i7, int i8) {
-		long j = (long) (i - i6);
-		long j2 = (long) (i2 - i7);
-		long j3 = ((((long) i3) * j) + (((long) i4) * j2)) >> 16;
-		if (j3 >= 0) {
-			return false;
-		}
-		long j4 = (((j * j) + (j2 * j2)) >> 16) - ((long) ((i8 * i8) << 16));
-		if (j4 <= 0) {
-			aabbRayWeight = 0;
-			int sqrt = (int) Math.sqrt((double) ((j * j) + (j2 * j2)));
-			int i9 = 0;
-			int i10 = 0;
-			if (sqrt != 0) {
-				i9 = (int) (((((long) i8) * j) << 16) / ((long) sqrt));
-				i10 = (int) (((((long) i8) * j2) << 16) / ((long) sqrt));
-			}
-			aabbRayX = i9 + i6;
-			aabbRayY = i10 + i7;
-			aabbRayResult = true;
-			return true;
-		}
-		long j5 = ((j3 * j3) >> 16) - j4;
-		if (j5 < 0) {
-			return false;
-		}
-		long sqrt2 = (-j3) - ((long) ((int) Math.sqrt((double) (j5 << 16))));
-		if (sqrt2 > ((long) i5)) {
-			return false;
-		}
-		aabbRayWeight = (int) ((sqrt2 << 16) / ((long) i5));
-		aabbRayX = (int) (((long) i) + ((((long) i3) * sqrt2) >> 16));
-		aabbRayY = (int) (((sqrt2 * ((long) i4)) >> 16) + ((long) i2));
-		aabbRayResult = false;
-		return true;
-	}
-
-	/* renamed from: n */
-	private void resetStretch() {
-		for (int i = 0; i < 4; i++) {
-			this.reqStretchMagnitudes[i] = 0;
-			this.stretchResults[i] = 0;
-			this.stretchResultsAbs[i] = 0;
-			this.stretchMagnitudes[i] = 0;
 		}
 	}
 
@@ -493,7 +249,7 @@ public final class BounceObject extends GameObject {
 				int collAABBMaxY = higherY + ballDiameter;
 				if (!aabbIntersects(other.allBBoxMinX, other.allBBoxMinY, other.allBBoxMaxX, other.allBBoxMaxY, collAABBMinX, collAABBMinY, collAABBMaxX, collAABBMaxY)) {
 					other = other.getNextNode(startNode);
-				} else if ((other.flags & 32) <= 0) {
+				} else if ((other.flags & FLAG_NOCOLLIDE) == 0) {
 					//System.out.println("checkcoll me " + getObjectId() + " other " + other.getObjectId() + " isplayer " + isPlayer + " mybbox " + collAABBMinX + "/" + collAABBMaxX + "/" + collAABBMinY + "/" + collAABBMaxY);
 					switch (other.getObjType()) {
 						case GeometryObject.TYPEID:
@@ -592,7 +348,7 @@ public final class BounceObject extends GameObject {
 						}
 						case CannonObject.TYPEID:
 							CannonObject cannon = (CannonObject) other;
-							if (aabbCheckBoundCross(xRelToOther, yRelToOther, newXRelToOther, newYRelToOther, cannon.f209a, cannon.f213c, cannon.f212b, cannon.f214d)) {
+							if (aabbCheckBoundCross(xRelToOther, yRelToOther, newXRelToOther, newYRelToOther, cannon.loadAABBMinX, cannon.loadAABBMinY, cannon.loadAABBMaxX, cannon.loadAABBMaxY)) {
 								cannon.loadBounceToCannon();
 							}
 							other = other.getNextNodeDescendToChildren(startNode);
@@ -641,7 +397,7 @@ public final class BounceObject extends GameObject {
 							int i46 = newYRelToOther >> 16;
 							if ((i45 * i45) + (i46 * i46) < 2025) {
 								collectEgg.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-								BounceGame.f290f.startEmitter(8, GameObject.tmpObjMatrix.translationX, GameObject.tmpObjMatrix.translationY, 540, 0, 540, 0);
+								BounceGame.eggCollectParticle.emitCircle(8, GameObject.tmpObjMatrix.translationX, GameObject.tmpObjMatrix.translationY, 540, 0, 540, 0);
 								if (collectEgg.equals(BounceGame.enemyDeadEgg)) {
 									BounceGame.eggCount++;
 									collectEgg.localObjectMatrix.translationX = Integer.MAX_VALUE;
@@ -659,7 +415,7 @@ public final class BounceObject extends GameObject {
 							EnemyObject enemy = (EnemyObject) other;
 							other = other.getNextNodeDescendToChildren(startNode);
 							boolean isStomp = false;
-							if (enemy.enemyType == EnemyObject.TYPE_CANDLE || (enemy.enemyType == EnemyObject.TYPE_MOLE && (enemy.propelType == 1 || enemy.f223a))) {
+							if (enemy.enemyType == EnemyObject.TYPE_CANDLE || (enemy.enemyType == EnemyObject.TYPE_MOLE && (enemy.propelType == 1 || enemy.moleIsVulnerable))) {
 								isStomp = aabbCheckBoundCross(xRelToOther, yRelToOther, newXRelToOther, newYRelToOther, enemy.bboxMinX, enemy.bboxMinY + (((enemy.bboxMaxY - enemy.bboxMinY) << 1) / 3), enemy.bboxMaxX, enemy.bboxMaxY);
 							}
 							if (isStomp) {
@@ -669,7 +425,7 @@ public final class BounceObject extends GameObject {
 									enemy.onPlayerHit();
 								}
 								if (enemy.enemyType == EnemyObject.TYPE_MOLE) {
-									if (aabbCheckBoundCross(xRelToOther, yRelToOther, newXRelToOther, newYRelToOther, enemy.bboxMinX, enemy.bboxMinY, enemy.bboxMaxX, enemy.bboxMinY + ((((enemy.f222a * 100) / enemy.f224b) * (enemy.bboxMaxY - enemy.bboxMinY)) / 100))) {
+									if (aabbCheckBoundCross(xRelToOther, yRelToOther, newXRelToOther, newYRelToOther, enemy.bboxMinX, enemy.bboxMinY, enemy.bboxMaxX, enemy.bboxMinY + ((((enemy.molePeekTimer * 100) / enemy.molePeekPeriod) * (enemy.bboxMaxY - enemy.bboxMinY)) / 100))) {
 										enemy.propelBounceAway();
 									}
 								}
@@ -699,15 +455,15 @@ public final class BounceObject extends GameObject {
 				}
 				if (nearestCollIdx != -1) {
 					float f3 = 1000.0f / ((float) GameRuntime.updateDelta);
-					float f4 = ((float) this.collPointsX[nearestCollIdx]) * f33s;
-					float f5 = ((float) this.collPointsY[nearestCollIdx]) * f33s;
-					float f6 = ((float) this.f65l[nearestCollIdx]) * f33s;
-					float f7 = ((float) this.f66m[nearestCollIdx]) * f33s;
+					float f4 = ((float) this.collPointsX[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
+					float f5 = ((float) this.collPointsY[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
+					float f6 = ((float) this.f65l[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
+					float f7 = ((float) this.f66m[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
 					float sqrt2 = 1.0f / ((float) Math.sqrt((double) ((f6 * f6) + (f7 * f7))));
 					float xslope = sqrt2 * f6;
 					float yslope = sqrt2 * f7;
-					float f10 = ((float) this.f68n[nearestCollIdx]) * f33s;
-					float f11 = ((float) this.f70o[nearestCollIdx]) * f33s;
+					float f10 = ((float) this.f68n[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
+					float f11 = ((float) this.f70o[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
 					float f12 = (f10 * xslope) + (f11 * yslope);
 					float f13 = f12 * xslope;
 					float f14 = f12 * yslope;
@@ -717,8 +473,8 @@ public final class BounceObject extends GameObject {
 					}
 					float f15 = f10 * f3;
 					float f16 = f11 * f3;
-					float f17 = ((float) (this.localObjectMatrix.translationX - this.collPointsX[nearestCollIdx])) * f33s;
-					float f18 = ((float) (this.localObjectMatrix.translationY - this.collPointsY[nearestCollIdx])) * f33s;
+					float f17 = ((float) (this.localObjectMatrix.translationX - this.collPointsX[nearestCollIdx])) * LP32_TO_FP32_MULTIPLIER;
+					float f18 = ((float) (this.localObjectMatrix.translationY - this.collPointsY[nearestCollIdx])) * LP32_TO_FP32_MULTIPLIER;
 					float f19 = f10 + f4;
 					float f20 = f11 + f5;
 					float f21 = (f17 * xslope) + (f18 * yslope);
@@ -752,8 +508,8 @@ public final class BounceObject extends GameObject {
 						this.gravityX -= f37;
 						this.gravityY -= f38;
 					}
-					this.f61j = (this.f61j * (1.0f - this.f69o)) + (this.f69o * f32);
-					this.f63k = (this.f63k * (1.0f - this.f69o)) + (this.f69o * f33);
+					this.torqueX = (this.torqueX * (1.0f - this.torqueFalloff)) + (this.torqueFalloff * f32);
+					this.torqueY = (this.torqueY * (1.0f - this.torqueFalloff)) + (this.torqueFalloff * f33);
 					this.airTimeCounter = 0.0f;
 					this.isGrounded = true;
 					this.slopeSinAbs = xslope;
@@ -775,6 +531,136 @@ public final class BounceObject extends GameObject {
 			//since this is done both in coll check and physics update, it's actually 1/8th of a second instead of 1/4th
 			this.isGrounded = false;
 		}
+	}
+
+	/* renamed from: a */
+	private void registCollPoint(GeometryObject geometry, int t, int x, int y, int x2, int y2, boolean z) {
+		if (t > 0) {
+			this.collPointsX[this.collPointCount] = this.renderCalcMatrix.translationX + ((int) ((((long) x) * ((long) t)) >> 16));
+			this.collPointsY[this.collPointCount] = this.renderCalcMatrix.translationY + ((int) ((((long) y) * ((long) t)) >> 16));
+			this.f41a[this.collPointCount] = z;
+			geometry.renderCalcMatrix.mulDirection(x2, y2);
+			int i6 = Matrix.vectorMulRslX;
+			int i7 = Matrix.vectorMulRslY;
+			geometry.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
+			GameObject.tmpObjMatrix.mulDirection(x2, y2);
+			int i8 = Matrix.vectorMulRslX;
+			int i9 = Matrix.vectorMulRslY;
+			this.f65l[this.collPointCount] = (int) (((((long) i6) * ((long) (LP32.ONE - t))) + (((long) i8) * ((long) t))) >> 16);
+			this.f66m[this.collPointCount] = (int) (((((long) i7) * ((long) (LP32.ONE - t))) + (((long) i9) * ((long) t))) >> 16);
+		} else if (t < 0) {
+			throw new IllegalStateException("t < 0, t: " + t);
+		} else {
+			geometry.renderCalcMatrix.mulVector(aabbRayX, aabbRayY);
+			this.collPointsX[this.collPointCount] = Matrix.vectorMulRslX;
+			this.collPointsY[this.collPointCount] = Matrix.vectorMulRslY;
+			this.f41a[this.collPointCount] = z;
+			geometry.renderCalcMatrix.mulVector(x2, y2);
+			this.f65l[this.collPointCount] = Matrix.vectorMulRslX;
+			this.f66m[this.collPointCount] = Matrix.vectorMulRslY;
+		}
+		geometry.renderCalcMatrix.mulVector(aabbRayX, aabbRayY);
+		int i10 = Matrix.vectorMulRslX;
+		int i11 = Matrix.vectorMulRslY;
+		geometry.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
+		GameObject.tmpObjMatrix.mulVector(aabbRayX, aabbRayY);
+		int i12 = (int) ((float) GameRuntime.updateDelta * 6553.6f);
+		this.f68n[this.collPointCount] = (Matrix.vectorMulRslX - i10) + (i12 * 0);
+		this.f70o[this.collPointCount] = (Matrix.vectorMulRslY - i11) + (i12 * 0);
+		this.collPointCount++;
+		if (geometry.event > -1) {
+			System.out.println("Geometry " + getObjectId() + " started event " + geometry.event);
+			((EventObject) getObjectRoot().searchByObjId(geometry.event)).changeEventState(EventObject.STATE_ACTIVE);
+		}
+	}
+
+	private static boolean aabbIntersectRay(int minX, int minY, int width, int height, int rayx1, int rayy1, int rayx2, int rayy2, int epsilon) {
+		long l2 = (long) rayx1 * (long) height >> 16;
+		long l3 = (long) rayy1 * (long) width >> 16;
+		long l4 = (long) rayx2 * (long) height >> 16;
+		long l5 = (long) rayy2 * (long) width >> 16;
+		long l6 = l2 - l3 - l4 + l5;
+		if (l6 == 0L) {
+			return false;
+		}
+		long l7 = (l2 - l3 + ((long) width * (long) minY >> 16) - ((long) height * (long) minX >> 16) << 16) / l6;
+		if (l7 < 0L || l7 > LP32.ONE) {
+			return false;
+		}
+		long weight = ((long) rayx1 * (long) (rayy2 - minY) + (long) rayy1 * (long) (minX - rayx2) + (long) rayx2 * (long) minY - (long) rayy2 * (long) minX) / l6;
+		if (weight >= 0L && weight <= LP32.ONE) {
+			aabbRayWeight = (int) weight;
+			aabbRayX = (int) ((long) minX + (weight * (long) width >> 16));
+			aabbRayY = (int) ((long) minY + (weight * (long) height >> 16));
+			aabbRayResult = false;
+			return true;
+		}
+		if (weight < 0L) {
+			long l9 = minX - rayx1;
+			long l10 = rayx2 - rayx1;
+			long l11 = minY - rayy1;
+			long l12 = rayy2 - rayy1;
+			long l13 = l9 * l10 + l11 * l12 >> 16;
+			if (l13 <= 0L) {
+				return false;
+			}
+			long l14 = l10 * l10 + l12 * l12 >> 16;
+			if (l13 >= l14) {
+				return false;
+			}
+			long l15 = (long) rayx1 + ((l13 = (l13 << 16) / l14) * l10 >> 16);
+			long l16 = l15 - (long) minX;
+			long l17 = (long) rayy1 + (l13 * l12 >> 16);
+			long l18 = l17 - (long) minY;
+			long l19 = l16 * l16 + l18 * l18 >> 16;
+			if (l19 > (long) epsilon) {
+				return false;
+			}
+			aabbRayWeight = 0;
+			aabbRayX = (int) l15;
+			aabbRayY = (int) l17;
+			aabbRayResult = true;
+			return true;
+		}
+		return false;
+	}
+
+	/* renamed from: c */
+	private static boolean m9c(int i, int i2, int i3, int i4, int i5, int i6, int i7, int i8) {
+		long j = (long) (i - i6);
+		long j2 = (long) (i2 - i7);
+		long j3 = ((((long) i3) * j) + (((long) i4) * j2)) >> 16;
+		if (j3 >= 0) {
+			return false;
+		}
+		long j4 = (((j * j) + (j2 * j2)) >> 16) - ((long) ((i8 * i8) << 16));
+		if (j4 <= 0) {
+			aabbRayWeight = 0;
+			int sqrt = (int) Math.sqrt((double) ((j * j) + (j2 * j2)));
+			int i9 = 0;
+			int i10 = 0;
+			if (sqrt != 0) {
+				i9 = (int) (((((long) i8) * j) << 16) / ((long) sqrt));
+				i10 = (int) (((((long) i8) * j2) << 16) / ((long) sqrt));
+			}
+			aabbRayX = i9 + i6;
+			aabbRayY = i10 + i7;
+			aabbRayResult = true;
+			return true;
+		}
+		long j5 = ((j3 * j3) >> 16) - j4;
+		if (j5 < 0) {
+			return false;
+		}
+		long sqrt2 = (-j3) - ((long) ((int) Math.sqrt((double) (j5 << 16))));
+		if (sqrt2 > ((long) i5)) {
+			return false;
+		}
+		aabbRayWeight = (int) ((sqrt2 << 16) / ((long) i5));
+		aabbRayX = (int) (((long) i) + ((((long) i3) * sqrt2) >> 16));
+		aabbRayY = (int) (((sqrt2 * ((long) i4)) >> 16) + ((long) i2));
+		aabbRayResult = false;
+		return true;
 	}
 
 	// p000.GameObject
@@ -812,34 +698,34 @@ public final class BounceObject extends GameObject {
 							fbBallCX = ballX;
 							graphics2 = graphics;
 						}
-						for (int i12 = 0; i12 < 4; i12++) {
-							this.f58h[i12] = 0;
-							for (int i13 = 0; i13 < 4; i13++) {
-								if (i12 != i13) {
-									this.f58h[i12] -= this.stretchResultsAbs[i13] >> 1;
+						for (int axisA = 0; axisA < 4; axisA++) {
+							this.stretchDirBalance[axisA] = 0;
+							for (int axisB = 0; axisB < 4; axisB++) {
+								if (axisA != axisB) {
+									this.stretchDirBalance[axisA] -= this.stretchResultsAbs[axisB] >> 1;
 								}
 							}
 						}
-						for (int i14 = 0; i14 < 4; i14++) {
-							this.f60i[i14] = 999;
+						for (int axis = 0; axis < 4; axis++) {
+							this.stretchBuffer[axis] = 999;
 						}
-						m5a(fbBallCX, fbBallCY, BALL_DIMENS_SCREENSPACE[this.ballForme] + 2, BALL_DIMENS_SCREENSPACE[this.ballForme] + 2, 0xFF000000, graphics2, false, false);
-						m5a(fbBallCX, fbBallCY, BALL_DIMENS_SCREENSPACE[this.ballForme], BALL_DIMENS_SCREENSPACE[this.ballForme], this.defaultBallColor, graphics2, true, false);
-						int i15 = (BALL_DIMENS_SCREENSPACE[this.ballForme] * 90) / 100;
-						m5a(fbBallCX, fbBallCY + 2, i15, BALL_DIMENS_SCREENSPACE[this.ballForme], this.f78w, graphics2, false, false);
-						m5a(fbBallCX + 1, fbBallCY - 1, i15, BALL_DIMENS_SCREENSPACE[this.ballForme], this.defaultBallColor, graphics2, false, true);
+						fillStretchedCircle(fbBallCX, fbBallCY, BALL_DIMENS_SCREENSPACE[this.ballForme] + 2, BALL_DIMENS_SCREENSPACE[this.ballForme] + 2, 0xFF000000, graphics2, false, false);
+						fillStretchedCircle(fbBallCX, fbBallCY, BALL_DIMENS_SCREENSPACE[this.ballForme], BALL_DIMENS_SCREENSPACE[this.ballForme], this.BOUNCE_PRIMARY_COLOR, graphics2, true, false);
+						int innerRadius = (BALL_DIMENS_SCREENSPACE[this.ballForme] * 90) / 100;
+						fillStretchedCircle(fbBallCX, fbBallCY + 2, innerRadius, BALL_DIMENS_SCREENSPACE[this.ballForme], this.BOUNCE_SECONDARY_COLOR, graphics2, false, false);
+						fillStretchedCircle(fbBallCX + 1, fbBallCY - 1, innerRadius, BALL_DIMENS_SCREENSPACE[this.ballForme], this.BOUNCE_PRIMARY_COLOR, graphics2, false, true);
 						Matrix.temp.setRotation(5.3f);
-						int i16 = this.f60i[1] >> 1;
-						int i17 = (this.f60i[1] - i16) + 1;
-						int i18 = fbBallCX + ((Matrix.temp.m00 * i17) >> 16);
-						int i19 = fbBallCY + ((i17 * Matrix.temp.m10) >> 16);
+						int i16 = this.stretchBuffer[1] >> 1;
+						int i17 = (this.stretchBuffer[1] - i16) + 1;
+						int highlightX = fbBallCX + ((Matrix.temp.m00 * i17) >> 16);
+						int highlightY = fbBallCY + ((i17 * Matrix.temp.m10) >> 16);
 						for (int i20 = 0; i20 < 12; i20++) {
 							int abs = Math.abs(i20 & 1) + 31;
 							int i21 = 100 - (i20 << 2);
 							Matrix.temp.setRotation(this.rotation + (((float) i20) * 0.8f));
-							int posBase = ((this.stretchResultsAbs[1] + this.f58h[1]) >> 10);
+							int posBase = ((this.stretchResultsAbs[1] + this.stretchDirBalance[1]) >> 10);
 							for (int i22 = 0; i22 < 4; i22++) {
-								int i23 = ((this.f60i[i22] - ((this.f60i[i22] >> 1) >> 1)) * i21) / 100;
+								int i23 = ((this.stretchBuffer[i22] - ((this.stretchBuffer[i22] >> 1) >> 1)) * i21) / 100;
 								int i24 = ((Matrix.temp.m00 * i23) >> 16) + fbBallCX;
 								int i25 = ((i23 * Matrix.temp.m10) >> 16) + fbBallCY;
 								if (i22 == 0) {
@@ -865,7 +751,7 @@ public final class BounceObject extends GameObject {
 							}
 						}
 						GameRuntime.drawImageRes(fbBallCX, fbBallCY, 17);
-						m5a(i18, i19, i16 >> 1, BALL_DIMENS_SCREENSPACE[this.ballForme], this.f77v, graphics2, false, false);
+						fillStretchedCircle(highlightX, highlightY, i16 >> 1, BALL_DIMENS_SCREENSPACE[this.ballForme], this.BOUNCE_HIGHLIGHT_COLOR, graphics2, false, false);
 						GameRuntime.drawImageRes(fbBallCX, fbBallCY, 28);
 						if (this.fadeColor != 0) {
 							GameRuntime.setGraphics(orgGraphics);
@@ -892,10 +778,10 @@ public final class BounceObject extends GameObject {
 							);
 						}
 						if (BounceGame.isSuperBounceUnlocked && !BounceGame.levelPaused) {
-							this.f74r += GameRuntime.updateDelta * GameRuntime.getUpdatesPerDraw();
-							if (this.f74r > 150) {
-								BounceGame.f280d.mo72b(EventObject.eventVars[4] / 120, BounceGame.bounceObj.localObjectMatrix.translationX, BounceGame.bounceObj.localObjectMatrix.translationY, BALL_DIMENS[0] << 15, 0, 0, 0, 0, 1000, 166);
-								this.f74r = 0;
+							this.superBounceParticleTimer += GameRuntime.updateDelta * GameRuntime.getUpdatesPerDraw();
+							if (this.superBounceParticleTimer > 150) {
+								BounceGame.superBounceParticle.emitTrail(EventObject.eventVars[4] / 120, BounceGame.bounceObj.localObjectMatrix.translationX, BounceGame.bounceObj.localObjectMatrix.translationY, BALL_DIMENS[0] << 15, 0, 0, 0, 0, 1000, 166);
+								this.superBounceParticleTimer = 0;
 							}
 						}
 						ballY = fbBallCY;
@@ -952,67 +838,77 @@ public final class BounceObject extends GameObject {
 					}
 					GameRuntime.drawAnimatedImageRes(ballX, ballY, eyeImageId, (frameCount - 1) - frameInvIndex);
 				} else if (eyeFrame >= 4 && eyeFrame <= 8) {
-					GameRuntime.drawAnimatedImageRes(ballX, ballY, f23c[eyeFrame - 4], 0);
+					GameRuntime.drawAnimatedImageRes(ballX, ballY, EYE_ANIMATION_IMAGE_IDS[eyeFrame - 4], 0);
 				} else if (EventObject.eventVars[0] == 4) {
 					GameRuntime.drawAnimatedImageRes(ballX, ballY, 465, 0);
 				}
 			} else {
-				graphics.setColor(this.defaultBallColor);
+				graphics.setColor(this.BOUNCE_PRIMARY_COLOR);
 				graphics.fillArc(ballTLX, ballTLY, ballHalfWidthX << 1, ballHalfWidthY << 1, 0, 360);
 			}
 		}
 		debugDraw(graphics, 0xFFCC00, rootMatrix);
 	}
 
-	/* renamed from: a */
-	public final void jump(boolean small) {
-		if (this.slopeCosAbs > MAX_JUMP_SLOPE_INV[this.ballForme] && this.isGrounded) {
-			if (small) {
-				this.verticalPush += JUMP_MODIFIERS[this.ballForme] / 2.0f;
-			} else {
-				this.verticalPush += JUMP_MODIFIERS[this.ballForme];
+	/* renamed from: b */
+	private void stretchInDirection(int dir, int magnitude) {
+		if (magnitude > 0) {
+			if (magnitude > 70) {
+				magnitude = 70;
 			}
-			this.isGrounded = false;
-			if (this.isPlayer) {
-				if (small) {
-					stretchInDirection(0, -27);
-					stretchInDirection(1, -27);
-				} else {
-					stretchInDirection(0, -53);
-					stretchInDirection(1, -53);
+		} else if (magnitude < 0 && magnitude < -70) {
+			magnitude = -70;
+		}
+		this.reqStretchMagnitudes[dir] += magnitude;
+	}
+
+	/* renamed from: n */
+	private void resetStretch() {
+		for (int i = 0; i < 4; i++) {
+			this.reqStretchMagnitudes[i] = 0;
+			this.stretchResults[i] = 0;
+			this.stretchResultsAbs[i] = 0;
+			this.stretchMagnitudes[i] = 0;
+		}
+	}
+
+	/* renamed from: a */
+	private void fillStretchedCircle(int cx, int cy, int radius, int stretchRadius, int color, Graphics graphics, boolean writeStretchBuffer, boolean z2) {
+		graphics.setColor(color);
+		int i6 = 2;
+		int axis = 0;
+		while (axis < 4) {
+			int width = radius - (((this.stretchResultsAbs[i6] + this.stretchDirBalance[i6]) >> 10) * radius / stretchRadius);
+			int height = radius - (((this.stretchResultsAbs[axis >> 1] + this.stretchDirBalance[axis >> 1]) >> 10) * radius / stretchRadius);
+			if (z2) {
+				width++;
+			}
+			if (writeStretchBuffer) {
+				this.stretchBuffer[axis] = width;
+				if (height < width) {
+					this.stretchBuffer[axis] = height;
 				}
 			}
+			graphics.fillArc(cx - width, (cy - height) + ((this.stretchResultsAbs[1] + this.stretchDirBalance[1]) >> 10), width << 1, height << 1, axis * 90, 90);
+			int i10 = axis == 0 ? i6 + 1 : i6;
+			if (axis == 2) {
+				i10--;
+			}
+			axis++;
+			i6 = i10;
 		}
 	}
 
-	/* renamed from: b */
-	public final void moveLeft() {
-		float speedBoost = 0.0f;
-		if (BounceGame.isSuperBounceUnlocked && this.ballForme == BounceObject.FORME_BOUNCE) {
-			speedBoost = 50.0f;
-		}
-		if (this.isGrounded) {
-			if (this.curXVelocity > (-MOVEMENT_SPEEDS[this.ballForme]) - speedBoost) {
-				this.gravityX -= speedBoost + MOVEMENT_TRACTIONS[this.ballForme];
-			}
-		} else if (this.curXVelocity > (-MOVEMENT_SPEEDS[this.ballForme]) - speedBoost) {
-			this.gravityX -= (speedBoost + MOVEMENT_TRACTIONS[this.ballForme]) / MIDAIR_MOVEMENT_SUPPRESSION[this.ballForme];
-		}
-	}
-
-	/* renamed from: c */
-	public final void moveRight() {
-		float speedBoost = 0.0f;
-		if (BounceGame.isSuperBounceUnlocked && this.ballForme == BounceObject.FORME_BOUNCE) {
-			speedBoost = 50.0f;
-		}
-		if (this.isGrounded) {
-			if (this.curXVelocity < MOVEMENT_SPEEDS[this.ballForme] + speedBoost) {
-				this.gravityX += speedBoost + MOVEMENT_TRACTIONS[this.ballForme];
-			}
-		} else if (this.curXVelocity < MOVEMENT_SPEEDS[this.ballForme] + speedBoost) {
-			this.gravityX += ((speedBoost + MOVEMENT_TRACTIONS[this.ballForme]) / MIDAIR_MOVEMENT_SUPPRESSION[this.ballForme]);
-		}
+	/* renamed from: g */
+	public final void resetPhysics() {
+		this.curXVelocity = 0.0f;
+		this.curYVelocity = 0.0f;
+		this.pushX = 0.0f;
+		this.pushY = 0.0f;
+		this.gravityX = 0.0f;
+		this.gravityY = 0.0f;
+		this.torqueX = 0.0f;
+		this.torqueY = 0.0f;
 	}
 
 	// p000.GameObject
@@ -1052,23 +948,23 @@ public final class BounceObject extends GameObject {
 			float invGravity = 1.0f / GRAVITY[this.ballForme];
 			this.curXVelocity += this.gravityX * invGravity * motionDelta;
 			this.curYVelocity += this.gravityY * invGravity * motionDelta;
-			this.curXVelocity += this.horizontalPush * invGravity;
-			this.curYVelocity += this.verticalPush * invGravity;
+			this.curXVelocity += this.pushX * invGravity;
+			this.curYVelocity += this.pushY * invGravity;
 			this.localObjectMatrix.translationX += LP32.FP32ToLP32(this.curXVelocity * motionDelta);
 			this.localObjectMatrix.translationY += LP32.FP32ToLP32(this.curYVelocity * motionDelta);
 			this.gravityX = 0.0f;
 			this.gravityY = 0.0f;
-			this.horizontalPush = 0.0f;
-			this.verticalPush = 0.0f;
-			float f7 = (this.f61j * this.slopeSinAbs) + (this.f63k * this.slopeCosAbs);
+			this.pushX = 0.0f;
+			this.pushY = 0.0f;
+			float f7 = (this.torqueX * this.slopeSinAbs) + (this.torqueY * this.slopeCosAbs);
 			float f8 = this.slopeSinAbs * f7;
 			float f9 = this.slopeCosAbs * f7;
-			if ((this.slopeSinAbs * this.f61j) + (this.slopeCosAbs * this.f63k) >= 0.0f) {
-				f = this.f61j - f8;
-				f2 = this.f63k - f9;
+			if ((this.slopeSinAbs * this.torqueX) + (this.slopeCosAbs * this.torqueY) >= 0.0f) {
+				f = this.torqueX - f8;
+				f2 = this.torqueY - f9;
 			} else {
-				f = this.f61j + f8;
-				f2 = this.f63k + f9;
+				f = this.torqueX + f8;
+				f2 = this.torqueY + f9;
 			}
 			float sqrt = motionDelta * (((float) Math.sqrt((f * f) + (f2 * f2))) / ((float) BALL_DIMENS[this.ballForme]));
 			this.rotation += ((f2 * this.slopeSinAbs) - (f * this.slopeCosAbs) > 0.0f ? -sqrt : sqrt);
@@ -1157,9 +1053,60 @@ public final class BounceObject extends GameObject {
 		resetStretch();
 		int i = 3000 - BounceGame.exitWaitTimer;
 		if (i <= 1000) {
-			this.localObjectMatrix.translationY = (BounceGame.SIN_COS_TABLE[(i / 5) % 360] << 14) + BounceGame.f274c;
+			this.localObjectMatrix.translationY = (BounceGame.SIN_COS_TABLE[(i / 5) % 360] << 14) + BounceGame.deathBaseY;
 		} else {
-			this.localObjectMatrix.translationY = (BounceGame.f274c + (BounceGame.SIN_COS_TABLE[200] << 14)) - ((i - 1000) * 22500);
+			this.localObjectMatrix.translationY = (BounceGame.deathBaseY + (BounceGame.SIN_COS_TABLE[200] << 14)) - ((i - 1000) * 22500);
+		}
+	}
+
+	/* renamed from: a */
+	public final void jump(boolean small) {
+		if (this.slopeCosAbs > MAX_JUMP_SLOPE_INV[this.ballForme] && this.isGrounded) {
+			if (small) {
+				this.pushY += JUMP_MODIFIERS[this.ballForme] / 2.0f;
+			} else {
+				this.pushY += JUMP_MODIFIERS[this.ballForme];
+			}
+			this.isGrounded = false;
+			if (this.isPlayer) {
+				if (small) {
+					stretchInDirection(0, -27);
+					stretchInDirection(1, -27);
+				} else {
+					stretchInDirection(0, -53);
+					stretchInDirection(1, -53);
+				}
+			}
+		}
+	}
+
+	/* renamed from: b */
+	public final void moveLeft() {
+		float speedBoost = 0.0f;
+		if (BounceGame.isSuperBounceUnlocked && this.ballForme == BounceObject.FORME_BOUNCE) {
+			speedBoost = 50.0f;
+		}
+		if (this.isGrounded) {
+			if (this.curXVelocity > (-MOVEMENT_SPEEDS[this.ballForme]) - speedBoost) {
+				this.gravityX -= speedBoost + MOVEMENT_TRACTIONS[this.ballForme];
+			}
+		} else if (this.curXVelocity > (-MOVEMENT_SPEEDS[this.ballForme]) - speedBoost) {
+			this.gravityX -= (speedBoost + MOVEMENT_TRACTIONS[this.ballForme]) / MIDAIR_MOVEMENT_SUPPRESSION[this.ballForme];
+		}
+	}
+
+	/* renamed from: c */
+	public final void moveRight() {
+		float speedBoost = 0.0f;
+		if (BounceGame.isSuperBounceUnlocked && this.ballForme == BounceObject.FORME_BOUNCE) {
+			speedBoost = 50.0f;
+		}
+		if (this.isGrounded) {
+			if (this.curXVelocity < MOVEMENT_SPEEDS[this.ballForme] + speedBoost) {
+				this.gravityX += speedBoost + MOVEMENT_TRACTIONS[this.ballForme];
+			}
+		} else if (this.curXVelocity < MOVEMENT_SPEEDS[this.ballForme] + speedBoost) {
+			this.gravityX += ((speedBoost + MOVEMENT_TRACTIONS[this.ballForme]) / MIDAIR_MOVEMENT_SUPPRESSION[this.ballForme]);
 		}
 	}
 
@@ -1173,17 +1120,5 @@ public final class BounceObject extends GameObject {
 			this.ballForme = 0;
 		}
 		initialize();
-	}
-
-	/* renamed from: g */
-	public final void resetPhysics() {
-		this.curXVelocity = 0.0f;
-		this.curYVelocity = 0.0f;
-		this.horizontalPush = 0.0f;
-		this.verticalPush = 0.0f;
-		this.gravityX = 0.0f;
-		this.gravityY = 0.0f;
-		this.f61j = 0.0f;
-		this.f63k = 0.0f;
 	}
 }

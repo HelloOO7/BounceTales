@@ -3,7 +3,7 @@ package bouncetales;
 public class EventCommand {
 
 	public static final int MESSAGE = 0;
-	public static final int BLOWER = 1;
+	public static final int OBJ_ANIMATE = 1;
 	public static final int EVENT_TERMINATE = 2;
 	public static final int EVENT_CANCEL = 3;
 	public static final int EVENT_START = 4;
@@ -31,7 +31,7 @@ public class EventCommand {
 	public static final int PUSH = 26;
 	public static final int GRAVITATE = 27;
 	public static final int ACCELERATE = 28;
-	public static final int CMD_29 = 29;
+	public static final int OBJ_SET_FLAGS = 29;
 	public static final int CAMERA_TARGET = 30;
 	public static final int CAMERA_SETPARAM = 31;
 	public static final int CAMERA_SETPARAM_DEFAULT = 32;

@@ -18,4 +18,6 @@ public class LevelID {
 	public static final int FINAL_RIDE = 13;
 	public static final int FANTASTIC_FAIR = 14;
 	public static final int LEVEL_IDX_MAX = 15;
+	
+	public static final int GAME_CLEAR_LEVEL = FINAL_RIDE;
 }

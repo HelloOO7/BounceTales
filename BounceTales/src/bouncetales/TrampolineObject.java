@@ -73,18 +73,6 @@ public final class TrampolineObject extends GameObject {
 		debugDraw(graphics, 0xFF00FF, rootMatrix);
 	}
 
-	private void releaseJumper() {
-		if (jumper != null) {
-			jumper.enablePhysics = true;
-			jumper.f61j = 0.0f;
-			jumper.f63k = 0.0f;
-			jumper.reqSkipAccelStretch = true;
-			if (jumper.equals(BounceGame.bounceObj)) {
-				EventObject.eventVars[1] = BounceGame.CONTROLLER_NORMAL;
-			}
-		}
-	}
-
 	public final void setJumper(BounceObject j) {
 		if (jumper != j) {
 			releaseJumper();
@@ -93,6 +81,18 @@ public final class TrampolineObject extends GameObject {
 		jumper.enablePhysics = false;
 		jumper.curXVelocity = 0.0f;
 		jumper.curYVelocity = 0.0f;
+	}
+
+	private void releaseJumper() {
+		if (jumper != null) {
+			jumper.enablePhysics = true;
+			jumper.torqueX = 0.0f;
+			jumper.torqueY = 0.0f;
+			jumper.reqSkipAccelStretch = true;
+			if (jumper.equals(BounceGame.bounceObj)) {
+				EventObject.eventVars[1] = BounceGame.CONTROLLER_NORMAL;
+			}
+		}
 	}
 
 	/* renamed from: b */
