@@ -1272,8 +1272,8 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 
 				int residentCount = dis.readShort();
 				ResidentResHeader[] resident = new ResidentResHeader[residentCount];
-				for (int i4 = 0; i4 < residentCount; i4++) {
-					resident[i4] = new ResidentResHeader(dis);
+				for (int i = 0; i < residentCount; i++) {
+					resident[i] = new ResidentResHeader(dis);
 				}
 				dis.close();
 

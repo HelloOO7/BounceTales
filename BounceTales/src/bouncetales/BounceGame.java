@@ -574,7 +574,7 @@ public final class BounceGame {
 					GameRuntime.drawText(str, 0, str.length(), i11 + 23 + 11, i5 + a3 + 11, 6);
 				}
 			}
-			if (wasLevelBeaten(LevelID.FINAL_RIDE) && !isBonusLevel(levelId)) {
+			if (wasLevelBeaten(LevelID.GAME_CLEAR_LEVEL) && !isBonusLevel(levelId)) {
 				int d = getCollectionChallengeRank(levelId);
 				int i12 = d > -1 ? TROPHY_IMAGE_IDS[d] : d;
 				int e = getTimerChallengeRank(levelId);
@@ -1619,7 +1619,7 @@ public final class BounceGame {
 					newHighScoreText.setText(StringManager.getMessage(MessageID.NEW_HIGH_SCORE), -1);
 					this.ui.addElement(newHighScoreText);
 				}
-				if (wasLevelBeaten(LevelID.FINAL_RIDE) && !this.wasFinalLevelJustBeaten && !isBonusLevel(currentLevel)) {
+				if (wasLevelBeaten(LevelID.GAME_CLEAR_LEVEL) && !this.wasFinalLevelJustBeaten && !isBonusLevel(currentLevel)) {
 					boolean anyMedalsWon = false;
 					if (this.timerChallengeTrophy > -1) {
 						short timerTrophyImageId = TROPHY_IMAGE_IDS[this.timerChallengeTrophy];
@@ -1940,7 +1940,7 @@ public final class BounceGame {
 									}
 								}
 							}
-							if (!finalRideBeatenBefore && wasLevelBeaten(LevelID.FINAL_RIDE)) {
+							if (!finalRideBeatenBefore && wasLevelBeaten(LevelID.GAME_CLEAR_LEVEL)) {
 								this.wasFinalLevelJustBeaten = true;
 							}
 							if (!superBounceUnlockedBefore && checkSuperBounceUnlocked()) {
@@ -2136,15 +2136,11 @@ public final class BounceGame {
 					byte[] savedData = GameRuntime.loadFromRecordStore("game");
 					if (savedData != null) {
 						deserializeSaveData(savedData);
-						if (!wasLevelBeaten(LevelID.FINAL_RIDE)) {
-							int levelId = 14;
-							while (true) {
-								if (levelId >= 0) {
-									if (!isLevelUnlocked(levelId) || isBonusLevel(levelId)) {
-										levelId--;
-									} else {
-										selectedLevelId = levelId;
-									}
+						if (!wasLevelBeaten(LevelID.GAME_CLEAR_LEVEL)) {
+							for (int levelId = LevelID.LEVEL_IDX_MAX - 1; levelId >= 0; levelId--) {
+								if (!isBonusLevel(levelId) && isLevelUnlocked(levelId)) {
+									selectedLevelId = levelId;
+									break;
 								}
 							}
 						}
