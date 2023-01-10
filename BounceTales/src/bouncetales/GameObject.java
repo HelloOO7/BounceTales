@@ -87,15 +87,6 @@ public class GameObject {
 	public int allBBoxMaxX; //renamed from: k
 	public int allBBoxMaxY; //renamed from: l
 
-	static {
-		screenSpaceMatrix.m00 = 43266;
-		screenSpaceMatrix.m11 = -43266;
-		if (GameRuntime.currentWidth < 200) {
-			screenSpaceMatrix.m00 = 22306;
-			screenSpaceMatrix.m11 = -22306;
-		}
-	}
-
 	public GameObject() {
 		objectId = gameObjInstanceCount++;
 		renderCalcMatrix = new Matrix();
@@ -259,6 +250,17 @@ public class GameObject {
 		//high resolution 2D rendering needs this
 		objectsToRender = new GameObject[levelObjCount];
 		renderObjCount = 0;
+	}
+
+	public static void setScreenSpaceMatrixByWindow(int winW, int winH) {
+		screenSpaceMatrix.m00 = 43266;
+		screenSpaceMatrix.m11 = -43266;
+		if (winW < 200) {
+			screenSpaceMatrix.m00 = 22306;
+			screenSpaceMatrix.m11 = -22306;
+		}
+		screenSpaceMatrix.translationX = (winW << 16) >> 1;
+		screenSpaceMatrix.translationY = (winH << 16) >> 1;
 	}
 
 	/* renamed from: a */

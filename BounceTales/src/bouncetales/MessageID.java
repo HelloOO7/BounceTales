@@ -33,6 +33,11 @@ public class MessageID {
 	public static final int UI_CONTINUE = 17;
 	public static final int UI_GUIDE = 18;
 	public static final int UI_NEW_GAME = 36;
+	public static final int UI_RESTART_LEVEL = 37;
+	public static final int UI_CONTINUE_LEVEL = 38;
+	public static final int UI_LEVEL_SELECT = 39;
+	public static final int UI_NEW_HIGH_SCORE = 40;
+	public static final int UI_NO_MEDALS_WON = 41;
 	public static final int UI_HIGH_SCORE = 19;
 	public static final int UI_SCORE = 42;
 
@@ -46,7 +51,10 @@ public class MessageID {
 
 	public static final int DIALOG_QUIT_GAME = 80;
 	public static final int DIALOG_PAUSE_MENU = 83;
+	public static final int DIALOG_GAME_BEATEN = 81;
+	public static final int DIALOG_GAME_COMPLETED = 82;
 	public static final int DIALOG_NEW_GAME = 84;
 	public static final int DIALOG_RESTART_LEVEL = 85;
 	public static final int CHAPTER_COMPLETE = 86;
+	public static final int DIALOG_RETURN_LEVEL_SELECT = 87;
 }

@@ -47,6 +47,10 @@ public final class BounceObject extends GameObject {
 	//Dimensions
 	public static final int[] BALL_DIMENS = {20, 20, 20}; //renamed from: a
 	public static int[] BALL_DIMENS_SCREENSPACE = new int[3]; //renamed from: b
+	
+	static {
+		updateScreenSpaceConstants();
+	}
 
 	//Physics
 	private static final float BASE_GRAVITY_X = 0.0f; //renamed from: l
@@ -147,12 +151,6 @@ public final class BounceObject extends GameObject {
 	//State - Super Bounce
 	private int superBounceParticleTimer = 0; //renamed from: r
 
-	static {
-		BALL_DIMENS_SCREENSPACE[0] = ((BALL_DIMENS[0] * GameObject.screenSpaceMatrix.m00) >> 16) + 1;
-		BALL_DIMENS_SCREENSPACE[1] = ((BALL_DIMENS[1] * GameObject.screenSpaceMatrix.m00) >> 16) + 1;
-		BALL_DIMENS_SCREENSPACE[2] = ((BALL_DIMENS[2] * GameObject.screenSpaceMatrix.m00) >> 16) + 1;
-	}
-
 	public BounceObject(boolean isPlayer) {
 		this.objType = TYPEID;
 		this.isPlayer = isPlayer;
@@ -196,6 +194,12 @@ public final class BounceObject extends GameObject {
 			}
 		}
 		this.objectMatrixIsDirty = true;
+	}
+
+	public static void updateScreenSpaceConstants() {
+		BALL_DIMENS_SCREENSPACE[0] = ((BALL_DIMENS[0] * GameObject.screenSpaceMatrix.m00) >> 16) + 1;
+		BALL_DIMENS_SCREENSPACE[1] = ((BALL_DIMENS[1] * GameObject.screenSpaceMatrix.m00) >> 16) + 1;
+		BALL_DIMENS_SCREENSPACE[2] = ((BALL_DIMENS[2] * GameObject.screenSpaceMatrix.m00) >> 16) + 1;
 	}
 
 	// p000.GameObject, p000.GameObject, p000.GameObject
@@ -823,7 +827,7 @@ public final class BounceObject extends GameObject {
 					default:
 						break;
 				}
-				if (eyeFrame == 1 || EventObject.eventVars[0] == 3) {
+				if (eyeFrame == 1 || BounceGame.getPlayerState() == BounceGame.PLAYER_STATE_LOSE_UPDATE) {
 					GameRuntime.drawImageRes(ballX, ballY, 20); //owowowowow
 				} else if (eyeFrame == 2 || eyeFrame == 3) {
 					int eyeImageId = 462;
@@ -839,7 +843,7 @@ public final class BounceObject extends GameObject {
 					GameRuntime.drawAnimatedImageRes(ballX, ballY, eyeImageId, (frameCount - 1) - frameInvIndex);
 				} else if (eyeFrame >= 4 && eyeFrame <= 8) {
 					GameRuntime.drawAnimatedImageRes(ballX, ballY, EYE_ANIMATION_IMAGE_IDS[eyeFrame - 4], 0);
-				} else if (EventObject.eventVars[0] == 4) {
+				} else if (BounceGame.getPlayerState() == BounceGame.PLAYER_STATE_WIN_UPDATE) {
 					GameRuntime.drawAnimatedImageRes(ballX, ballY, 465, 0);
 				}
 			} else {
@@ -1016,7 +1020,7 @@ public final class BounceObject extends GameObject {
 							}
 						}
 					}
-				} else if (EventObject.eventVars[0] == 0 && EventObject.eventVars[1] == BounceGame.CONTROLLER_NORMAL && Math.abs(this.curXVelocity) < 40.0f && Math.abs(this.curYVelocity) < 40.0f) {
+				} else if (BounceGame.getPlayerState() == BounceGame.PLAYER_STATE_PLAY && EventObject.eventVars[1] == BounceGame.CONTROLLER_NORMAL && Math.abs(this.curXVelocity) < 40.0f && Math.abs(this.curYVelocity) < 40.0f) {
 					idleAnimStartTimer -= GameRuntime.updateDelta;
 					if (idleAnimStartTimer <= 0) {
 						idleAnimTimer = 600;

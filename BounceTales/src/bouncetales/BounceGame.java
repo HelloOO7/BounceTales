@@ -15,6 +15,12 @@ public final class BounceGame {
 	public static final int CONTROLLER_CANNON = 1;
 	public static final int CONTROLLER_DISABLED = 2;
 	public static final int CONTROLLER_FROZEN = 3;
+	
+	public static final int PLAYER_STATE_PLAY = 0;
+	public static final int PLAYER_STATE_LOSE = 1;
+	public static final int PLAYER_STATE_WIN = 2;
+	public static final int PLAYER_STATE_LOSE_UPDATE = 3;
+	public static final int PLAYER_STATE_WIN_UPDATE = 4;
 
 	/*
 	Constants
@@ -99,7 +105,6 @@ public final class BounceGame {
 		30, 30, 30
 	}; //renamed from: d
 
-	/* renamed from: e */
 	private static final short[] LEVEL_TIMER_TROPHY_REQUIREMENTS = {
 		30, 40, 50,
 		36, 45, 55,
@@ -145,6 +150,8 @@ public final class BounceGame {
 	private static final int[] FORME_UNLOCK_LEVELS = {3, 8}; //renamed from: d
 
 	private static final short[] NUMBER_FONT_IMAGE_IDS = {90, 91, 92, 93, 94, 95, 96, 97, 98, 99}; //renamed from: w
+
+	private static final int PARALLAX_MAX_COUNT = 5;
 
 	private static final short[] ALL_PARALLAX_IMAGE_IDS = {388, 373, 145, 313, 265, 157, 174, 55, 345, 243, 78, 317, 176, 267}; //renamed from: u
 	private static short[] f307i = {388}; //renamed from: i
@@ -198,6 +205,9 @@ public final class BounceGame {
 	private static final boolean enableCheats; //renamed from: f
 	private static byte cheatComboIndex; //renamed from: a
 
+	private static int renderClipWidth = GameRuntime.currentWidth; //renamed from: x
+	private static int renderClipHeight = GameRuntime.currentHeight; //renamed from: y
+
 	//State - text
 	private static boolean isTextRightToLeft = StringManager.getMessage(90).equals("1"); //renamed from: e
 
@@ -213,14 +223,14 @@ public final class BounceGame {
 	private int loadingProgressBar = 0; //renamed from: B
 
 	//State - menus
-	private static int mainMenuReturnUI = 17; //renamed from: A
-	private static int lastMainMenuOption = 0; //renamed from: o
+	private static int exitLevelReturnScene = 17; //renamed from: A
+	private static int lastMenuOption = 0; //renamed from: o
 	private static int selectedLevelId = 0; //renamed from: k
 
-	private static int f315l = 0; //renamed from: l
+	private static int lastSelectedLevelId = 0; //renamed from: l
 
-	private static int f319m = 0; //renamed from: m
-	private static int f323n = 0; //renamed from: n
+	private static int bookAnimationTime = 0; //renamed from: m
+	private static int targetBookAnimationTime = 0; //renamed from: n
 
 	//State - softkey bar polygon coordinates
 	private static int[] xluSoftkeyBarXs = new int[4]; //renamed from: v
@@ -307,14 +317,14 @@ public final class BounceGame {
 	private static Image[] parallaxImagesRegColors; //renamed from: a
 	private static Image[] parallaxImagesStolenColors; //renamed from: b
 
-	private static int f353x = GameRuntime.currentWidth; //renamed from: x
-	private static int f354y = GameRuntime.currentHeight; //renamed from: y
-
 	private static int f240F; //renamed from: F
 
-	private static int[] paralaxXOffsets = new int[10]; //renamed from: s
-	private static int[] parallaxYOffsets = new int[10]; //renamed from: t
-	private static int[] parallaxImageIndices = new int[10]; //renamed from: u
+	//array size bugfixed for HD parallaxes
+	//another slight optimization: originally the size allocated was 10 (double the parallax count)
+	//instead of 6 (parallax count + 1), which was just enough. reducing it changes nothing and descreases memory footprint.
+	private static int[] parallaxXOffsets = new int[PARALLAX_MAX_COUNT * ((renderClipWidth + 239) / 240) * ((renderClipHeight + 319) / 320) + 1]; //renamed from: s
+	private static int[] parallaxYOffsets = new int[parallaxXOffsets.length]; //renamed from: t
+	private static int[] parallaxImageIndices = new int[parallaxYOffsets.length]; //renamed from: u
 
 	//State - after level cleared
 	private static int calcScore; //renamed from: p
@@ -398,27 +408,29 @@ public final class BounceGame {
 	}
 
 	/* renamed from: a */
-	private static void drawLevelSelectUI(int x, int centerX, int levelId, int bottomY, int i5) {
+	private static void drawLevelSelectUI(int x, int y, int levelId, int bottomY, int i5) {
 		int b = getLevelType(levelId);
 		if (b == 0) {
-			GameRuntime.drawImageRes(x, centerX, 8);
+			GameRuntime.drawImageRes(x, y, 8);
 		} else if (b == 2) {
-			GameRuntime.drawImageRes(x, centerX, 380);
+			GameRuntime.drawImageRes(x, y, 380);
 		}
-		GameRuntime.drawImageRes(x, centerX, LEVEL_COVER_ART_IMAGE_IDS[levelId]);
+		GameRuntime.drawImageRes(x, y, LEVEL_COVER_ART_IMAGE_IDS[levelId]);
 		String[] printfParams = new String[1];
 		GameRuntime.setTextStyle(-3, 1);
 		GameRuntime.setTextColor(0, 0);
 		if (!isLevelUnlocked(levelId)) {
-			GameRuntime.drawImageRes(x, centerX, 149);
+			//Level not unlocked
+			GameRuntime.drawImageRes(x, y, 149);
 			if (isBonusLevel(levelId)) {
-				int i6 = 0;
-				for (int i7 = 0; i7 < BONUS_LEVEL_INFO.length; i7 += 2) {
-					if (levelId == BONUS_LEVEL_INFO[i7]) {
-						i6 = BONUS_LEVEL_INFO[i7 + 1];
+				//Required eggs for unlock
+				int bonusLevelRequirement = 0;
+				for (int i = 0; i < BONUS_LEVEL_INFO.length; i += 2) {
+					if (levelId == BONUS_LEVEL_INFO[i]) {
+						bonusLevelRequirement = BONUS_LEVEL_INFO[i + 1];
 					}
 				}
-				String unlockRequirementMsg = StringManager.getMessage(MessageID.NEED_COLLECT_COUNT, i6);
+				String unlockRequirementMsg = StringManager.getMessage(MessageID.NEED_COLLECT_COUNT, bonusLevelRequirement);
 				int a2 = GameRuntime.getStrRenderWidth(-3, unlockRequirementMsg, 0, unlockRequirementMsg.length()) + 23 + 5;
 				int i8 = (GameRuntime.currentWidth >> 1) - (a2 >> 1);
 				int i9 = a2 + i8;
@@ -431,6 +443,7 @@ public final class BounceGame {
 				}
 			}
 		} else {
+			//Level stats
 			int a3 = GameRuntime.getFontHeight(-3) + 1;
 			int a4 = GameRuntime.getFontHeight(-3) + 23 + 3;
 			String a5 = StringManager.getMessage(MessageID.UI_SCORE, "9999");
@@ -644,32 +657,32 @@ public final class BounceGame {
 		}
 	}
 
-	private static void cycleLevelSelectLeft(UILayout layout, boolean z) {
+	private static void cycleLevelSelectLeft(UILayout layout, boolean updateSoftkeys) {
 		if (selectedLevelId != 0) {
-			if (f315l <= selectedLevelId) {
-				z = false;
-			}
-			f315l = selectedLevelId;
+			boolean fast = lastSelectedLevelId > selectedLevelId;
+			lastSelectedLevelId = selectedLevelId;
 			selectedLevelId--;
-			if (f319m == 650 || z) {
-				f319m = 0;
+			if (bookAnimationTime == 650 || fast) {
+				bookAnimationTime = 0;
 			}
-			f323n = 650;
-			updateLevelStartSoftkeyByUnlock(layout);
+			targetBookAnimationTime = 650;
+			if (updateSoftkeys) {
+				updateLevelStartSoftkeyByUnlock(layout);
+			}
 		}
 	}
 
 	/* renamed from: a */
-	private static void cycleLevelSelectRight(UILayout layout, boolean z) {
+	private static void cycleLevelSelectRight(UILayout layout, boolean updateSoftkeys) {
 		if (selectedLevelId != 14) {
-			boolean z2 = f315l < selectedLevelId;
-			f315l = selectedLevelId;
+			boolean fast = lastSelectedLevelId < selectedLevelId;
+			lastSelectedLevelId = selectedLevelId;
 			selectedLevelId++;
-			if (f319m == 0 || z2) {
-				f319m = 650;
+			if (bookAnimationTime == 0 || fast) {
+				bookAnimationTime = 650;
 			}
-			f323n = 0;
-			if (z) {
+			targetBookAnimationTime = 0;
+			if (updateSoftkeys) {
 				updateLevelStartSoftkeyByUnlock(layout);
 			}
 		}
@@ -687,38 +700,55 @@ public final class BounceGame {
 		GameRuntime.drawImageRes(0, GameRuntime.currentHeight, 3);
 	}
 
-	/* renamed from: a */
-	private static void drawBGParallax(short[] imageIDs, int xStep, int i2, int x, int xRange, int y, int yRange, int count, int stripeFillColor, Graphics graphics) {
-		paralaxXOffsets[0] = 0;
-		int i9 = 0;
-		if (yRange != 0) {
-			i9 = mRNG.nextInt() % yRange;
+	private static int[] arraysCopyOf(int[] src, int newSize) {
+		int[] newarr = new int[newSize];
+		System.arraycopy(src, 0, newarr, 0, src.length);
+		return newarr;
+	}
+
+	/*
+	For high resolution parallaxes.
+	 */
+	private static void checkReallocParallax(int maxAllocSize) {
+		if (parallaxImageIndices.length < maxAllocSize) {
+			parallaxImageIndices = arraysCopyOf(parallaxImageIndices, maxAllocSize);
+			parallaxXOffsets = arraysCopyOf(parallaxXOffsets, maxAllocSize);
+			parallaxYOffsets = arraysCopyOf(parallaxYOffsets, maxAllocSize);
 		}
-		parallaxYOffsets[0] = i9 + y;
+	}
+
+	/* renamed from: a */
+	private static void drawBGParallax(short[] imageIDs, int moveSpeedNum, int moveSpeedDenom, int x, int xRange, int y, int yRange, int count, int stripeFillColor, Graphics graphics) {
+		parallaxXOffsets[0] = 0;
+		int firstYOffset = 0;
+		if (yRange != 0) {
+			firstYOffset = mRNG.nextInt() % yRange;
+		}
+		parallaxYOffsets[0] = firstYOffset + y;
 		for (int i = 1; i < count + 1; i++) {
-			int i11 = 0;
+			int stepFromLast = 0;
 			if (xRange != 0) {
-				i11 = Math.abs(mRNG.nextInt() % xRange);
+				stepFromLast = Math.abs(mRNG.nextInt() % xRange);
 			}
-			paralaxXOffsets[i] = i11 + paralaxXOffsets[i - 1] + x;
-			int i12 = 0;
+			parallaxXOffsets[i] = stepFromLast + parallaxXOffsets[i - 1] + x;
+			int yOffset = 0;
 			if (yRange != 0) {
-				i12 = mRNG.nextInt() % yRange;
+				yOffset = mRNG.nextInt() % yRange;
 			}
-			parallaxYOffsets[i] = i12 + y;
+			parallaxYOffsets[i] = yOffset + y;
 			parallaxImageIndices[i] = Math.abs(mRNG.nextInt() % imageIDs.length);
 		}
-		int i13 = paralaxXOffsets[count];
-		int baseX = i13 - (((((((GameObject.cameraMatrix.translationX >> 16) + 33000) * GameObject.screenSpaceMatrix.m00) >> 16) * xStep) / i2) % i13);
-		int baseY = GameRuntime.currentHeight + ((((((GameObject.cameraMatrix.translationY - f240F) >> 16) * GameObject.screenSpaceMatrix.m00) >> 16) * xStep) / i2);
+		int parallaxGroupWidth = parallaxXOffsets[count];
+		int baseX = parallaxGroupWidth - (((((((GameObject.cameraMatrix.translationX >> 16) + 33000) * GameObject.screenSpaceMatrix.m00) >> 16) * moveSpeedNum) / moveSpeedDenom) % parallaxGroupWidth);
+		int baseY = GameRuntime.currentHeight + ((((((GameObject.cameraMatrix.translationY - f240F) >> 16) * GameObject.screenSpaceMatrix.m00) >> 16) * moveSpeedNum) / moveSpeedDenom);
 		for (int i = 0; i < count; i++) {
 			if (i < 2) {
-				GameRuntime.drawImageRes(paralaxXOffsets[i] + baseX, parallaxYOffsets[i] + baseY, imageIDs[parallaxImageIndices[i]]);
+				GameRuntime.drawImageRes(parallaxXOffsets[i] + baseX, parallaxYOffsets[i] + baseY, imageIDs[parallaxImageIndices[i]]);
 			}
 			if (i > 2) {
-				GameRuntime.drawImageRes((paralaxXOffsets[i] + baseX) - (i13 << 1), parallaxYOffsets[i] + baseY, imageIDs[parallaxImageIndices[i]]);
+				GameRuntime.drawImageRes((parallaxXOffsets[i] + baseX) - (parallaxGroupWidth << 1), parallaxYOffsets[i] + baseY, imageIDs[parallaxImageIndices[i]]);
 			}
-			GameRuntime.drawImageRes((paralaxXOffsets[i] + baseX) - i13, parallaxYOffsets[i] + baseY, imageIDs[parallaxImageIndices[i]]);
+			GameRuntime.drawImageRes((parallaxXOffsets[i] + baseX) - parallaxGroupWidth, parallaxYOffsets[i] + baseY, imageIDs[parallaxImageIndices[i]]);
 		}
 		if (stripeFillColor != -1) {
 			setBGColor(stripeFillColor, graphics);
@@ -730,9 +760,14 @@ public final class BounceGame {
 	public static boolean drawUIGraphics(UILayout ui, int type, int xpos, int ypos, int width, int height) {
 		GameRuntime.setBacklight(true);
 		Graphics grp = GameRuntime.getGraphicsObj();
-		int a2 = GameRuntime.updateDelta * GameRuntime.getUpdatesPerDraw();
+		int delta = GameRuntime.updateDelta * GameRuntime.getUpdatesPerDraw();
 		DirectGraphics directGraphics = DirectUtils.getDirectGraphics(grp);
-		if ((ui.uiID == 34 || ui.uiID == 25 || ui.uiID == 28 || ui.uiID == 29 || ui.uiID == 30) && type == 1) {
+		if ((ui.uiID == GameScene.INFO_FIELD_MESSAGE
+				|| ui.uiID == GameScene.MENU_PAUSE
+				|| ui.uiID == GameScene.CONFIRM_RESTART_LEVEL
+				|| ui.uiID == GameScene.CONFIRM_RETURN_LEVEL_SELECT
+				|| ui.uiID == GameScene.CONFIRM_EXIT_LEVEL) && type == 1) {
+			//Pause menu background
 			int[] xpoints = GeometryObject.TEMP_QUAD_XS;
 			int[] ypoints = GeometryObject.TEMP_QUAD_YS;
 			xpoints[0] = xpos;
@@ -750,68 +785,68 @@ public final class BounceGame {
 			GameRuntime.drawImageRes(xpos + width, ypos + height, 310);
 			drawTranslucentSoftkeyBar(directGraphics);
 			return false;
-		} else if (ui.uiID == 18) {
+		} else if (ui.uiID == GameScene.MENU_LEVEL_SELECT) {
 			if (type == 1) {
 				clearUIBackground(grp);
-				int i6 = GameRuntime.currentWidth >> 1;
-				int i7 = GameRuntime.currentHeight >> 1;
-				int b = ((short) GameRuntime.getImageAnimParamEx(331, 2)) + i7;
-				int b2 = ((short) GameRuntime.getImageAnimParamEx(331, 3)) + i7;
-				drawBookFrame(i6, i7, grp);
+				int screenCX = GameRuntime.currentWidth >> 1;
+				int screenCY = GameRuntime.currentHeight >> 1;
+				int b = ((short) GameRuntime.getImageAnimParamEx(331, 2)) + screenCY;
+				int b2 = ((short) GameRuntime.getImageAnimParamEx(331, 3)) + screenCY;
+				drawBookFrame(screenCX, screenCY, grp);
 				if (selectedLevelId != 0) {
-					GameRuntime.drawImageResAnchored(3, i7, 326, 6);
+					GameRuntime.drawImageResAnchored(3, screenCY, 326, 6); //left arrow
 				}
-				if (selectedLevelId != 14) {
-					GameRuntime.drawImageResAnchored(GameRuntime.currentWidth - 3, i7, 2, 10);
+				if (selectedLevelId != LevelID.LEVEL_IDX_MAX - 1) {
+					GameRuntime.drawImageResAnchored(GameRuntime.currentWidth - 3, screenCY, 2, 10); //right arrow
 				}
-				int i8 = 0;
-				int i9 = 0;
-				if (f319m < f323n) {
-					int i10 = f319m + a2;
-					f319m = i10;
-					if (i10 > f323n) {
-						f319m = f323n;
+				int topPageLevel = 0;
+				int bottomPageLevel = 0;
+				if (bookAnimationTime < targetBookAnimationTime) {
+					bookAnimationTime += delta;
+					if (bookAnimationTime > targetBookAnimationTime) {
+						bookAnimationTime = targetBookAnimationTime;
 					}
-					i8 = selectedLevelId;
-					i9 = f315l;
-				} else if (f319m > f323n) {
-					int i11 = f319m - a2;
-					f319m = i11;
-					if (i11 < f323n) {
-						f319m = f323n;
+					topPageLevel = selectedLevelId;
+					bottomPageLevel = lastSelectedLevelId;
+				} else if (bookAnimationTime > targetBookAnimationTime) {
+					bookAnimationTime -= delta;
+					if (bookAnimationTime < targetBookAnimationTime) {
+						bookAnimationTime = targetBookAnimationTime;
 					}
-					i8 = f315l;
-					i9 = selectedLevelId;
+					topPageLevel = lastSelectedLevelId;
+					bottomPageLevel = selectedLevelId;
 				}
-				if (f319m > 400 && f319m < 650) {
-					drawLevelSelectUI(i6, i7, i8, b, b2);
-					GameRuntime.drawAnimatedImageRes(i6, i7, 442, ((f319m - 400) << 1) / 250);
-				} else if (f319m > 400 || f319m <= 0) {
-					drawLevelSelectUI(i6, i7, selectedLevelId, b, b2);
+				if (bookAnimationTime > 400 && bookAnimationTime < 650) {
+					//grab page end
+					drawLevelSelectUI(screenCX, screenCY, topPageLevel, b, b2);
+					GameRuntime.drawAnimatedImageRes(screenCX, screenCY, 442, ((bookAnimationTime - 400) << 1) / 250);
+				} else if (bookAnimationTime > 400 || bookAnimationTime <= 0) {
+					//idle
+					drawLevelSelectUI(screenCX, screenCY, selectedLevelId, b, b2);
 				} else {
-					int i12 = ((i6 - 119) - 239) + 22;
-					int i13 = (i6 + 120) - 30;
-					int i14 = (i6 - 119) + 22;
-					int i15 = i12 + ((((i13 - 25) - i12) * f319m) / 400);
-					int i16 = (((i13 - i14) * f319m) / 400) + i14;
-					int i17 = (i7 - 158) - 3;
-					grp.setClip(0, 0, i15 + 3, GameRuntime.currentHeight);
-					drawLevelSelectUI(i6, i7, i8, b, b2);
-					grp.setClip(i16 - 2, 0, (GameRuntime.currentWidth - i16) + 2, GameRuntime.currentHeight);
-					drawLevelSelectUI(i6, i7, i9, b, b2);
+					int i12 = ((screenCX - 119) - 239) + 22;
+					int i13 = (screenCX + 120) - 30;
+					int i14 = (screenCX - 119) + 22;
+					int pageSplitXStart = i12 + ((((i13 - 25) - i12) * bookAnimationTime) / 400);
+					int pageSplitXEnd = (((i13 - i14) * bookAnimationTime) / 400) + i14;
+					int i17 = (screenCY - 158) - 3;
+					grp.setClip(0, 0, pageSplitXStart + 3, GameRuntime.currentHeight);
+					drawLevelSelectUI(screenCX, screenCY, topPageLevel, b, b2);
+					grp.setClip(pageSplitXEnd - 2, 0, (GameRuntime.currentWidth - pageSplitXEnd) + 2, GameRuntime.currentHeight);
+					drawLevelSelectUI(screenCX, screenCY, bottomPageLevel, b, b2);
 					grp.setClip(0, 0, GameRuntime.currentWidth, GameRuntime.currentHeight);
-					GameRuntime.drawImageRes(i15, i17, 377);
-					grp.setColor(15394508);
-					int i18 = ((i16 - i15) - 12) - 13;
-					grp.fillRect(i15 + 12, i17, i18, 295);
+					GameRuntime.drawImageRes(pageSplitXStart, i17, 377);
+					grp.setColor(0xEAE6CC);
+					int i18 = ((pageSplitXEnd - pageSplitXStart) - 12) - 13;
+					grp.fillRect(pageSplitXStart + 12, i17, i18, 295);
 					grp.setColor(0);
-					grp.fillRect(i15 + 12, i17, i18, 1);
-					grp.fillRect(i15 + 12, ((i17 + 307) - 1) - 12, i18, 1);
-					GameRuntime.drawImageRes(i18 + i15 + 12, i17, 378);
-					GameRuntime.drawImageRes(i6, i7, 376);
+					grp.fillRect(pageSplitXStart + 12, i17, i18, 1);
+					grp.fillRect(pageSplitXStart + 12, ((i17 + 307) - 1) - 12, i18, 1);
+					GameRuntime.drawImageRes(i18 + pageSplitXStart + 12, i17, 378);
+					GameRuntime.drawImageRes(screenCX, screenCY, 376);
 				}
 				GameRuntime.setTextStyle(-3, 3);
-				GameRuntime.setTextColor(0, 16742400);
+				GameRuntime.setTextColor(0, 0xFF7800);
 				GameRuntime.setTextColor(1, 0);
 				GameRuntime.drawImageRes(9, 9, 102);
 				String stringBuffer = getTotalEggCount() + "/450";
@@ -819,14 +854,25 @@ public final class BounceGame {
 				drawTranslucentSoftkeyBar(directGraphics);
 			}
 			return false;
-		} else if (ui.uiID == 25 || ui.uiID == 28 || ui.uiID == 29 || ui.uiID == 30 || ui.uiID == 15 || ui.uiID == 34 || type != 1) {
+		} else if (ui.uiID == GameScene.MENU_PAUSE
+				|| ui.uiID == GameScene.CONFIRM_RESTART_LEVEL
+				|| ui.uiID == GameScene.CONFIRM_RETURN_LEVEL_SELECT
+				|| ui.uiID == GameScene.CONFIRM_EXIT_LEVEL
+				|| ui.uiID == 15
+				|| ui.uiID == GameScene.INFO_FIELD_MESSAGE
+				|| type != 1) {
 			if (type == 1) {
 				drawTranslucentSoftkeyBar(directGraphics);
 			}
 			if (type == 4 || type == 2 || type == 9) {
 				return false;
 			}
-			if (ui.uiID == 25 || ui.uiID == 28 || ui.uiID == 29 || ui.uiID == 30 || ui.uiID == 34 || type != 10) {
+			if (ui.uiID == GameScene.MENU_PAUSE
+					|| ui.uiID == GameScene.CONFIRM_RESTART_LEVEL
+					|| ui.uiID == GameScene.CONFIRM_RETURN_LEVEL_SELECT
+					|| ui.uiID == GameScene.CONFIRM_EXIT_LEVEL
+					|| ui.uiID == GameScene.INFO_FIELD_MESSAGE
+					|| type != 10) {
 				return true;
 			}
 			grp.setClip(0, 0, GameRuntime.currentWidth, GameRuntime.currentHeight);
@@ -848,7 +894,7 @@ public final class BounceGame {
 			clearUIBackground(grp);
 			int i20 = GameRuntime.currentWidth >> 1;
 			int i21 = GameRuntime.currentHeight >> 1;
-			if (ui.uiID == 17) {
+			if (ui.uiID == GameScene.MENU_TITLE) {
 				int b3 = GameRuntime.getImageAnimParamEx(332, 0);
 				int i22 = b3 >> 16;
 				short s = (short) b3;
@@ -1130,7 +1176,7 @@ public final class BounceGame {
 	/* renamed from: e */
 	private void updateLoadingScreen() {
 		if (this.curSplashId + 1 >= SPLASH_SCREEN_LAYOUT_RESIDS.length) {
-			GameRuntime.startLoadScene(36);
+			GameRuntime.startLoadScene(GameScene.CALL_TITLE_MENU);
 		} else if (GameRuntime.isResourceLoadDone(SPLASH_SCREEN_LAYOUT_RESIDS[this.curSplashId + 1])) {
 			hasLoadingProgressBar = true;
 			this.curSplashId++;
@@ -1145,9 +1191,9 @@ public final class BounceGame {
 	private void levelEnded() {
 		resetParallaxStolenColors();
 		this.isLevelActive = false;
-		GameRuntime.startLoadScene(5);
-		mainMenuReturnUI = 31;
-		setPlayerState(0);
+		GameRuntime.startLoadScene(GameScene.EXIT_LEVEL);
+		exitLevelReturnScene = GameScene.INFO_CHAPTER_COMPLETE;
+		setPlayerState(PLAYER_STATE_PLAY);
 	}
 
 	/* renamed from: f */
@@ -1214,7 +1260,7 @@ public final class BounceGame {
 		this.ui.setElemDefaultAttribute(UIElement.FONT, -2);
 		this.ui.setAttribute(UILayout.FONT, -2);
 		switch (uiID) {
-			case 10: //high scores list
+			case GameScene.MENU_HIGH_SCORES: //high scores list
 				this.ui.loadFromResource(36);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
@@ -1226,14 +1272,17 @@ public final class BounceGame {
 				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
 				this.ui.setAttribute(UILayout.OFFSET_LEFT, LAYOUT_DEFAULT_HORIZONTAL_MARGIN - 2);
 
-				//HD stuff
-				//ui.setAttribute(UILayout.SOFTKEY_BAR, 64);
-				//ui.setAttribute(UILayout.FIXED_HEIGHT, 300);
+				//HD
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, 4);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (240 - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, 320 - LAYOUT_DEFAULT_VERTICAL_MARGIN - 36);
+				this.ui.setAttribute(UILayout.ANCHOR_CENTER, UILayout.ANCHOR_CENTER_BIT);
+
 				this.ui.setElemDefaultAttribute(3, 0);
 				this.ui.setElemDefaultAttribute(2, 32);
 				this.ui.setAttribute(UILayout.BLOCK_INCREMENT, GameRuntime.getFontHeight(-3) << 1);
 				this.ui.setTitle(StringManager.getMessage(MessageID.UI_HIGH_SCORE), -1, 1);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_BACK), 0, 17, true);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_BACK), 0, GameScene.MENU_TITLE, true);
 				boolean hasAnyHighScore = false;
 				for (int levelIdx = 0; levelIdx < LevelID.LEVEL_IDX_MAX; levelIdx++) {
 					if (getLevelGlobalHighScore(levelIdx) > 0) {
@@ -1260,7 +1309,7 @@ public final class BounceGame {
 					this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.EMPTY), -1, this.ui, -1));
 					break;
 				}
-			case 17: //main menu
+			case GameScene.MENU_TITLE: //main menu
 				this.ui.loadFromResource(37);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -2); //font
 				this.ui.setAttribute(UILayout.FONT, -2);
@@ -1268,43 +1317,50 @@ public final class BounceGame {
 				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, LAYOUT_MAIN_MENU_TITLE_PADDING);
 				this.ui.setAttribute(5, 128);
 
-				//for center
-				//ui.setAttribute(UILayout.VERTICAL_SPACING, 10);
-				//ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, 200);
-				//this.ui.setAttribute(UILayout.SOFTKEY_BAR, 64);
-				//this.ui.setAttribute(3, 32);
+				//HD
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, 22);
+				this.ui.setAttribute(UILayout.ANCHOR_CENTER, UILayout.ANCHOR_CENTER_BIT);
+				this.ui.setAttribute(UILayout.PACKED_HEIGHT, UILayout.PACKED_HEIGHT_BIT);
+
 				this.ui.setElemDefaultAttribute(UIElement.FONT_TEXT_COLOR_SELECTED, 0xFF7800);
 				this.ui.setTitle("", -1, 1);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_SELECT), 0, -2, true);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_LEAVE), 0, 9, false);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_LEAVE), 0, GameScene.QUIT_GAME, false);
 				if (isLevelUnlocked(1)) {
-					this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_CONTINUE), -1, this.ui, 18));
-					this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_NEW_GAME), -1, this.ui, 20));
+					this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_CONTINUE), -1, this.ui, GameScene.MENU_LEVEL_SELECT));
+					this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_NEW_GAME), -1, this.ui, GameScene.MENU_NEW_GAME));
 				} else {
-					this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_NEW_GAME), -1, this.ui, 18));
+					this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_NEW_GAME), -1, this.ui, GameScene.MENU_LEVEL_SELECT));
 					selectedLevelId = 0;
 				}
-				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_HIGH_SCORE), -1, this.ui, 10));
-				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_GUIDE), -1, this.ui, 22));
-				this.ui.setSelectedOption(lastMainMenuOption);
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_HIGH_SCORE), -1, this.ui, GameScene.MENU_HIGH_SCORES));
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_GUIDE), -1, this.ui, GameScene.MENU_GUIDE));
+				this.ui.setSelectedOption(lastMenuOption);
 				break;
-			case 18: //level select
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_SELECT), 0, 7, true);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_BACK), 0, 17, true);
+			case GameScene.MENU_LEVEL_SELECT: //level select
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_SELECT), 0, GameScene.ENTER_LEVEL, true);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_BACK), 0, GameScene.MENU_TITLE, true);
 				updateLevelStartSoftkeyByUnlock(this.ui);
 				break;
-			case 20: //start new game
+			case GameScene.MENU_NEW_GAME: //start new game
 				this.ui.loadFromResource(37);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
 				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, LAYOUT_DEFAULT_TITLE_PADDING_TOP);
 				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, LAYOUT_DEFAULT_TITLE_PADDING_BOTTOM);
+
+				//HD
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, 0);
+				this.ui.setAttribute(UILayout.MARGIN_BOTTOM, 180);
+				this.ui.setAttribute(UILayout.ANCHOR_CENTER, UILayout.ANCHOR_CENTER_BIT);
+				this.ui.setAttribute(UILayout.PACKED_HEIGHT, UILayout.PACKED_HEIGHT_BIT);
+
 				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_NEW_GAME), -1, 1);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_YES), 0, 11, false);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_NO), 0, 17, true);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_YES), 0, GameScene.START_NEW_GAME, false);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_NO), 0, GameScene.MENU_TITLE, true);
 				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.GAME_PROGRESS_WILL_BE_LOST), -1, this.ui, -1));
 				break;
-			case 22: //guide
+			case GameScene.MENU_GUIDE: //guide
 				this.ui.loadFromResource(36);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
@@ -1314,24 +1370,31 @@ public final class BounceGame {
 				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, LAYOUT_DEFAULT_TITLE_PADDING_BOTTOM);
 				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
 				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_VERTICAL_MARGIN);
+
+				//HD
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, 4);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (240 - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, 320 - LAYOUT_DEFAULT_VERTICAL_MARGIN - 36);
+				this.ui.setAttribute(UILayout.ANCHOR_CENTER, UILayout.ANCHOR_CENTER_BIT);
+
 				this.ui.setAttribute(UILayout.OFFSET_LEFT, LAYOUT_DEFAULT_HORIZONTAL_MARGIN - 2);
 				this.ui.setElemDefaultAttribute(3, 0);
 				this.ui.setElemDefaultAttribute(2, 32);
 				this.ui.setAttribute(UILayout.BLOCK_INCREMENT, GameRuntime.getFontHeight(-3) << 1);
 				this.ui.setTitle(StringManager.getMessage(MessageID.UI_GUIDE), -1, 1);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_BACK), 0, 17, true);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_BACK), 0, GameScene.MENU_TITLE, true);
 				this.ui.addElement(new UIElement(StringManager.getMessage(12), -1, this.ui, -1));
 				this.ui.addElement(new UIElement(StringManager.getMessage(13), 102, this.ui, -1));
 				this.ui.addElement(new UIElement(StringManager.getMessage(11), -1, this.ui, -1));
 				this.ui.addElement(new UIElement(StringManager.getMessage(14), 371, this.ui, -1));
 				this.ui.addElement(new UIElement(StringManager.getMessage(15), 372, this.ui, -1));
 				break;
-			case 24: //quit game
-				this.ui.setTitle(StringManager.getMessage(80), -1, 1);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(49), 0, 9, false);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(45), 0, 17, true);
+			case GameScene.CONFIRM_QUIT_GAME: //quit game
+				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_QUIT_GAME), -1, 1);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_YES), 0, GameScene.QUIT_GAME, false);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_NO), 0, GameScene.MENU_TITLE, true);
 				break;
-			case 25: //pause menu
+			case GameScene.MENU_PAUSE: //pause menu
 				this.ui.loadFromResource(37);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
@@ -1347,13 +1410,13 @@ public final class BounceGame {
 				this.ui.setAttribute(2, 0);
 				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_PAUSE_MENU), -1, 1);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_SELECT), 0, -2, true);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_QUIT), 0, 30, true);
-				this.ui.addElement(new UIElement(StringManager.getMessage(38), -1, this.ui, 8));
-				this.ui.addElement(new UIElement(StringManager.getMessage(37), -1, this.ui, 28));
-				this.ui.addElement(new UIElement(StringManager.getMessage(39), -1, this.ui, 29));
-				this.ui.setSelectedOption(lastMainMenuOption);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_QUIT), 0, GameScene.CONFIRM_EXIT_LEVEL, true);
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_CONTINUE_LEVEL), -1, this.ui, GameScene.UNPAUSE_LEVEL));
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_RESTART_LEVEL), -1, this.ui, GameScene.CONFIRM_RESTART_LEVEL));
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_LEVEL_SELECT), -1, this.ui, GameScene.CONFIRM_RETURN_LEVEL_SELECT));
+				this.ui.setSelectedOption(lastMenuOption);
 				break;
-			case 28: //confirm restart level
+			case GameScene.CONFIRM_RESTART_LEVEL: //confirm restart level
 				this.ui.loadFromResource(37);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
@@ -1366,15 +1429,15 @@ public final class BounceGame {
 				this.ui.setAttribute(3, 32);
 				this.ui.setAttribute(2, 0);
 				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_RESTART_LEVEL), -1, 1);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(49), 0, 37, false);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(45), 0, 25, true);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_YES), 0, GameScene.RESTART_LEVEL, false);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_NO), 0, GameScene.MENU_PAUSE, true);
 				this.ui.addElement(new UIElement(StringManager.getMessage(3), -1, this.ui, -1));
 				break;
-			case 29: //confirm return to level select
+			case GameScene.CONFIRM_RETURN_LEVEL_SELECT: //confirm return to level select
 				this.ui.loadFromResource(37);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
-				mainMenuReturnUI = 18;
+				exitLevelReturnScene = GameScene.MENU_LEVEL_SELECT;
 				this.ui.setElemDefaultAttribute(UIElement.AUTO_WIDTH, 256);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
@@ -1383,16 +1446,16 @@ public final class BounceGame {
 				this.ui.setAttribute(4, 64);
 				this.ui.setAttribute(3, 32);
 				this.ui.setAttribute(2, 0);
-				this.ui.setTitle(StringManager.getMessage(87), -1, 1);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(49), 0, 5, false);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(45), 0, 25, true);
-				this.ui.addElement(new UIElement(StringManager.getMessage(3), -1, this.ui, -1));
+				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_RETURN_LEVEL_SELECT), -1, 1);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_YES), 0, GameScene.EXIT_LEVEL, false);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_NO), 0, GameScene.MENU_PAUSE, true);
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.LEVEL_PROGRESS_WILL_BE_LOST), -1, this.ui, -1));
 				break;
-			case 30: //confirm quit level
+			case GameScene.CONFIRM_EXIT_LEVEL: //confirm quit level
 				this.ui.loadFromResource(37);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
-				mainMenuReturnUI = 17;
+				exitLevelReturnScene = GameScene.MENU_TITLE;
 				this.ui.setElemDefaultAttribute(UIElement.AUTO_WIDTH, 256);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
@@ -1402,11 +1465,11 @@ public final class BounceGame {
 				this.ui.setAttribute(3, 32);
 				this.ui.setAttribute(2, 0);
 				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_QUIT_GAME), -1, 1);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_YES), 0, 5, false);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_NO), 0, 25, true);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_YES), 0, GameScene.EXIT_LEVEL, false);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_NO), 0, GameScene.MENU_PAUSE, true);
 				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.LEVEL_PROGRESS_WILL_BE_LOST), -1, this.ui, -1));
 				break;
-			case 31: //chapter complete
+			case GameScene.INFO_CHAPTER_COMPLETE: //chapter complete
 				this.ui.loadFromResource(36);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
@@ -1418,14 +1481,21 @@ public final class BounceGame {
 				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_VERTICAL_MARGIN);
 				this.ui.setAttribute(UILayout.OFFSET_LEFT, LAYOUT_DEFAULT_HORIZONTAL_MARGIN - 2);
 				this.ui.setTitle(StringManager.getMessage(MessageID.CHAPTER_COMPLETE), -1, 1);
+
+				//HD
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, 4);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (240 - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, 320 - LAYOUT_DEFAULT_VERTICAL_MARGIN - 36);
+				this.ui.setAttribute(UILayout.ANCHOR_CENTER, UILayout.ANCHOR_CENTER_BIT);
+
 				if (this.wasSuperBounceJustUnlocked) {
-					this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(46), 0, 33, true);
+					this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_OK), 0, GameScene.INFO_GAME_COMPLETED, true);
 				} else if (this.wasFinalLevelJustBeaten) {
-					this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(46), 0, 32, true);
+					this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_OK), 0, GameScene.INFO_GAME_BEATEN, true);
 				} else {
-					this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(46), 0, 18, true);
+					this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_OK), 0, GameScene.MENU_LEVEL_SELECT, true);
 				}
-				this.ui.addElement(new UIElement(StringManager.getMessage(42, calcScore), -1, this.ui, -1));
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_SCORE, calcScore), -1, this.ui, -1));
 				String eggsCollectedStr = eggCount + "/" + bonusLevelEggLimit;
 				UIElement eggsCollectedUI = new UIElement(eggsCollectedStr, 102, this.ui, -1);
 				if (isTextRightToLeft) {
@@ -1441,38 +1511,38 @@ public final class BounceGame {
 				}
 				this.ui.addElement(timerUI);
 				if (this.highScoreBeaten) {
-					UIElement fVar3 = new UIElement(StringManager.getMessage(40), -1, this.ui, -1);
-					fVar3.setAttribute(1, 8);
-					fVar3.setText(StringManager.getMessage(40), -1);
-					this.ui.addElement(fVar3);
+					UIElement newHighScoreText = new UIElement(StringManager.getMessage(MessageID.UI_NEW_HIGH_SCORE), -1, this.ui, -1);
+					newHighScoreText.setAttribute(1, 8);
+					newHighScoreText.setText(StringManager.getMessage(MessageID.UI_NEW_HIGH_SCORE), -1);
+					this.ui.addElement(newHighScoreText);
 				}
 				if (wasLevelBeaten(LevelID.FINAL_RIDE) && !this.wasFinalLevelJustBeaten && !isBonusLevel(currentLevel)) {
-					boolean z2 = false;
+					boolean anyMedalsWon = false;
 					if (this.timerChallengeTrophy > -1) {
 						short timerTrophyImageId = TROPHY_IMAGE_IDS[this.timerChallengeTrophy];
-						z2 = true;
-						UIElement fVar4 = new UIElement(StringManager.getMessage(MessageID.TIMER_CHALLENGE), timerTrophyImageId, this.ui, -1);
-						fVar4.setAttribute(2, 16);
-						fVar4.setAttribute(3, 64);
-						fVar4.setAttribute(1, 8);
-						fVar4.setText(StringManager.getMessage(8), timerTrophyImageId);
-						this.ui.addElement(fVar4);
+						anyMedalsWon = true;
+						UIElement timerChallengeText = new UIElement(StringManager.getMessage(MessageID.TIMER_CHALLENGE), timerTrophyImageId, this.ui, -1);
+						timerChallengeText.setAttribute(2, 16);
+						timerChallengeText.setAttribute(3, 64);
+						timerChallengeText.setAttribute(1, 8);
+						timerChallengeText.setText(StringManager.getMessage(MessageID.TIMER_CHALLENGE), timerTrophyImageId);
+						this.ui.addElement(timerChallengeText);
 					}
 					if (this.collectionChallengeTrophy > -1) {
 						short collectionTrophyImageId = TROPHY_IMAGE_IDS[this.collectionChallengeTrophy];
-						z2 = true;
-						UIElement fVar5 = new UIElement(StringManager.getMessage(MessageID.COLLECTION_CHALLENGE), collectionTrophyImageId, this.ui, -1);
-						fVar5.setAttribute(2, 16);
-						fVar5.setAttribute(3, 64);
-						fVar5.setAttribute(1, 8);
-						fVar5.setText(StringManager.getMessage(MessageID.COLLECTION_CHALLENGE), collectionTrophyImageId);
-						this.ui.addElement(fVar5);
+						anyMedalsWon = true;
+						UIElement collectionChallengeText = new UIElement(StringManager.getMessage(MessageID.COLLECTION_CHALLENGE), collectionTrophyImageId, this.ui, -1);
+						collectionChallengeText.setAttribute(2, 16);
+						collectionChallengeText.setAttribute(3, 64);
+						collectionChallengeText.setAttribute(1, 8);
+						collectionChallengeText.setText(StringManager.getMessage(MessageID.COLLECTION_CHALLENGE), collectionTrophyImageId);
+						this.ui.addElement(collectionChallengeText);
 					}
-					if (!z2) {
-						UIElement fVar6 = new UIElement(StringManager.getMessage(41), -1, this.ui, -1);
-						fVar6.setAttribute(1, 8);
-						fVar6.setText(StringManager.getMessage(41), -1);
-						this.ui.addElement(fVar6);
+					if (!anyMedalsWon) {
+						UIElement noMedalsWonText = new UIElement(StringManager.getMessage(MessageID.UI_NO_MEDALS_WON), -1, this.ui, -1);
+						noMedalsWonText.setAttribute(1, 8);
+						noMedalsWonText.setText(StringManager.getMessage(MessageID.UI_NO_MEDALS_WON), -1);
+						this.ui.addElement(noMedalsWonText);
 					}
 				}
 				this.wasFinalLevelJustBeaten = false;
@@ -1482,7 +1552,7 @@ public final class BounceGame {
 				this.highScoreBeaten = false;
 				cycleLevelSelectRight(this.ui, false);
 				break;
-			case 32: //all levels beaten
+			case GameScene.INFO_GAME_BEATEN: //all levels beaten
 				this.ui.loadFromResource(36);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
@@ -1493,11 +1563,18 @@ public final class BounceGame {
 				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_VERTICAL_MARGIN);
 				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
 				this.ui.setAttribute(UILayout.OFFSET_LEFT, LAYOUT_DEFAULT_HORIZONTAL_MARGIN - 2);
-				this.ui.setTitle(StringManager.getMessage(81), -1, 1);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_OK), 0, 18, true);
+
+				//HD
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, 4);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (240 - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, 320 - LAYOUT_DEFAULT_VERTICAL_MARGIN - 36);
+				this.ui.setAttribute(UILayout.ANCHOR_CENTER, UILayout.ANCHOR_CENTER_BIT);
+
+				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_GAME_BEATEN), -1, 1);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_OK), 0, GameScene.MENU_LEVEL_SELECT, true);
 				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.ALL_LEVELS_BEATEN), -1, this.ui, -1));
 				break;
-			case 33: //all levels completed
+			case GameScene.INFO_GAME_COMPLETED: //all levels completed
 				this.ui.loadFromResource(36);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
@@ -1508,11 +1585,18 @@ public final class BounceGame {
 				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_VERTICAL_MARGIN);
 				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
 				this.ui.setAttribute(UILayout.OFFSET_LEFT, LAYOUT_DEFAULT_HORIZONTAL_MARGIN - 2);
-				this.ui.setTitle(StringManager.getMessage(82), -1, 1);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_OK), 0, 18, true);
+
+				//HD
+				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, 4);
+				this.ui.setAttribute(UILayout.FIXED_WIDTH, (240 - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, 320 - LAYOUT_DEFAULT_VERTICAL_MARGIN - 36);
+				this.ui.setAttribute(UILayout.ANCHOR_CENTER, UILayout.ANCHOR_CENTER_BIT);
+
+				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_GAME_COMPLETED), -1, 1);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_OK), 0, GameScene.MENU_LEVEL_SELECT, true);
 				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.ALL_LEVELS_COMPLETED), -1, this.ui, -1));
 				break;
-			case 34: //field message
+			case GameScene.INFO_FIELD_MESSAGE: //field message
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -1);
 				this.ui.setAttribute(UILayout.FONT, -1);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
@@ -1523,7 +1607,7 @@ public final class BounceGame {
 				this.ui.setAttribute(3, 32);
 				this.ui.setAttribute(2, 0);
 				this.ui.setTitle("", -1, 1);
-				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_OK), 0, 35, true);
+				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_OK), 0, GameScene.CLOSE_FIELD_MESSAGE, true);
 				if (reqReloadFieldMsg) {
 					this.ui.addElement(new UIElement(lastFieldMsg, -1, this.ui, -1));
 					reqReloadFieldMsg = false;
@@ -1601,7 +1685,7 @@ public final class BounceGame {
 				totalGameTime += GameRuntime.updateDelta;
 				waterSingletonFlag = false;
 				switch (getPlayerState()) {
-					case 0:
+					case PLAYER_STATE_PLAY:
 						bounceObj.zCoord = 0;
 						if (EventObject.eventVars[1] != CONTROLLER_FROZEN) {
 							levelTimer += GameRuntime.updateDelta;
@@ -1646,11 +1730,12 @@ public final class BounceGame {
 						if (EventObject.eventVars[4] == 0 && i2 != 0) {
 							bounceObj.resetPhysics();
 						}
-						if (bounceObj.localObjectMatrix.translationY < rootLevelObj.allBBoxMinY && EventObject.eventVars[0] == 0) {
-							setPlayerState(1); //die
+						if (bounceObj.localObjectMatrix.translationY < rootLevelObj.allBBoxMinY && getPlayerState() == PLAYER_STATE_WIN) {
+							//sanity death boundary
+							setPlayerState(PLAYER_STATE_LOSE);
 						}
 						if (eggCount == bonusLevelEggLimit && isBonusLevel(currentLevel)) {
-							setPlayerState(2); //win
+							setPlayerState(PLAYER_STATE_WIN);
 						}
 						EventObject.eventVars[3] = bounceObj.ballForme;
 						EventObject.eventVars[4] = (int) bounceObj.curVelocity;
@@ -1682,18 +1767,18 @@ public final class BounceGame {
 							}
 						}
 						break;
-					case 1:
+					case PLAYER_STATE_LOSE:
 						GameRuntime.playMusic(SoundID.ME_LOSE, 1);
-						setPlayerState(3);
+						setPlayerState(PLAYER_STATE_LOSE_UPDATE);
 						exitWaitTimer = 3000;
 						deathBaseY = bounceObj.localObjectMatrix.translationY;
 						if (currentLevel == LevelID.FINAL_RIDE) {
 							EventObject.finalBossTimer = 0;
 						}
 						break;
-					case 2:
+					case PLAYER_STATE_WIN:
 						GameRuntime.playMusic(SoundID.ME_WIN, 1);
-						setPlayerState(4);
+						setPlayerState(PLAYER_STATE_WIN_UPDATE);
 						exitWaitTimer = 3000;
 						bounceObj.resetPhysics();
 						if (isBonusLevel(currentLevel)) {
@@ -1701,18 +1786,18 @@ public final class BounceGame {
 						}
 						winParticle.emitCircle(20, bounceObj.localObjectMatrix.translationX, bounceObj.localObjectMatrix.translationY, 740, 0, 1840, 230);
 						break;
-					case 3: //dying -> return to checkpoint
+					case PLAYER_STATE_LOSE_UPDATE: //dying -> return to checkpoint
 						exitWaitTimer -= GameRuntime.updateDelta;
 						bounceObj.updateDeathAnimation();
 						if (exitWaitTimer <= 0) {
 							bounceObj.setPosXY(checkpointPosX, checkpointPosY);
 							reqCameraSnap = true;
-							setPlayerState(0);
+							setPlayerState(PLAYER_STATE_PLAY);
 							bounceObj.fadeColor = 0xFF000000;
 							GameRuntime.playMusic(getLevelMusicID(), -1);
 						}
 						break;
-					case 4:
+					case PLAYER_STATE_WIN_UPDATE:
 						//exit level and update stats
 						exitWaitTimer -= GameRuntime.updateDelta;
 						bounceObj.jump(true);
@@ -1818,7 +1903,7 @@ public final class BounceGame {
 				GameRuntime.setBacklight(true);
 				Graphics graphics = GameRuntime.getGraphicsObj();
 				DirectGraphics directGraphics = DirectUtils.getDirectGraphics(graphics);
-				graphics.setClip(0, 0, f353x, f354y);
+				graphics.setClip(0, 0, renderClipWidth, renderClipHeight);
 				int levelType = getLevelType(currentLevel);
 				short[] sArr4 = f307i;
 				short[] sArr5 = f311j;
@@ -1875,15 +1960,19 @@ public final class BounceGame {
 					i17 += i14;
 					i18 += i15;
 				}
+				//bugfix: on high resolutions, not enough parallaxes were generated, resulting in early culling
+				//we compensate this by generating more parallaxes for larger screen sizes
+				int pscale = ((renderClipWidth + 239) / 240) * ((renderClipHeight + 319) / 320);
+				checkReallocParallax((pscale * PARALLAX_MAX_COUNT) + 1);
 				mRNG.setSeed(currentLevel + 1);
 				if (levelType == 2) {
-					drawBGParallax(fixedPosParallaxes, 5, 100, 600, 100, -80, 50, 2, -1, graphics);
-					drawBGParallax(sArr, 20, 100, GameRuntime.getImageMapParam(sArr[0], ImageMap.PARAM_WIDTH), 0, -50, 0, 3, 1380668, graphics);
-					drawBGParallax(sArr2, 50, 100, GameRuntime.getImageMapParam(sArr2[0], ImageMap.PARAM_WIDTH), 0, -30, 0, 3, 131610, graphics);
+					drawBGParallax(fixedPosParallaxes, 5, 100, 600, 100, -80, 50, 2 * pscale, -1, graphics);
+					drawBGParallax(sArr, 20, 100, GameRuntime.getImageMapParam(sArr[0], ImageMap.PARAM_WIDTH), 0, -50, 0, 3 * pscale, 0x15113C, graphics);
+					drawBGParallax(sArr2, 50, 100, GameRuntime.getImageMapParam(sArr2[0], ImageMap.PARAM_WIDTH), 0, -30, 0, 3 * pscale, 0x02021A, graphics);
 				} else {
-					drawBGParallax(sArr, 20, 100, 200, 140, -200, 200, 5, -1, graphics);
-					drawBGParallax(sArr2, 50, 100, 100, 70, -70, 300, 5, -1, graphics);
-					drawBGParallax(sArr3, 80, 100, 150, 100, -70, 300, 5, -1, graphics);
+					drawBGParallax(sArr, 20, 100, 200, 140, -200, 200, PARALLAX_MAX_COUNT * pscale, -1, graphics);
+					drawBGParallax(sArr2, 50, 100, 100, 70, -70, 300, PARALLAX_MAX_COUNT * pscale, -1, graphics);
+					drawBGParallax(sArr3, 80, 100, 150, 100, -70, 300, PARALLAX_MAX_COUNT * pscale, -1, graphics);
 				}
 				mRNG.setSeed(System.currentTimeMillis());
 				GameObject.drawSceneTree(rootLevelObj, graphics, directGraphics);
@@ -1915,18 +2004,21 @@ public final class BounceGame {
 
 	/* renamed from: b */
 	public final int loadScene(int sceneId, int sceneResult) {
-		if (!(sceneId == 17 || sceneId == 25)) {
-			lastMainMenuOption = 0;
+		if (!(sceneId == GameScene.MENU_TITLE || sceneId == GameScene.MENU_PAUSE)) {
+			lastMenuOption = 0;
 		}
 		switch (sceneId) {
-			case 0:
-				GameRuntime.startLoadScene(2);
+			case GameScene.ENTRYPOINT:
+				GameRuntime.startLoadScene(GameScene.INIT);
 				return 0;
-			case 1:
+			case GameScene.LOAD_SAVE_DATA:
 				if (sceneResult >= 0 && sceneResult < SPLASH_SCREEN_LAYOUT_RESIDS.length) {
 					if (sceneResult == 0) {
 						this.curSplashId = -1;
 						this.gameMainState = 2;
+
+						this.drawUI = null;
+						GameRuntime.resetSoftkeys(); //not present in the original game, disables softkeys on soft-reset
 					}
 					GameRuntime.loadResource(SPLASH_SCREEN_LAYOUT_RESIDS[sceneResult]);
 					return sceneResult + 1;
@@ -1960,7 +2052,7 @@ public final class BounceGame {
 					System.out.println("Saved data loaded");
 					return 0;
 				}
-			case 2:
+			case GameScene.INIT:
 				if (sceneResult == 0) {
 					return 1;
 				}
@@ -1972,12 +2064,12 @@ public final class BounceGame {
 				}
 				if (this.drawUI == null || this.drawUI.uiID == 14) {
 					GameRuntime.setMusicEnabled(true);
-					GameRuntime.startLoadScene(1);
+					GameRuntime.startLoadScene(GameScene.LOAD_SAVE_DATA);
 				} else {
-					setUI(19);
+					setUI(GameScene.MENU_SOFTLOCK); //forbid soft-resetting
 				}
 				return 0;
-			case 5: //return to level select
+			case GameScene.EXIT_LEVEL: //exit level
 				if (sceneResult == 0) {
 					GameRuntime.stopMusic();
 					freeIngameData();
@@ -1986,11 +2078,11 @@ public final class BounceGame {
 					return 0;
 				} else {
 					this.gameMainState = 3;
-					setUI(mainMenuReturnUI);
+					setUI(exitLevelReturnScene);
 					GameRuntime.playMusic(SoundID.TITLE_MENU, -1);
 					return 0;
 				}
-			case 6:
+			case GameScene.LOAD_LEVEL:
 			case 15: //load level
 				if (sceneResult == 0) {
 					GameRuntime.stopMusic();
@@ -2056,8 +2148,8 @@ public final class BounceGame {
 						isFieldMessageShowing = false;
 						waterSingletonFlag = false;
 						isBlockingEvent = false;
-						GameObject.screenSpaceMatrix.translationX = GameRuntime.currentWidth << 15;
-						GameObject.screenSpaceMatrix.translationY = GameRuntime.currentHeight << 15;
+						GameObject.setScreenSpaceMatrixByWindow(GameRuntime.currentWidth, GameRuntime.currentHeight);
+						BounceObject.updateScreenSpaceConstants();
 						byte[] cannonLevel = (byte[]) GameRuntime.getLoadedResData((int) LEVEL_RESIDS[CANNON_LEVEL_INDEX]);
 						cannonModels = new GameObject[GameObject.readShort(cannonLevel, 8)];
 						byte cmnKey;
@@ -2083,7 +2175,6 @@ public final class BounceGame {
 							pos += dataSize;
 						}
 						byte[] levelData = (byte[]) GameRuntime.getLoadedResData((int) LEVEL_RESIDS[currentLevel]);
-						int playerDataOffs = 0;
 						if (levelData != null) {
 							objectCount = GameObject.readShort(levelData, 8);
 							levelObjects = new GameObject[objectCount];
@@ -2126,7 +2217,6 @@ public final class BounceGame {
 										BounceObject player = new BounceObject(true);
 										bounceObj = player;
 										player.setObjectId(objID);
-										playerDataOffs = afterHeaderPos;
 										player.readData(levelData, afterHeaderPos);
 										player.initialize();
 										levelObjects[objID] = player;
@@ -2240,10 +2330,9 @@ public final class BounceGame {
 							GameObject.allocateRenderPool(objID); //okay to be a bit much, it's just a pointer array
 							GeometryObject.TEMP_QUAD_XS = new int[maxVerticesPerObj];
 							GeometryObject.TEMP_QUAD_YS = new int[maxVerticesPerObj];
-							int[] iArr = new int[72];
-							EventObject.eventVars = iArr;
-							iArr[1] = 0;
-							setPlayerState(0);
+							EventObject.eventVars = new int[72];
+							setPlayerState(PLAYER_STATE_PLAY);
+							EventObject.eventVars[1] = 0;
 							EventObject.eventVars[2] = 0;
 							EventObject.eventVars[7] = 0;
 							GameRuntime.unloadResource(LEVEL_RESIDS[currentLevel]);
@@ -2282,7 +2371,7 @@ public final class BounceGame {
 					}
 					return 0;
 				}
-			case 11: //start NG+
+			case GameScene.START_NEW_GAME: //start NG+
 				for (int saveIndex = 0; saveIndex < levelSaveData.length; saveIndex++) {
 					if ((saveIndex + 1) % 4 != 0) {
 						levelSaveData[saveIndex] = 0;
@@ -2292,16 +2381,16 @@ public final class BounceGame {
 				selectedLevelId = 0;
 				serializeSaveData();
 				this.isLevelActive = false;
-				setUI(18);
+				setUI(GameScene.MENU_LEVEL_SELECT);
 				return 0;
 			case 21:
 			case 22:
-				lastMainMenuOption = this.ui.getSelectedOption();
+				lastMenuOption = this.ui.getSelectedOption();
 				setUI(sceneId);
 				return 0;
 			case 27:
 				return 0;
-			case 36: //go to main menu
+			case GameScene.CALL_TITLE_MENU: //go to main menu
 				if (sceneResult == 0) {
 					GameRuntime.unloadResource(SPLASH_SCREEN_LAYOUT_RESIDS[SPLASH_SCREEN_LAYOUT_RESIDS.length - 1]);
 					return 1;
@@ -2310,7 +2399,7 @@ public final class BounceGame {
 				} else {
 					this.gameMainState = 3;
 					GameRuntime.playMusic(SoundID.TITLE_MENU, -1);
-					setUI(17);
+					setUI(GameScene.MENU_TITLE);
 					return 0;
 				}
 			default:
@@ -2318,11 +2407,33 @@ public final class BounceGame {
 		}
 	}
 
+	private static final int[] CHEAT_COMBO_DEBUG_SCENE_CALL = new int[]{KeyCode.NUM3, KeyCode.NUM1, KeyCode.NUM3};
+
+	private int debugSceneCallIdx = -1;
+	private int debugSceneCallBuffer = 0;
+
 	/* renamed from: b */
 	public final void handleKeyPress(int keyCode) {
 		if (this.drawUI != null) {
 			UILayout ui = this.drawUI;
-			if (ui.uiID == 18) {
+			if (ui.uiID == GameScene.MENU_LEVEL_SELECT) {
+				if (debugSceneCallIdx != -1) {
+					int num = keyCode - KeyCode.NUM0;
+					if (num >= 0 && num <= 9) {
+						debugSceneCallBuffer *= 10;
+						debugSceneCallBuffer += num;
+					} else if (keyCode == KeyCode.SOFTKEY_MIDDLE) {
+						debugSceneCallIdx = -1;
+						System.out.println("Calling debug scene " + debugSceneCallBuffer);
+						GameRuntime.initHID(GameRuntime.CONTROL_MODE_GAME);
+						changeScene(debugSceneCallBuffer);
+					} else {
+						GameRuntime.initHID(GameRuntime.CONTROL_MODE_GAME);
+						debugSceneCallIdx = -1;
+					}
+					return;
+				}
+
 				if (enableCheats) {
 					if (CHEAT_COMBO_ALL_UNLOCK[cheatComboIndex] == keyCode) {
 						if (++cheatComboIndex == CHEAT_COMBO_ALL_UNLOCK.length) {
@@ -2345,10 +2456,19 @@ public final class BounceGame {
 							updateLevelStartSoftkeyByUnlock(ui);
 							serializeSaveData();
 						}
+					} else if (CHEAT_COMBO_DEBUG_SCENE_CALL[cheatComboIndex] == keyCode) {
+						if (++cheatComboIndex == CHEAT_COMBO_DEBUG_SCENE_CALL.length) {
+							System.out.println("Cheat activated: debug scene call");
+							debugSceneCallIdx = 0;
+							debugSceneCallBuffer = 0;
+							cheatComboIndex = 0;
+							GameRuntime.initHID(GameRuntime.CONTROL_MODE_RAW);
+						}
 					} else {
 						cheatComboIndex = 0;
 					}
 				}
+
 				switch (keyCode) {
 					case KeyCode.LEFT:
 						cycleLevelSelectLeft(ui, true);
@@ -2366,7 +2486,7 @@ public final class BounceGame {
 				//automatically win the level
 				if (CHEAT_COMBO_ALL_UNLOCK[cheatComboIndex] == keyCode && (EventObject.eventVars[1] == CONTROLLER_NORMAL || EventObject.eventVars[1] == CONTROLLER_CANNON)) {
 					if (++cheatComboIndex == CHEAT_COMBO_ALL_UNLOCK.length) {
-						setPlayerState(2);
+						setPlayerState(PLAYER_STATE_WIN);
 						cheatComboIndex = 0;
 						eggCount = 30;
 					}
@@ -2379,7 +2499,7 @@ public final class BounceGame {
 					levelPaused = true;
 					break;
 				case KeyCode.STAR:
-					if (EventObject.eventVars[1] == CONTROLLER_NORMAL && EventObject.eventVars[0] != 3) {
+					if (EventObject.eventVars[1] == CONTROLLER_NORMAL && getPlayerState() != PLAYER_STATE_LOSE_UPDATE) {
 						bounceObj.cycleForme();
 					}
 					break;
@@ -2398,7 +2518,7 @@ public final class BounceGame {
 			GameRuntime.loadResource(-1);
 			GameRuntime.loadResource(-2);
 			GameRuntime.loadResource(-3);
-			GameRuntime.startLoadScene(0);
+			GameRuntime.startLoadScene(GameScene.ENTRYPOINT);
 		} else if (eventId == GameRuntime.SYSTEM_EVENT_PAUSE && this.gameMainState == 4) {
 			levelPaused = true;
 			if (isFieldMessageShowing) {
@@ -2408,51 +2528,59 @@ public final class BounceGame {
 			} else if (!reqReloadFieldMsg) {
 				lastFieldMsg = null;
 			}
+		} else if (eventId == GameRuntime.SYSTEM_EVENT_RESIZE) { //added for resizing support
+			if (GameRuntime.currentWidth > 0 && GameRuntime.currentHeight > 0) {
+				renderClipWidth = GameRuntime.currentWidth;
+				renderClipHeight = GameRuntime.currentHeight;
+				GameObject.setScreenSpaceMatrixByWindow(GameRuntime.currentWidth, GameRuntime.currentHeight);
+				BounceObject.updateScreenSpaceConstants();
+			}
 		}
 	}
 
 	/* renamed from: d */
 	public final void changeScene(final int sceneId) {
-		if (sceneId != 17 && sceneId != 25) {
-			lastMainMenuOption = 0;
+		if (sceneId != GameScene.MENU_TITLE && sceneId != GameScene.MENU_PAUSE) {
+			lastMenuOption = 0;
 		}
 		switch (sceneId) {
-			case 2:
-			case 5:
-			case 6:
-			case 11:
+			case GameScene.ENTRYPOINT: //not present in original game, added for debug
+			case GameScene.INIT:
+			case GameScene.EXIT_LEVEL:
+			case GameScene.LOAD_LEVEL:
+			case GameScene.START_NEW_GAME:
 			case 15:
 			case 21:
-			case 22:
+			case GameScene.MENU_GUIDE:
 			case 27: {
 				GameRuntime.startLoadScene(sceneId);
 				break;
 			}
-			case 10:
-			case 20:
-			case 28:
-			case 29:
-			case 30: {
-				lastMainMenuOption = this.ui.getSelectedOption();
+			case GameScene.MENU_HIGH_SCORES:
+			case GameScene.MENU_NEW_GAME:
+			case GameScene.CONFIRM_RESTART_LEVEL:
+			case GameScene.CONFIRM_RETURN_LEVEL_SELECT:
+			case GameScene.CONFIRM_EXIT_LEVEL: {
+				lastMenuOption = this.ui.getSelectedOption();
 			}
-			case 17:
-			case 18:
+			case GameScene.MENU_TITLE:
+			case GameScene.MENU_LEVEL_SELECT:
 			case 19:
 			case 23:
 			case 24:
-			case 25:
+			case GameScene.MENU_PAUSE:
 			case 26:
-			case 31:
-			case 32:
-			case 33: {
+			case GameScene.INFO_CHAPTER_COMPLETE:
+			case GameScene.INFO_GAME_BEATEN:
+			case GameScene.INFO_GAME_COMPLETED: {
 				this.setUI(sceneId);
 				break;
 			}
-			case 9: {
+			case GameScene.QUIT_GAME: {
 				GameRuntime.quit();
 				break;
 			}
-			case 35: { //field message advance
+			case GameScene.CLOSE_FIELD_MESSAGE: { //field message advance
 				isFieldMessageShowing = false;
 				this.setIngameHID();
 				if (reqQuitLevelAfterFieldMessage) {
@@ -2464,20 +2592,20 @@ public final class BounceGame {
 			case 13: {
 				break;
 			}
-			case 37: { //restart level
+			case GameScene.RESTART_LEVEL: { //restart level
 				resetParallaxStolenColors();
 				//fall through
 			}
-			case 7: {
+			case GameScene.ENTER_LEVEL: {
 				if (isLevelUnlocked(selectedLevelId)) { //enter level
-					f319m = f323n;
+					bookAnimationTime = targetBookAnimationTime;
 					this.isLevelActive = false;
 					currentLevel = selectedLevelId;
 					GameRuntime.startLoadScene(6); //load level
 				}
 				break;
 			}
-			case 8: { //unpause
+			case GameScene.UNPAUSE_LEVEL: { //unpause
 				levelPaused = false;
 				this.setIngameHID();
 				if (!levelPaused) {

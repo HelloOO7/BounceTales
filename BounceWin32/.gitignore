@@ -1,3 +1,6 @@
 build/
 dist/
 src/bouncetales/*
+hs_err_pid*
+options.dat
+save/

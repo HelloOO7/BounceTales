@@ -223,10 +223,12 @@ public final class WaterObject extends GameObject {
 				int length = (((width << 8) << 10) / this.splashYOffsets.length) >> 8;
 				int[] xPoints = GeometryObject.TEMP_QUAD_XS;
 				int[] yPoints = GeometryObject.TEMP_QUAD_YS;
+				//seafloor
 				xPoints[0] = maxx;
 				yPoints[0] = maxy;
 				xPoints[1] = minx;
 				yPoints[1] = maxy;
+				//surface
 				int nPoints = 2;
 				int vertIdx = 2;
 				while (vertIdx < this.splashYOffsets.length + 2) {

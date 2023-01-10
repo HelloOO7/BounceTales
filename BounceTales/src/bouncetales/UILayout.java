@@ -11,6 +11,7 @@ import javax.microedition.lcdui.Graphics;
 public final class UILayout {
 
 	public static final int SOFTKEY_BAR = 2;
+	public static final int PACKED_HEIGHT = 3;
 	public static final int ANCHOR_CENTER = 4;
 	public static final int TITLE_PADDING_TOP = 6;
 	public static final int TITLE_PADDING_BOTTOM = 7;
@@ -29,6 +30,10 @@ public final class UILayout {
 	public static final int SOFTKEY_BAR_COLOR = 21;
 	public static final int FONT_TEXT_COLOR = 24;
 	public static final int FONT_SHADOW_COLOR = 25;
+	
+	public static final int SOFTKEY_BAR_BIT = 16;
+	public static final int PACKED_HEIGHT_BIT = 32;
+	public static final int ANCHOR_CENTER_BIT = 64;
 
 	/* renamed from: e */
 	private static final int[] f118e = new int[4];
@@ -40,6 +45,7 @@ public final class UILayout {
 	private static final int[] DEFAULT_LAYOUT_ATTRIBUTES = {-1, 8, 2, 2, 2, 0, 0, -1, -1, -1, 20, 12, 12, 2, 6, 1, 0x440000, 0x5E2601, 68, 0xA0A0A0, 0, 0x990000, 0}; //renamed from: i 
 
 	public int uiID = 0; //renamed from: a
+	
 	public int[] elemDefaultAttributes = null; //renamed from: a
 	public int[] layoutAttributes = null; //renamed from: b
 
@@ -222,7 +228,7 @@ public final class UILayout {
 				if (GameRuntime.isScreenPortrait()) {
 					layoutYMax -= GameRuntime.getSoftkeyBarHeight();
 				}
-				if (getAttribute(3) == 32) {
+				if (getAttribute(PACKED_HEIGHT) == PACKED_HEIGHT_BIT) {
 					return Math.min(getLayoutVDim(2) + getTotalHeight() + getAttribute(MARGIN_TOP) + getAttribute(MARGIN_BOTTOM), layoutYMax);
 				} else {
 					int c = getAttribute(FIXED_HEIGHT);
@@ -286,10 +292,10 @@ public final class UILayout {
 	}
 
 	/* renamed from: a */
-	public final void setSoftkey(int softkey, String buttonText, int i2, int action, boolean z) {
+	public final void setSoftkey(int softkey, String buttonText, int type, int action, boolean z) {
 		this.softkeyActions[softkey] = 0x110000 | (action & 0xFFFF);
 		this.softkeyTexts[softkey] = buttonText;
-		this.softkeyTypes[softkey] = 0;
+		this.softkeyTypes[softkey] = type;
 	}
 
 	/* renamed from: b */

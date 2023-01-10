@@ -51,7 +51,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 	private static final int KEYEVENT_FLAG_JMEKEYCODE = 8;
 	private static final int KEYEVENT_FLAG_PRESS = 1;
 	private static final int KEYEVENT_FLAG_RELEASE = 2;
-	
+
 	public static final int CONTROL_MODE_RAW = 1;
 	public static final int CONTROL_MODE_GAME = 2;
 	public static final int CONTROL_MODE_STRINPUT = 3;
@@ -103,7 +103,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 	private static boolean gameThreadStarted = false; //renamed from: a
 	private static boolean reqSystemGamePause = false; //renamed from: e
 	private static boolean gameIsLoading = false; //renamed from: f
-	private static boolean gameClosing = false; //renamed from: g
+	private static boolean reqClose = false; //renamed from: g
 
 	//GAME UPDATE TIMING
 	private static int maxUpdateDelta = 500; //renamed from: i
@@ -221,7 +221,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 		typeSeqLastKey = 0;
 		typeSeqKeyRepeatNo = 0;
 		gameThreadStarted = false;
-		gameClosing = false;
+		reqClose = false;
 	}
 
 	public static boolean getAppFlag(String name) {
@@ -231,7 +231,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 
 	/* renamed from: a */
 	public static void quit() {
-		gameClosing = true;
+		reqClose = true;
 	}
 
 	/* renamed from: e */
@@ -792,41 +792,36 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 	public static void saveToRecordStore(String tag, byte[] rawData) {
 		RecordStore recordStore = null;
 		try {
-			RecordStore openRecordStore = RecordStore.openRecordStore(tag, true);
-			if (openRecordStore.getNumRecords() < 1) {
-				openRecordStore.addRecord((byte[]) null, 0, 0);
+			recordStore = RecordStore.openRecordStore(tag, true);
+			if (recordStore.getNumRecords() < 1) {
+				recordStore.addRecord((byte[]) null, 0, 0);
 			}
-			byte[] bArr2 = new byte[(rawData.length + 2)];
-			bArr2[0] = 1;
-			bArr2[1] = 2;
-			System.arraycopy(rawData, 0, bArr2, 2, rawData.length);
-			openRecordStore.setRecord(1, bArr2, 0, bArr2.length);
-			if (openRecordStore != null) {
+			byte[] taggedData = new byte[(rawData.length + 2)];
+			taggedData[0] = 1;
+			taggedData[1] = 2;
+			System.arraycopy(rawData, 0, taggedData, 2, rawData.length);
+			recordStore.setRecord(1, taggedData, 0, taggedData.length);
+			if (recordStore != null) {
 				try {
-					openRecordStore.closeRecordStore();
+					recordStore.closeRecordStore();
 				} catch (Exception e) {
 				}
 			}
 		} catch (RecordStoreException e2) {
-			if (0 != 0) {
-				try {
-					recordStore.closeRecordStore();
-				} catch (Exception e3) {
-				}
+			try {
+				recordStore.closeRecordStore();
+			} catch (Exception e3) {
+				
 			}
 		} catch (Exception e4) {
-			if (0 != 0) {
-				try {
-					recordStore.closeRecordStore();
-				} catch (Exception e5) {
-				}
+			try {
+				recordStore.closeRecordStore();
+			} catch (Exception e5) {
 			}
 		} catch (Throwable th) {
-			if (0 != 0) {
-				try {
-					recordStore.closeRecordStore();
-				} catch (Exception e6) {
-				}
+			try {
+				recordStore.closeRecordStore();
+			} catch (Exception e6) {
 			}
 		}
 	}
@@ -865,15 +860,15 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 			GameRuntime.setTextStyle(-3, 1);
 			g.setColor(0xFF0000);
 			String fpsStr = String.valueOf(debugFps);
-			int len = fpsStr.length();
-			fpsStr = "FPS: " + fpsStr.substring(0, Math.min(len, 4)) + "0000".substring(len);
+			int len = Math.min(fpsStr.length(), 4);
+			fpsStr = "FPS: " + fpsStr.substring(0, len) + "0000".substring(len);
 			g.drawString(fpsStr, currentWidth >> 1, 2, Graphics.HCENTER | Graphics.TOP);
 		}
 	}
 
 	/* renamed from: b */
 	private void gamePaint(Graphics graphics) {
-		if (paintMode != 0) {
+		if (paintMode != 0 && graphics != null) {
 			try {
 				lastGraphics = graphics;
 				mGraphics = graphics;
@@ -1816,7 +1811,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 			resumeRuntime();
 			long[] framets = new long[20];
 			int frameIndex = 0;
-			while (!gameClosing) {
+			while (!reqClose) {
 				while (true) {
 					try {
 						currentTime = System.currentTimeMillis();
@@ -1875,7 +1870,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 							callGamePaint(1);
 							if (!reqSystemGamePause) {
 								gameUpdate();
-								if (gameClosing) {
+								if (reqClose) {
 									System.out.println("Game is about to close.");
 									break;
 								}
