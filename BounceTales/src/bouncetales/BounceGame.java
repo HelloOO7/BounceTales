@@ -1421,9 +1421,9 @@ public final class BounceGame {
 				this.ui.setAttribute(5, 128);
 
 				//HD
-				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, 22);
+				this.ui.setAttribute(UILayout.MARGIN_TOP, 14);
 				this.ui.setAttribute(UILayout.ANCHOR_CENTER, UILayout.ANCHOR_CENTER_BIT);
-				this.ui.setAttribute(UILayout.PACKED_HEIGHT, UILayout.PACKED_HEIGHT_BIT);
+				this.ui.setAttribute(UILayout.FIXED_HEIGHT, 320);
 
 				this.ui.setElemDefaultAttribute(UIElement.FONT_TEXT_COLOR_SELECTED, 0xFF7800);
 				this.ui.setTitle("", -1, 1);
