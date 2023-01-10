@@ -225,6 +225,9 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 	}
 
 	public static boolean getAppFlag(String name) {
+		if (GameRuntime.mMidLet == null) {
+			return false;
+		}
 		String property = GameRuntime.mMidLet.getAppProperty(name);
 		return property != null && property.equals("On");
 	}

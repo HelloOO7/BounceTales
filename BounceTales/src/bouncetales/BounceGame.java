@@ -179,7 +179,110 @@ public final class BounceGame {
 
 	private static final short[] TROPHY_IMAGE_IDS = {314, 315, 389}; //renamed from: c
 
-	public static final short[] SCRIPT_MESSAGE_IDS = {48, 44, 43, 46, 49, 45, 47, 36, 84, 19, 18, 17, 4, 12, 13, 11, 14, 15, 83, 80, 37, 85, 38, 39, 87, 2, 3, 35, 16, 0, 1, 20, 24, 25, 32, 26, 27, 28, 29, 33, 30, 31, 21, 22, 34, 23, 86, 81, 82, 5, 6, 8, 7, 41, 9, 10, 40, 42, 51, 52, 53, 50, 54, 55, 56, 57, 58, 59, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 60, 61, 62, 63, 64, 88, 89, 90}; //renamed from: a
+	public static final short[] SCRIPT_MESSAGE_IDS = {
+		MessageID.UI_SELECT, 
+		MessageID.UI_LEAVE, 
+		MessageID.UI_BACK, 
+		MessageID.UI_OK, 
+		MessageID.UI_YES,
+		MessageID.UI_NO,
+		MessageID.UI_QUIT, 
+		
+		MessageID.UI_NEW_GAME, 
+		MessageID.DIALOG_NEW_GAME, 
+		MessageID.UI_HIGH_SCORES, 
+		MessageID.UI_GUIDE,
+		MessageID.UI_CONTINUE, 
+		
+		MessageID.EMPTY, 
+		MessageID.GUIDE_TEXT_1, 
+		MessageID.GUIDE_TEXT_2,
+		MessageID.GUIDE_TEXT_3,
+		MessageID.GUIDE_TEXT_4,
+		MessageID.GUIDE_TEXT_5,
+		
+		MessageID.DIALOG_PAUSE_MENU,
+		MessageID.DIALOG_QUIT_GAME,
+		MessageID.UI_RESTART_LEVEL,
+		MessageID.DIALOG_RESTART_LEVEL,
+		MessageID.UI_CONTINUE_LEVEL,
+		MessageID.UI_RETURN_LEVEL_SELECT,
+		MessageID.DIALOG_RETURN_LEVEL_SELECT,
+		
+		MessageID.GAME_PROGRESS_WILL_BE_LOST,
+		MessageID.LEVEL_PROGRESS_WILL_BE_LOST,
+		
+		MessageID.UI_CHAPTERNO_STD, 
+		MessageID.UI_CHAPTERNO_BONUS, 
+		
+		MessageID.NEED_COLLECT_COUNT,
+		MessageID.BONUS_CHAPTER_UNLOCKED,
+		
+		MessageID.LEVEL_MISTY_MORNING,
+		MessageID.LEVEL_UNFRIENDLY_FRIENDS,
+		MessageID.LEVEL_SEEKING_ANSWERS,
+		MessageID.LEVEL_SECRET_STALKWAY,
+		MessageID.LEVEL_BUMPY_CRACKS,
+		MessageID.LEVEL_INTO_THE_MINES,
+		MessageID.LEVEL_A_GLOOMY_PATH,
+		MessageID.LEVEL_RUMBLING_SOUNDS,
+		MessageID.LEVEL_TUNNEL_OF_TREASURES,
+		MessageID.LEVEL_TRAPPED_IN_MACHINE,
+		MessageID.LEVEL_WICKED_CIRCUS,
+		MessageID.LEVEL_HUNTING_COLOURS,
+		MessageID.LEVEL_ALMOST_THERE,
+		MessageID.LEVEL_FANTASTIC_FAIR,
+		MessageID.LEVEL_FINAL_RIDE,
+		
+		MessageID.CHAPTER_COMPLETE,
+		MessageID.DIALOG_GAME_BEATEN,
+		MessageID.DIALOG_GAME_COMPLETED,
+		MessageID.ALL_LEVELS_BEATEN,
+		MessageID.ALL_LEVELS_COMPLETED,
+		MessageID.TIMER_CHALLENGE,
+		MessageID.COLLECTION_CHALLENGE,
+		MessageID.NO_MEDALS_WON,
+		
+		MessageID.BONUS_CHAPTER_UNLOCKED_DESC,
+		MessageID.NEW_FORME_UNLOCKED,
+		MessageID.NEW_HIGH_SCORE, 
+		MessageID.SCORE,
+		
+		MessageID.SCENARIO_L01E01M01,
+		MessageID.SCENARIO_L01E01M02,
+		MessageID.SCENARIO_L01E01M03,
+		MessageID.SCENARIO_L01E02M01,
+		MessageID.SCENARIO_L01E03M01,
+		MessageID.SCENARIO_L01E03M02,
+		MessageID.SCENARIO_L01E03M03,
+		MessageID.SCENARIO_L01E04M01,
+		MessageID.SCENARIO_L01E04M02,
+		MessageID.SCENARIO_L01E04M03,
+		MessageID.SCENARIO_L02E01M01,
+		MessageID.SCENARIO_L02E01M02,
+		MessageID.SCENARIO_L04E01M01,
+		MessageID.SCENARIO_L04E01M02,
+		MessageID.SCENARIO_L04E02M01,
+		MessageID.SCENARIO_L04E03M01,
+		MessageID.SCENARIO_L04E03M02,
+		MessageID.SCENARIO_L04E03M03,
+		MessageID.SCENARIO_L04E03M04,
+		MessageID.SCENARIO_L05_UNUSED,
+		MessageID.SCENARIO_L08E01M01,
+		MessageID.SCENARIO_L08E01M02,
+		MessageID.SCENARIO_L08E01M03,
+		MessageID.SCENARIO_L08E02M01,
+		MessageID.SCENARIO_L11_UNUSED,
+		MessageID.SCENARIO_L12E01M01,
+		MessageID.SCENARIO_L12E01M02,
+		MessageID.SCENARIO_L12E02M01,
+		MessageID.SCENARIO_L12E02M02,
+		MessageID.SCENARIO_L12E02M03,
+		
+		MessageID.MM_SS,
+		MessageID.GAME_TITLE,
+		MessageID.IS_TEXT_RIGHT_TO_LEFT_RESERVED
+	}; //renamed from: a
 
 	private static final int[] SPLASH_SCREEN_LAYOUT_RESIDS = {7}; //renamed from: o
 	private static final int[] SPLASH_SCREEN_DURATIONS = {100}; //renamed from: q
@@ -209,7 +312,7 @@ public final class BounceGame {
 	private static int renderClipHeight = GameRuntime.currentHeight; //renamed from: y
 
 	//State - text
-	private static boolean isTextRightToLeft = StringManager.getMessage(90).equals("1"); //renamed from: e
+	private static boolean isTextRightToLeft = StringManager.getMessage(MessageID.IS_TEXT_RIGHT_TO_LEFT_RESERVED).equals("1"); //renamed from: e
 
 	//State - layout core
 	private final UILayout ui = new UILayout(); //renamed from: b
@@ -446,7 +549,7 @@ public final class BounceGame {
 			//Level stats
 			int a3 = GameRuntime.getFontHeight(-3) + 1;
 			int a4 = GameRuntime.getFontHeight(-3) + 23 + 3;
-			String a5 = StringManager.getMessage(MessageID.UI_SCORE, "9999");
+			String a5 = StringManager.getMessage(MessageID.SCORE, "9999");
 			int a6 = GameRuntime.getStrRenderWidth(-3, a5, 0, a5.length());
 			int myScore = getLevelLocalHighScore(levelId);
 			if (!(myScore > 0)) {
@@ -454,7 +557,7 @@ public final class BounceGame {
 			}
 			int i11 = ((GameRuntime.currentWidth >> 1) - (a6 >> 1)) - 6;
 			int a7 = GameRuntime.getStrRenderWidth(-3, "00/00", 0, "00/00".length()) + 23 + 11;
-			String a8 = StringManager.getMessage(MessageID.UI_SCORE, myScore);
+			String a8 = StringManager.getMessage(MessageID.SCORE, myScore);
 			if (isTextRightToLeft) {
 				GameRuntime.drawText(a8, 0, a8.length(), i11 + a7 + 23, i5, 24);
 			} else {
@@ -1281,7 +1384,7 @@ public final class BounceGame {
 				this.ui.setElemDefaultAttribute(3, 0);
 				this.ui.setElemDefaultAttribute(2, 32);
 				this.ui.setAttribute(UILayout.BLOCK_INCREMENT, GameRuntime.getFontHeight(-3) << 1);
-				this.ui.setTitle(StringManager.getMessage(MessageID.UI_HIGH_SCORE), -1, 1);
+				this.ui.setTitle(StringManager.getMessage(MessageID.UI_HIGH_SCORES), -1, 1);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_BACK), 0, GameScene.MENU_TITLE, true);
 				boolean hasAnyHighScore = false;
 				for (int levelIdx = 0; levelIdx < LevelID.LEVEL_IDX_MAX; levelIdx++) {
@@ -1333,7 +1436,7 @@ public final class BounceGame {
 					this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_NEW_GAME), -1, this.ui, GameScene.MENU_LEVEL_SELECT));
 					selectedLevelId = 0;
 				}
-				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_HIGH_SCORE), -1, this.ui, GameScene.MENU_HIGH_SCORES));
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_HIGH_SCORES), -1, this.ui, GameScene.MENU_HIGH_SCORES));
 				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_GUIDE), -1, this.ui, GameScene.MENU_GUIDE));
 				this.ui.setSelectedOption(lastMenuOption);
 				break;
@@ -1383,11 +1486,11 @@ public final class BounceGame {
 				this.ui.setAttribute(UILayout.BLOCK_INCREMENT, GameRuntime.getFontHeight(-3) << 1);
 				this.ui.setTitle(StringManager.getMessage(MessageID.UI_GUIDE), -1, 1);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_BACK), 0, GameScene.MENU_TITLE, true);
-				this.ui.addElement(new UIElement(StringManager.getMessage(12), -1, this.ui, -1));
-				this.ui.addElement(new UIElement(StringManager.getMessage(13), 102, this.ui, -1));
-				this.ui.addElement(new UIElement(StringManager.getMessage(11), -1, this.ui, -1));
-				this.ui.addElement(new UIElement(StringManager.getMessage(14), 371, this.ui, -1));
-				this.ui.addElement(new UIElement(StringManager.getMessage(15), 372, this.ui, -1));
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.GUIDE_TEXT_1), -1, this.ui, -1));
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.GUIDE_TEXT_2), 102, this.ui, -1));
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.GUIDE_TEXT_3), -1, this.ui, -1));
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.GUIDE_TEXT_4), 371, this.ui, -1));
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.GUIDE_TEXT_5), 372, this.ui, -1));
 				break;
 			case GameScene.CONFIRM_QUIT_GAME: //quit game
 				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_QUIT_GAME), -1, 1);
@@ -1413,7 +1516,7 @@ public final class BounceGame {
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_QUIT), 0, GameScene.CONFIRM_EXIT_LEVEL, true);
 				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_CONTINUE_LEVEL), -1, this.ui, GameScene.UNPAUSE_LEVEL));
 				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_RESTART_LEVEL), -1, this.ui, GameScene.CONFIRM_RESTART_LEVEL));
-				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_LEVEL_SELECT), -1, this.ui, GameScene.CONFIRM_RETURN_LEVEL_SELECT));
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_RETURN_LEVEL_SELECT), -1, this.ui, GameScene.CONFIRM_RETURN_LEVEL_SELECT));
 				this.ui.setSelectedOption(lastMenuOption);
 				break;
 			case GameScene.CONFIRM_RESTART_LEVEL: //confirm restart level
@@ -1495,7 +1598,7 @@ public final class BounceGame {
 				} else {
 					this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_OK), 0, GameScene.MENU_LEVEL_SELECT, true);
 				}
-				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_SCORE, calcScore), -1, this.ui, -1));
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.SCORE, calcScore), -1, this.ui, -1));
 				String eggsCollectedStr = eggCount + "/" + bonusLevelEggLimit;
 				UIElement eggsCollectedUI = new UIElement(eggsCollectedStr, 102, this.ui, -1);
 				if (isTextRightToLeft) {
@@ -1511,9 +1614,9 @@ public final class BounceGame {
 				}
 				this.ui.addElement(timerUI);
 				if (this.highScoreBeaten) {
-					UIElement newHighScoreText = new UIElement(StringManager.getMessage(MessageID.UI_NEW_HIGH_SCORE), -1, this.ui, -1);
+					UIElement newHighScoreText = new UIElement(StringManager.getMessage(MessageID.NEW_HIGH_SCORE), -1, this.ui, -1);
 					newHighScoreText.setAttribute(1, 8);
-					newHighScoreText.setText(StringManager.getMessage(MessageID.UI_NEW_HIGH_SCORE), -1);
+					newHighScoreText.setText(StringManager.getMessage(MessageID.NEW_HIGH_SCORE), -1);
 					this.ui.addElement(newHighScoreText);
 				}
 				if (wasLevelBeaten(LevelID.FINAL_RIDE) && !this.wasFinalLevelJustBeaten && !isBonusLevel(currentLevel)) {
@@ -1539,9 +1642,9 @@ public final class BounceGame {
 						this.ui.addElement(collectionChallengeText);
 					}
 					if (!anyMedalsWon) {
-						UIElement noMedalsWonText = new UIElement(StringManager.getMessage(MessageID.UI_NO_MEDALS_WON), -1, this.ui, -1);
+						UIElement noMedalsWonText = new UIElement(StringManager.getMessage(MessageID.NO_MEDALS_WON), -1, this.ui, -1);
 						noMedalsWonText.setAttribute(1, 8);
-						noMedalsWonText.setText(StringManager.getMessage(MessageID.UI_NO_MEDALS_WON), -1);
+						noMedalsWonText.setText(StringManager.getMessage(MessageID.NO_MEDALS_WON), -1);
 						this.ui.addElement(noMedalsWonText);
 					}
 				}
@@ -1858,7 +1961,7 @@ public final class BounceGame {
 							if (bonusChapterNo > 0) {
 								this.reqQuitLevelAfterFieldMessage = true;
 								fieldMessageParam = new String[]{String.valueOf(bonusChapterNo)};
-								pushFieldMessage(1);
+								pushFieldMessage(MessageID.BONUS_CHAPTER_UNLOCKED);
 							} else {
 								levelEnded();
 							}
@@ -2358,7 +2461,7 @@ public final class BounceGame {
 								}
 							}
 							if (noBonusLevelsBeaten && isBonusLevel(currentLevel)) {
-								pushFieldMessage(11);
+								pushFieldMessage(MessageID.GUIDE_TEXT_3); //bonus chapter guide
 							}
 							bounceObj.eyeFrame = 0;
 							bounceObj.idleAnimStartTimer = 3000;

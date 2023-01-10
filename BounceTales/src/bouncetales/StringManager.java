@@ -179,6 +179,9 @@ public final class StringManager {
 
 	/* renamed from: a */
 	private static boolean checkNokiaPlatform(String platform, String filter, int offsetPlatform, int offsetFilter) {
+		if (platform == null) {
+			return true; //running most likely on a PC
+		}
 		while (true) {
 			if (offsetPlatform == platform.length() && offsetFilter == filter.length()) {
 				return true;
