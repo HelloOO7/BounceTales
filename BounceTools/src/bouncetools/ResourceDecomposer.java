@@ -1,6 +1,5 @@
 package bouncetools;
 
-import bouncetales.ext.rsc.ImageMap;
 import bouncetales.ext.rsc.ResourceBatch;
 import bouncetales.ext.rsc.ResourceInfo;
 import bouncetales.ext.rsc.ResourceType;
@@ -8,7 +7,6 @@ import bouncetools.layout.LayoutPreset;
 import bouncetools.message.MessageData;
 import bouncetools.resmap.ResidentResourceList;
 import bouncetools.resmap.ResourceTable;
-import bouncetools.sprites.AbstractSprite;
 import bouncetools.sprites.SpriteLibrary;
 import java.io.FileNotFoundException;
 import java.io.IOException;

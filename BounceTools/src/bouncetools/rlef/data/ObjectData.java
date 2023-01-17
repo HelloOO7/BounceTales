@@ -1,17 +1,13 @@
 package bouncetools.rlef.data;
 
-import static bouncetales.GameObject.readInt;
-import static bouncetales.GameObject.readShort;
 import bouncetales.LP32;
 import bouncetales.Matrix;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.io.DataInput;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.List;
-import bouncetools.rlef.RLEF;
 
 public class ObjectData {
 

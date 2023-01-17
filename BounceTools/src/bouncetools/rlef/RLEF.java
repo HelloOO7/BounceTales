@@ -17,9 +17,6 @@ import bouncetools.rlef.data.ObjectData;
 import bouncetools.rlef.data.SpriteData;
 import bouncetools.rlef.data.GeometryData;
 
-/**
- *
- */
 public class RLEF {
 
     public static final int RLEF_SIGNATURE = 0x524C4546;

@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package bouncetools.resmap;
 
 import bouncetales.ext.rsc.ResidentResHeader;
@@ -11,7 +6,6 @@ import bouncetales.ext.rsc.ResourceInfo;
 import bouncetools.ResourceComposer;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -20,9 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import xstandard.io.base.iface.DataOutputEx;
 
-/**
- *
- */
+
 public class ResourceTable {
 
 	public List<ResourceInfo> infos = new ArrayList<ResourceInfo>();

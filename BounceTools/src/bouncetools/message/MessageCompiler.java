@@ -3,7 +3,6 @@ package bouncetools.message;
 import bouncetools.ResourceComposer;
 import java.io.IOException;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import xstandard.formats.yaml.Yaml;

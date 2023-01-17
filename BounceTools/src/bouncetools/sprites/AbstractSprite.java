@@ -6,6 +6,7 @@ import xstandard.formats.yaml.YamlNode;
 import xstandard.io.base.iface.DataOutputEx;
 
 public abstract class AbstractSprite {
+	
 	public static final int TYPEID_MASK = 0b11;
 	public static final int FLAG_16BIT = (1 << 2);
 	

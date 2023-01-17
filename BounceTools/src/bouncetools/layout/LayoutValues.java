@@ -1,6 +1,5 @@
 package bouncetools.layout;
 
-import java.awt.Color;
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.ArrayList;

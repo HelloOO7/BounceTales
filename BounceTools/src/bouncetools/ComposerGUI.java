@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package bouncetools;
 
 import java.awt.event.ActionEvent;
@@ -15,7 +10,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import xstandard.formats.zip.ZipArchive;
 import xstandard.fs.FSFile;
-import xstandard.fs.FSUtil;
 import xstandard.fs.accessors.DiskFile;
 import xstandard.gui.DialogUtils;
 import xstandard.gui.DnDHelper;
