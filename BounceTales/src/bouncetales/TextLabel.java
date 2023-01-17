@@ -34,7 +34,7 @@ public final class TextLabel {
 	private int fontId;
 
 	/* renamed from: g */
-	private int textDrawMode;
+	private int shadowType;
 
 	/* renamed from: h */
 	private int f10h = 0;
@@ -60,14 +60,14 @@ public final class TextLabel {
 		this.rawText = text;
 		this.fontId = fontId;
 		switch (this.flags & 3) {
+			case 0:
+				this.shadowType = 1;
+				break;
 			case 1:
-				this.textDrawMode = 2;
+				this.shadowType = 2;
 				break;
 			case 2:
-				this.textDrawMode = 3;
-				break;
-			default:
-				this.textDrawMode = 1;
+				this.shadowType = 3;
 				break;
 		}
 		if (iconImageId >= 0) {
@@ -79,8 +79,8 @@ public final class TextLabel {
 			this.iconWidth = 0;
 			this.iconHeight = 0;
 		}
-		this.f2a = maxWidth > this.iconWidth && (this.flags & 128) == 128 && (this.flags & 48) != 32;
-		boolean dynamicWidth = (this.flags & 256) == 256;
+		this.f2a = maxWidth > this.iconWidth && (this.flags & 128) != 0 && (this.flags & 48) != 32;
+		boolean dynamicWidth = (this.flags & 256) != 0;
 		this.rawText = text == null ? "" : text;
 		this.lines = GameRuntime.prepareStringLines(this.rawText, maxWidth, this.fontId, this.f2a, this.iconWidth, this.iconHeight, dynamicWidth);
 		parseDrawParams(this.lines[0]);
@@ -139,7 +139,7 @@ public final class TextLabel {
 		int i8;
 		int i9;
 		int i10 = this.lineCount;
-		GameRuntime.setTextStyle(this.fontId, this.textDrawMode);
+		GameRuntime.setTextStyle(this.fontId, this.shadowType);
 		GameRuntime.setTextColor(0, textColor);
 		GameRuntime.setTextColor(1, shadowColor);
 		int lineCount = i10 > this.lineCount ? this.lineCount : i10;

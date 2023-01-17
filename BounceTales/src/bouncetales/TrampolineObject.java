@@ -99,7 +99,7 @@ public final class TrampolineObject extends GameObject {
 	public final void onJumperContact() {
 		loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
 		jumper.localObjectMatrix.translationY = GameObject.tmpObjMatrix.translationY
-				- ((LP32.Int32ToLP32((short) GameRuntime.getImageAnimParamEx(GameRuntime.getImageIdAfterAnimation(this.imageId, this.animFrame), 0)) / GameObject.screenSpaceMatrix.m00) << 16);
+				- ((LP32.Int32ToLP32((short) GameRuntime.getCompoundSpriteParamEx(GameRuntime.getImageIdAfterAnimation(this.imageId, this.animFrame), 0)) / GameObject.screenSpaceMatrix.m00) << 16);
 		if (jumper.equals(BounceGame.bounceObj)) {
 			EventObject.eventVars[1] = BounceGame.CONTROLLER_FROZEN;
 		}

@@ -10,9 +10,12 @@ import javax.microedition.lcdui.Graphics;
 /* renamed from: h */
 public final class UILayout {
 
+	public static final int ELEMENT_ALIGNMENT = 0;
+	public static final int TITLE_ALIGNMENT = 1;
 	public static final int SOFTKEY_BAR = 2;
 	public static final int PACKED_HEIGHT = 3;
 	public static final int ANCHOR_CENTER = 4;
+	public static final int SCROLL_WRAPAROUND = 5;
 	public static final int TITLE_PADDING_TOP = 6;
 	public static final int TITLE_PADDING_BOTTOM = 7;
 	public static final int TITLE_PADDING_SIDE = 8;
@@ -27,16 +30,20 @@ public final class UILayout {
 	public static final int MARGIN_TOP = 17;
 	public static final int MARGIN_BOTTOM = 18;
 	public static final int VERTICAL_SPACING = 19;
+	public static final int CONTENT_PANE_COLOR = 20;
 	public static final int SOFTKEY_BAR_COLOR = 21;
+	public static final int BACKGROUND_COLOR = 22;
+	public static final int BORDER_COLOR = 23;
 	public static final int FONT_TEXT_COLOR = 24;
 	public static final int FONT_SHADOW_COLOR = 25;
 	
 	public static final int SOFTKEY_BAR_BIT = 16;
 	public static final int PACKED_HEIGHT_BIT = 32;
 	public static final int ANCHOR_CENTER_BIT = 64;
+	public static final int SCROLL_WRAPAROUND_BIT = 128;
 
 	/* renamed from: e */
-	private static final int[] f118e = new int[4];
+	private static final int[] childClipTemp = new int[4];
 
 	private static final int[] ELEMENT_FLAG_MASKS = {3, 12, 48, 64, 128, 256, 1536, 2048, 4096}; //renamed from: f
 	private static final int[] DEFAULT_ELEMENT_ATTRIBUTES = {-1, 7304, -1, -1, 1, 1, 1, 1, 0xFFFFFF, 0, 0, 0x666666, 0, 0, 0x666666, 0xAA7700}; //renamed from: g
@@ -320,8 +327,8 @@ public final class UILayout {
 
 	/* renamed from: a */
 	public final void setTitle(String str, int bgImage, int i2) {
-		this.titleLabel = (str == null || str.length() <= 0) ? null : new TextLabel(str, Integer.MAX_VALUE, getAttribute(FONT), getAttribute(0) | 256, -1);
-		this.titleImageId = -1;
+		this.titleLabel = (str == null || str.length() <= 0) ? null : new TextLabel(str, Integer.MAX_VALUE, getAttribute(FONT), getAttribute(ELEMENT_ALIGNMENT) | 256, -1);
+		this.titleImageId = bgImage;
 		this.titleXScroll = 0;
 	}
 
@@ -330,7 +337,7 @@ public final class UILayout {
 		if (this.titleLabel != null) {
 			int titleImageWidth = this.titleImageId != -1 ? GameRuntime.getImageMapParam(this.titleImageId, ImageMap.PARAM_WIDTH) : 0;
 			int c = getLayoutHDim() - (getAttribute(TITLE_PADDING_SIDE) << 1);
-			int i = getAttribute(1) != 8 ? c - titleImageWidth : c;
+			int i = getAttribute(TITLE_ALIGNMENT) != 8 ? c - titleImageWidth : c;
 			if (i < this.titleLabel.textBlockWidth) {
 				if (this.titleAnimTimer >= 3000) {
 					if (this.titleScrollDirection > 0) {
@@ -396,16 +403,14 @@ public final class UILayout {
 					if (i3 != -1) {
 						setSelectedOption(i3);
 						return;
-					} else if (getAttribute(5) != 128 || this.focusStartY > 0) {
+					} else if (getAttribute(SCROLL_WRAPAROUND) == 0 || this.focusStartY > 0) {
 						this.focusStartY -= getAttribute(BLOCK_INCREMENT);
 						if (this.focusStartY < 0) {
 							this.focusStartY = 0;
 						}
 						if (!(this.selectedElemIdx == -1 || isElemInFocus(this.selectedElemIdx))) {
 							setSelectedOption(-1);
-							return;
 						}
-						return;
 					} else {
 						int d = getTotalHeight();
 						this.focusStartY = d - getFocusHeight();
@@ -415,17 +420,15 @@ public final class UILayout {
 						for (int size = this.elements.size() - 1; size > 0; size--) {
 							if (!isElemInFocus(size)) {
 								setSelectedOption(-1);
-								return;
+								break;
 							} else if (((UIElement) this.elements.elementAt(size)).hasAction()) {
 								setSelectedOption(size);
-								return;
+								break;
 							}
 						}
-						return;
 					}
-				} else {
-					return;
 				}
+				return;
 			case KeyCode.DOWN:
 				if (!this.elements.isEmpty()) {
 					int d2 = getTotalHeight();
@@ -461,8 +464,7 @@ public final class UILayout {
 					}
 					if (i2 != -1) {
 						setSelectedOption(i2);
-						return;
-					} else if (getAttribute(5) != 128 || this.focusStartY < d2 - e) {
+					} else if (getAttribute(SCROLL_WRAPAROUND) == 0 || this.focusStartY < d2 - e) {
 						this.focusStartY += getAttribute(BLOCK_INCREMENT);
 						if (d2 <= e) {
 							this.focusStartY = 0;
@@ -471,26 +473,22 @@ public final class UILayout {
 						}
 						if (!(this.selectedElemIdx == -1 || isElemInFocus(this.selectedElemIdx))) {
 							setSelectedOption(-1);
-							return;
 						}
-						return;
 					} else {
 						this.focusStartY = 0;
 						for (int j = 0; j < this.elements.size() - 1; j++) {
 							UIElement fVar3 = (UIElement) this.elements.elementAt(j);
 							if (!isElemInFocus(j)) {
 								setSelectedOption(-1);
-								return;
+								break;
 							} else if (fVar3.hasAction()) {
 								setSelectedOption(j);
-								return;
+								break;
 							}
 						}
-						return;
 					}
-				} else {
-					return;
 				}
+				return;
 			case KeyCode.SOFTKEY_RIGHT:
 				resultSoftkey = 1;
 				break;
@@ -518,9 +516,9 @@ public final class UILayout {
 	public final void draw() {
 		int lytX;
 		int lytY;
-		int i;
+		int titleImageX;
 		Graphics grp = GameRuntime.getGraphicsObj();
-		int b = getLayoutVDim(2);
+		int contentH = getLayoutVDim(2);
 		if (getAttribute(ANCHOR_CENTER) == 64) {
 			//anchor to X center of drawable area
 			lytX = ((GameRuntime.currentWidth - getLayoutHDim()) >> 1) + (GameRuntime.getScreenOrientationFromSoftkeys() == GameRuntime.SCREEN_ORIENTATION_RLANDSCAPE ? GameRuntime.getSoftkeyBarWidth() : 0);
@@ -539,58 +537,57 @@ public final class UILayout {
 		int lytH = getLayoutVDim(1);
 
 		if (BounceGame.drawUIGraphics(this, 1, lytX, lytY, lytW, lytH)) {
-			grp.setColor(getAttribute(22));
+			grp.setColor(getAttribute(BACKGROUND_COLOR));
 			grp.fillRect(lytX, lytY, lytW, lytH);
-			grp.setColor(getAttribute(23));
+			grp.setColor(getAttribute(BORDER_COLOR));
 			grp.drawRect(lytX, lytY, lytW - 1, lytH - 1);
 		}
-		if (b > 0) {
-			grp.setClip(lytX, lytY, lytW, b);
-			if (BounceGame.drawUIGraphics(this, 2, lytX, lytY, lytW, b)) {
-				System.out.println("raw2");
+		if (contentH > 0) {
+			grp.setClip(lytX, lytY, lytW, contentH);
+			if (BounceGame.drawUIGraphics(this, 2, lytX, lytY, lytW, contentH)) {
 				grp.setColor(getAttribute(20));
-				grp.fillRect(lytX, lytY, lytW, b);
+				grp.fillRect(lytX, lytY, lytW, contentH);
 			}
-			grp.setClip(lytX, lytY, lytW, b);
-			if (BounceGame.drawUIGraphics(this, 3, lytX, lytY, lytW, b)) {
-				grp.setClip(lytX, lytY, lytW, b);
-				int c4 = getAttribute(8);
-				int a2 = this.titleImageId != -1 ? GameRuntime.getImageMapParam(this.titleImageId, 0) : 0;
-				int i2 = this.titleLabel != null ? this.titleLabel.textBlockWidth : 0;
-				int i3 = lytW - (c4 << 1);
-				int i4 = getAttribute(1) != 8 ? i3 - a2 : i3;
+			grp.setClip(lytX, lytY, lytW, contentH);
+			if (BounceGame.drawUIGraphics(this, 3, lytX, lytY, lytW, contentH)) {
+				grp.setClip(lytX, lytY, lytW, contentH);
+				int sidePadding = getAttribute(TITLE_PADDING_SIDE);
+				int titleImageWidth = this.titleImageId != -1 ? GameRuntime.getImageMapParam(this.titleImageId, ImageMap.PARAM_WIDTH) : 0;
+				int titleTextWidth = this.titleLabel != null ? this.titleLabel.textBlockWidth : 0;
+				int titleMaxWidth = lytW - (sidePadding << 1);
+				int i4 = getAttribute(TITLE_ALIGNMENT) != 8 ? titleMaxWidth - titleImageWidth : titleMaxWidth;
 				if (this.titleImageId != -1) {
-					switch (getAttribute(1)) {
-						case 4:
-							i = (i3 - a2) + c4;
+					switch (getAttribute(TITLE_ALIGNMENT)) {
+						case 4: //right
+							titleImageX = (titleMaxWidth - titleImageWidth) + sidePadding;
 							break;
-						case 8:
-							i = ((i3 - a2) >> 1) + c4;
+						case 8: //center
+							titleImageX = ((titleMaxWidth - titleImageWidth) >> 1) + sidePadding;
 							break;
-						default:
-							i = c4;
+						default: //left
+							titleImageX = sidePadding;
 							break;
 					}
-					GameRuntime.drawImageResAnchored(i + lytX, getAttribute(TITLE_PADDING_TOP) + lytY, this.titleImageId, 20);
+					GameRuntime.drawImageResAnchored(titleImageX + lytX, getAttribute(TITLE_PADDING_TOP) + lytY, this.titleImageId, Graphics.TOP | Graphics.LEFT);
 				}
 				if (this.titleLabel != null) {
-					switch (getAttribute(1)) {
+					switch (getAttribute(TITLE_ALIGNMENT)) {
 						case 0:
-							c4 += a2;
+							sidePadding += titleImageWidth;
 							break;
 						case 4:
-							c4 += Math.max(i4 - i2, 0);
+							sidePadding += Math.max(i4 - titleTextWidth, 0);
 							break;
 						case 8:
-							c4 += Math.max(i3 - i2, 0) >> 1;
+							sidePadding += Math.max(titleMaxWidth - titleTextWidth, 0) >> 1;
 							break;
 					}
 					int i5 = 0;
 					if (lytW < GameRuntime.currentWidth) {
 						i5 = ((GameRuntime.currentWidth - lytW) - (GameRuntime.isScreenLandscape() ? GameRuntime.getSoftkeyBarWidth() : 0)) >> 1;
 					}
-					grp.setClip(i5 + (c4 - 1), lytY - 1, i4 + 2, b + 2);
-					this.titleLabel.draw((lytX + c4) - this.titleXScroll,
+					grp.setClip(i5 + (sidePadding - 1), lytY - 1, i4 + 2, contentH + 2);
+					this.titleLabel.draw((lytX + sidePadding) - this.titleXScroll,
 							getAttribute(TITLE_PADDING_TOP) + lytY,
 							getAttribute(FONT_TEXT_COLOR),
 							getAttribute(FONT_SHADOW_COLOR)
@@ -619,10 +616,10 @@ public final class UILayout {
 					break;
 			}
 		}
-		grp.setClip(lytX, lytY + b, lytW, lytH - b);
-		BounceGame.drawUIGraphics(this, 4, lytX, lytY + b, lytW, lytH - b);
+		grp.setClip(lytX, lytY + contentH, lytW, lytH - contentH);
+		BounceGame.drawUIGraphics(this, 4, lytX, lytY + contentH, lytW, lytH - contentH);
 		int contentX = lytX + getAttribute(MARGIN_LEFT);
-		int contentY = lytY + b + getAttribute(MARGIN_TOP);
+		int contentY = lytY + contentH + getAttribute(MARGIN_TOP);
 		int focusWidth = getFocusWidth();
 		int focusHeight = getFocusHeight();
 		int d2 = getTotalHeight();
@@ -654,15 +651,15 @@ public final class UILayout {
 			int labelH = selectedElem.getHeight();
 			grp.setClip(labelX, labelY, labelW, labelH);
 			if (BounceGame.drawUIGraphics(this, 9, labelX, labelY, labelW, labelH)) {
-				grp.setColor(selectedElem.getAttribute(UIElement.COLOR1));
+				grp.setColor(selectedElem.getAttribute(UIElement.SELECTION_BACKGROUND_COLOR));
 				grp.fillRect(labelX, labelY, labelW, labelH);
-				grp.setColor(selectedElem.getAttribute(UIElement.COLOR2));
+				grp.setColor(selectedElem.getAttribute(UIElement.SELECTION_BORDER_COLOR));
 				grp.drawRect(labelX, labelY, labelW - 1, labelH - 1);
 			}
 		}
-		for (i = 0; i < this.elements.size(); ++i) {
-			final UIElement elem = (UIElement) this.elements.elementAt(i);
-			final int startY = getElemStartY(i);
+		for (titleImageX = 0; titleImageX < this.elements.size(); ++titleImageX) {
+			final UIElement elem = (UIElement) this.elements.elementAt(titleImageX);
+			final int startY = getElemStartY(titleImageX);
 			if (startY > this.focusStartY + focusHeight) { //element out of focus
 				break;
 			}
@@ -672,13 +669,13 @@ public final class UILayout {
 				final int elemY = b5 + startY - this.focusStartY;
 				final int elemWidth = elem.getWidth();
 				grp.setClip(contentX, b5, focusWidth, focusHeight);
-				GameRuntime.setChildClip(elemX, elemY, elemWidth, elemHeight, f118e);
+				GameRuntime.setChildClip(elemX, elemY, elemWidth, elemHeight, childClipTemp);
 				if (BounceGame.drawUIGraphics(this, 8, elemX, elemY, elemWidth, elemHeight)) {
 					if (elem.label != null) {
 						elem.label.draw(
 								elemX + elem.getAttribute(UIElement.MARGIN_LEFT),
 								elemY + elem.getAttribute(UIElement.MARGIN_TOP),
-								elem.getColor(i == this.selectedElemIdx),
+								elem.getColor(titleImageX == this.selectedElemIdx),
 								elem.getAttribute(UIElement.FONT_SHADOW_COLOR)
 						);
 					}

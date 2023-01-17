@@ -1,3 +1,6 @@
 [submodule "Jademula"]
 	path = Jademula
 	url = https://github.com/HelloOO7/Jademula
+[submodule "BounceTools/submodules/XStandard"]
+	path = BounceTools/submodules/XStandard
+	url = https://github.com/HelloOO7/XStandard

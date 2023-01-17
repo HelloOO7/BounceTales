@@ -5,7 +5,7 @@ import java.io.IOException;
 
 public class ResourceBatch {
 
-	public short resType;
+	public byte resType;
 	public short mainResId;
 	public short[] subResIds;
 
@@ -17,5 +17,9 @@ public class ResourceBatch {
 		for (int i = 0; i < count; i++) {
 			subResIds[i] = in.readShort();
 		}
+	}
+	
+	public ResourceBatch() {
+		
 	}
 }

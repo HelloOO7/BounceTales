@@ -8,6 +8,10 @@ public class ResourceInfo {
 	public String resourcePath;
 	public int skipOffset;
 	public int readLength;
+	
+	public ResourceInfo() {
+		
+	}
 
 	public ResourceInfo(DataInput in) throws IOException {
 		this(in, false);

@@ -18,6 +18,20 @@ It is, however, *not*:
 - A port to another platform - although it does include a Jademula-based Windows compatibility layer.
 - A series of tubes.
 
+# Dumping game data
+
+**Read this before building the game!**
+
+As is the tradition with decompilations, you'll need a copy of Bounce Tales in order for projects to compile and run properly. Even though the game is free and Rovio probably doesn't care about its copyright anymore, it's more streamlined than distributing them through version control and shouldn't be a problem for most users as Bounce Tales is still widely available for download.
+
+Most of the dumping process is already prepared for you, so all you'll need to provide is a JAR of Bounce Tales. Once you've got that ready, do the following:
+
+1. Open the `BounceTools` project in NetBeans.
+2. Run the `BounceComposer` run configuration.
+3. Either drag and drop your BounceTales JAR onto the window or click the prompt to select it manually (the latter will only work on JDK 1.8 or if you have a JavaFX distribution linked).
+4. Wait until the decomposing process finishes. If everything went properly, you should have a folder with editable resources in the `BounceTools/res_decomposed` folder. Now hit the `Compose resources!` button to generate the build-ready resource folder.
+5. You're all done! Just remember to re-run Composer and rebuild all resources every time you want to commit their edits.
+
 # Build instructions
 
 Bounce Tales can be run either as a MIDlet on a Nokia J2ME device, or through Jademula as a Windows application.

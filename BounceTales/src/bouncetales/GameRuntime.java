@@ -121,7 +121,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 	private static Graphics lastGraphics = null; //renamed from: a
 
 	private static int paintMode = 0; //renamed from: k
-	private static int textDrawMode; //renamed from: m
+	private static int textShadowType; //renamed from: m
 	private static int currentFont = -1; //renamed from: n
 	private static int nextDrawTransform = -1; //renamed from: o
 	private static int[] textColors = new int[2]; //renamed from: d
@@ -213,7 +213,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 
 	public static void resetGlobalState() {
 		typingKeyIsHeld = false;
-		textDrawMode = 0;
+		textShadowType = 0;
 		currentFont = -1;
 		nextDrawTransform = -1;
 		residentStringFieldCount = 0;
@@ -328,9 +328,9 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 	}
 
 	/* renamed from: a */
-	public static void setTextStyle(int font, int textDrawMode) {
+	public static void setTextStyle(int font, int shadowType) {
 		currentFont = font;
-		GameRuntime.textDrawMode = textDrawMode;
+		GameRuntime.textShadowType = shadowType;
 		textColors[0] = 0;
 	}
 
@@ -489,9 +489,9 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 			anchor = flags;
 		}
 		mGraphics.setFont(FONTS[fontIndex]);
-		if (textDrawMode != 1) {
+		if (textShadowType != 1) {
 			mGraphics.setColor(textColors[1]);
-			switch (textDrawMode) {
+			switch (textShadowType) {
 				case 2:
 					mGraphics.drawSubstring(str, 0, length, xpos + 1, ypos + 1, anchor);
 					break;
@@ -598,33 +598,37 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 	}
 
 	/* renamed from: c */
-	public static int getImageIdAfterAnimation(int imageId, int i2) {
+	public static int getImageIdAfterAnimation(int imageId, int frame) {
 		//for images of type 2
 		ImageMapEx m2 = imageMaps2[imageId - imageMaps.length];
-		short s = m2.offset;
-		byte[] bArr = (byte[]) loadedResources[m2.resBatchId];
-		int i3 = s + 3 + (i2 * 2);
-		return getShortFromByteArray(bArr, i3);
+		return getShortFromByteArray(
+				(byte[]) loadedResources[m2.resBatchId],
+				m2.offset //base
+				+ 1 //header
+				+ 2 //frame count
+				+ (frame * 2) //frame
+		);
 	}
 
 	/* renamed from: b */
-	public static int getImageAnimParamEx(int imgMapId, int paramIndex) {
+	public static int getCompoundSpriteParamEx(int imgMapId, int paramIndex) {
 		ImageMapEx m2 = imageMaps2[imgMapId - imageMaps.length];
-		short offset = m2.offset;
-		byte[] bArr = (byte[]) loadedResources[m2.resBatchId];
-		int baseOffset = offset + 1;
-		byte flags = bArr[offset];
+		byte[] data = (byte[]) loadedResources[m2.resBatchId];
+		byte flags = data[m2.offset];
 		int mapType = flags & 3;
-		int paramStride = (flags & 4) != 0 ? 2 : 1;
+		int paramQuantization = (flags & 4) != 0 ? 2 : 1;
 		if (mapType != 1) {
 			return 0;
 		}
-		int i6 = baseOffset + (paramStride << 2);
-		int dataOffs = i6 + 2 + (getShortFromByteArray(bArr, i6) * paramStride * 3) + ((paramStride << 1) * paramIndex);
-		if (paramStride == 1) {
-			return (bArr[dataOffs + 1] & 0xFFFF) | ((bArr[dataOffs] << 16) & 0xFFFF0000);
+		int paramOffs = m2.offset + 1 + (paramQuantization * 4);
+		int dataOffs = paramOffs
+				+ 2 //skip count field
+				+ (getShortFromByteArray(data, paramOffs) * paramQuantization * 3) //skip count * sizeof(params)
+				+ ((paramQuantization << 1) * paramIndex);
+		if (paramQuantization == 1) {
+			return (data[dataOffs + 1] & 0xFFFF) | ((data[dataOffs] << 16) & 0xFFFF0000);
 		} else {
-			return getIntFromByteArray(bArr, dataOffs);
+			return getIntFromByteArray(data, dataOffs);
 		}
 	}
 
@@ -648,51 +652,48 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 			mGraphics.fillRect(xpos + 10, ypos + 10, 10, 10);
 			return; //invalid resource
 		}
-		int i4;
+		int paramSrcIdx;
 		int mapType;
-		int dataType;
-		byte[] bArr;
+		int dataStride;
+		byte[] paramSrc;
 		Image image;
-		int i7;
 		int resIndex = 0;
 		if (mapId < imageMaps.length) {
 			mapType = -99;
-			bArr = null;
-			i4 = 0;
-			dataType = 0;
+			paramSrc = null;
+			paramSrcIdx = 0;
+			dataStride = 0;
 		} else {
 			ImageMapEx m2 = imageMaps2[mapId - imageMaps.length];
 			short s = m2.offset;
 			byte[] bArr2 = (byte[]) loadedResources[m2.resBatchId];
-			i4 = s + 1;
-			byte b = bArr2[s];
-			mapType = b & 3;
-			dataType = (b & 4) != 0 ? 2 : 1;
-			bArr = bArr2;
+			paramSrcIdx = s + 1;
+			byte exHeader = bArr2[s];
+			mapType = exHeader & 3;
+			dataStride = (exHeader & 4) != 0 ? 2 : 1;
+			paramSrc = bArr2;
 		}
 		if (mapType == 0 || mapType == -99) {
 			if (mapType == 0) {
-				if (dataType == 2) {
-					i7 = i4;
-					for (int i9 = 0; i9 < 6; i9++) {
-						tempImageDrawParams[i9] = (short) ((bArr[i7] << 8) | (bArr[i7 + 1] & 255));
-						i7 += 2;
+				if (dataStride == 2) {
+					for (int i = 0; i < 6; i++) {
+						tempImageDrawParams[i] = getShortFromByteArray(paramSrc, paramSrcIdx);
+						paramSrcIdx += 2;
 					}
 				} else {
-					i7 = i4;
-					for (int i10 = 0; i10 < 6; i10++) {
-						tempImageDrawParams[i10] = (short) bArr[i7];
-						i7++;
+					for (int i = 0; i < 6; i++) {
+						tempImageDrawParams[i] = (short) paramSrc[paramSrcIdx];
+						paramSrcIdx++;
 					}
 				}
-				image = imageResources[(short) ((bArr[i7 + 1] & 255) | (bArr[i7] << 8))];
+				image = imageResources[getShortFromByteArray(paramSrc, paramSrcIdx)];
 			} else {
-				tempImageDrawParams[0] = imageMaps[mapId].width;
-				tempImageDrawParams[1] = imageMaps[mapId].height;
+				tempImageDrawParams[0] = (short) (imageMaps[mapId].width & 0xFF);
+				tempImageDrawParams[1] = (short) (imageMaps[mapId].height & 0xFF);
 				tempImageDrawParams[2] = imageMaps[mapId].originX;
 				tempImageDrawParams[3] = imageMaps[mapId].originY;
-				tempImageDrawParams[4] = imageMaps[mapId].atlasX;
-				tempImageDrawParams[5] = imageMaps[mapId].atlasY;
+				tempImageDrawParams[4] = (short) (imageMaps[mapId].atlasX & 0xFF);
+				tempImageDrawParams[5] = (short) (imageMaps[mapId].atlasY & 0xFF);
 				image = imageResources[imageMaps[mapId].imageId];
 			}
 			int drawX = xpos - tempImageDrawParams[2];
@@ -707,23 +708,23 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 					mGraphics.drawRegion(image, tempImageDrawParams[4], tempImageDrawParams[5], drawW, drawH, Sprite.TRANS_NONE, drawX, drawY, Graphics.TOP | Graphics.LEFT);
 				}
 			}
-		} else if (mapType == 1) {
-			int i14 = (dataType << 2) + i4;
-			short resCount = getShortFromByteArray(bArr, i14);
-			int streamPos = i14 + 2;
-			if (dataType == 2) {
+		} else if (mapType == 1) { //compound
+			int dataOffs = (dataStride * 4) + paramSrcIdx;
+			short resCount = getShortFromByteArray(paramSrc, dataOffs);
+			int streamPos = dataOffs + 2;
+			if (dataStride == 2) {
 				while (resIndex < resCount) {
 					drawImageRes(
-							getShortFromByteArray(bArr, streamPos) + xpos,
-							getShortFromByteArray(bArr, streamPos + 2) + ypos,
-							getShortFromByteArray(bArr, streamPos + 4)
+							getShortFromByteArray(paramSrc, streamPos) + xpos,
+							getShortFromByteArray(paramSrc, streamPos + 2) + ypos,
+							getShortFromByteArray(paramSrc, streamPos + 4)
 					);
 					streamPos += 6;
 					resIndex++;
 				}
 			} else {
 				while (resIndex < resCount) {
-					drawImageRes(xpos + bArr[streamPos], ypos + bArr[streamPos + 1], bArr[streamPos + 2]);
+					drawImageRes(xpos + paramSrc[streamPos], ypos + paramSrc[streamPos + 1], paramSrc[streamPos + 2]);
 					streamPos += 3;
 					resIndex++;
 				}
@@ -814,7 +815,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 			try {
 				recordStore.closeRecordStore();
 			} catch (Exception e3) {
-				
+
 			}
 		} catch (Exception e4) {
 			try {
@@ -1254,7 +1255,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 	private static void readResourceTable() {
 		if (resourcePaths == null) {
 			try {
-				DataInputStream dis = new DataInputStream(mMidLet.getClass().getResourceAsStream("/a"));
+				DataInputStream dis = new DataInputStream(mMidLet.getClass().getResourceAsStream(ResourceID.RESMAP_FILENAME));
 				int rscCount = dis.readShort();
 				resourcePaths = new String[rscCount];
 				resourceInfo = new ResourceInfo[rscCount];
@@ -1436,7 +1437,8 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 
 						switch (resType) {
 							case ResourceType.IMAGE:
-								int imgResNo = getShortFromByteArray(getLoadedResData(batchId), 0) + subResIdx;
+								int imgResNo = getShortFromByteArray(getLoadedResData(batchId), 0) //table.baseImageID
+										+ subResIdx;
 								if (lastStream != null) {
 									byte[] bytes = readInputStreamToBytes((InputStream) lastStream, readLength);
 									imageResources[imgResNo] = Image.createImage(bytes, 0, bytes.length);

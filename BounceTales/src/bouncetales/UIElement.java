@@ -3,6 +3,11 @@ package bouncetales;
 /* renamed from: f */
 public final class UIElement {
 
+	public static final int FONT_SHADOW_TYPE = 0;
+	public static final int TEXT_ALIGNMENT = 1;
+	public static final int ICON_ALIGNMENT = 2;
+	public static final int FLAG_3 = 3;
+	public static final int FLAG_4 = 4;
 	public static final int AUTO_WIDTH = 5;
 	public static final int ANCHOR_H = 6;
 	public static final int SELECTION_ARROWS = 7;
@@ -15,11 +20,17 @@ public final class UIElement {
 	public static final int MARGIN_RIGHT = 14;
 	public static final int FONT_TEXT_COLOR = 15;
 	public static final int FONT_SHADOW_COLOR = 16;
+	public static final int COLOR_17 = 17;
 	public static final int FONT_TEXT_COLOR_SELECTED = 18;
 	public static final int FONT_TEXT_COLOR_DISABLED = 19;
 	public static final int FONT_TEXT_COLOR_SELECTED_DISABLED = 20;
-	public static final int COLOR1 = 21;
-	public static final int COLOR2 = 22;
+	public static final int SELECTION_BACKGROUND_COLOR = 21;
+	public static final int SELECTION_BORDER_COLOR = 22;
+	
+	public static final int AUTO_WIDTH_BIT = 256;
+	public static final int ANCHOR_H_BIT = 512;
+	public static final int SELECTION_ARROWS_BIT = 1024;
+	public static final int INHERIT_WIDTH_BIT = 2048;
 
 	public UILayout parentUI = null; //renamed from: a
 
@@ -66,7 +77,7 @@ public final class UIElement {
 		this.label = lastLabel;
 		int availWidth = getWidth() - (getAttribute(MARGIN_LEFT) + getAttribute(MARGIN_RIGHT));
 		int flags = 0;
-		for (int flagIdx = 0; flagIdx < 9; flagIdx++) {
+		for (int flagIdx = 0; flagIdx <= INHERIT_WIDTH; flagIdx++) {
 			flags |= getAttribute(flagIdx);
 		}
 		this.label = new TextLabel(sanitizedStr, availWidth, getAttribute(FONT), flags, iconImageId);

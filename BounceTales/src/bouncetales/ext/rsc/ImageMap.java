@@ -1,6 +1,6 @@
 package bouncetales.ext.rsc;
 
-import java.io.DataInputStream;
+import java.io.DataInput;
 import java.io.IOException;
 
 public class ImageMap {
@@ -13,14 +13,14 @@ public class ImageMap {
 	public static final int PARAM_ATLAS_Y = 5;
 	public static final int PARAM_IMAGE_ID = 6;
 
-	public short width;
-	public short height;
-	public short originX;
-	public short originY;
+	public byte width;
+	public byte height;
+	public byte originX;
+	public byte originY;
 
-	public short atlasX;
-	public short atlasY;
-	public short imageId;
+	public byte atlasX;
+	public byte atlasY;
+	public byte imageId;
 
 	public ImageMap() {
 		clear();
@@ -36,42 +36,32 @@ public class ImageMap {
 		imageId = -1;
 	}
 
-	public void read(DataInputStream dis) throws IOException {
-		width = (short) dis.readUnsignedByte();
-		height = (short) dis.readUnsignedByte();
+	public void read(DataInput dis) throws IOException {
+		width = dis.readByte();
+		height = dis.readByte();
 		originX = dis.readByte();
 		originY = dis.readByte();
-		atlasX = (short) dis.readUnsignedByte();
-		atlasY = (short) dis.readUnsignedByte();
+		atlasX = dis.readByte();
+		atlasY = dis.readByte();
 		imageId = dis.readByte();
-	}
-
-	public void read16Bit(DataInputStream dis) throws IOException {
-		width = dis.readShort();
-		height = dis.readShort();
-		originX = dis.readShort();
-		originY = dis.readShort();
-		atlasX = dis.readShort();
-		atlasY = dis.readShort();
-		imageId = dis.readShort();
 	}
 
 	public int getParam(int paramId) {
 		switch (paramId) {
 			case PARAM_ATLAS_X:
-				return atlasX;
+				return atlasX & 0xFF;
 			case PARAM_ATLAS_Y:
-				return atlasY;
+				return atlasY & 0xFF;
 			case PARAM_WIDTH:
-				return width;
+				return width & 0xFF;
 			case PARAM_HEIGHT:
-				return height;
+				return height & 0xFF;
 			case PARAM_ORIGIN_X:
 				return originX;
 			case PARAM_ORIGIN_Y:
 				return originY;
 			case PARAM_IMAGE_ID:
-				return imageId;
+				return imageId & 0xFF;
 		}
 		throw new IllegalArgumentException("Param wrong " + paramId);
 	}

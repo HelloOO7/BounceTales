@@ -33,22 +33,22 @@ public final class BounceGame {
 	public static final int CANNON_LEVEL_INDEX = 15;
 
 	private static final short[] LEVEL_RESIDS = {
-		39,
-		40,
-		41,
-		42,
-		51,
-		43,
-		44,
-		45,
-		46,
-		52,
-		47,
-		48,
-		49,
-		50,
-		53,
-		54
+		ResourceID.LEVELS_LEVEL_CAMPAIGN01_RLEF,
+		ResourceID.LEVELS_LEVEL_CAMPAIGN02_RLEF,
+		ResourceID.LEVELS_LEVEL_CAMPAIGN03_RLEF,
+		ResourceID.LEVELS_LEVEL_CAMPAIGN04_RLEF,
+		ResourceID.LEVELS_LEVEL_EXTRA01_RLEF,
+		ResourceID.LEVELS_LEVEL_CAMPAIGN05_RLEF,
+		ResourceID.LEVELS_LEVEL_CAMPAIGN06_RLEF,
+		ResourceID.LEVELS_LEVEL_CAMPAIGN07_RLEF,
+		ResourceID.LEVELS_LEVEL_CAMPAIGN08_RLEF,
+		ResourceID.LEVELS_LEVEL_EXTRA02_RLEF,
+		ResourceID.LEVELS_LEVEL_CAMPAIGN09_RLEF,
+		ResourceID.LEVELS_LEVEL_CAMPAIGN10_RLEF,
+		ResourceID.LEVELS_LEVEL_CAMPAIGN11_RLEF,
+		ResourceID.LEVELS_LEVEL_CAMPAIGN12_RLEF,
+		ResourceID.LEVELS_LEVEL_EXTRA03_RLEF,
+		ResourceID.LEVELS_LEVEL_OBJ01_CANNON_RLEF
 	}; //renamed from: v
 
 	private static final short[] LEVEL_NAME_MESSAGE_IDS = {
@@ -284,7 +284,7 @@ public final class BounceGame {
 		MessageID.IS_TEXT_RIGHT_TO_LEFT_RESERVED
 	}; //renamed from: a
 
-	private static final int[] SPLASH_SCREEN_LAYOUT_RESIDS = {7}; //renamed from: o
+	private static final int[] SPLASH_SCREEN_LAYOUT_RESIDS = {ResourceID.GRAPHICS_SPLASHLOGO_RES}; //renamed from: o
 	private static final int[] SPLASH_SCREEN_DURATIONS = {100}; //renamed from: q
 	private static final int[] SPLASH_BG_COLORS = {0xFFFFFF}; //renamed from: r
 	private static final int[] SPLASH_IMAGE_IDS = {1}; //renamed from: p
@@ -622,10 +622,10 @@ public final class BounceGame {
 	/* renamed from: a */
 	private static void drawBookFrame(int xpos, int ypos, Graphics graphics) {
 		GameRuntime.drawImageRes(xpos, ypos, 331);
-		int yparam = GameRuntime.getImageAnimParamEx(331, 0);
+		int yparam = GameRuntime.getCompoundSpriteParamEx(331, 0);
 		int xEnd = yparam >> 16;
 		short yEnd = (short) (yparam & 0xFFFF);
-		int xparam = GameRuntime.getImageAnimParamEx(331, 1);
+		int xparam = GameRuntime.getCompoundSpriteParamEx(331, 1);
 		int xStart = xparam >> 16;
 		short yStart = (short) (xparam & 0xFFFF);
 		graphics.setColor(0xFBF7E3);
@@ -661,19 +661,19 @@ public final class BounceGame {
 			case LevelID.SECRET_STALKWAY:
 			case LevelID.TUNNEL_OF_TREASURES:
 			case LevelID.FANTASTIC_FAIR:
-				return SoundID.LEVEL_BONUS;
+				return ResourceID.AUDIO_BGM_LEVEL_BONUS_MID;
 			case LevelID.BUMPY_CRACKS:
 			case LevelID.TRAPPED_IN_MACHINE:
 			case LevelID.FINAL_RIDE:
-				return SoundID.LEVEL_BOSS;
+				return ResourceID.AUDIO_BGM_LEVEL_BOSS_MID;
 		}
 		switch (getLevelType(currentLevel)) {
 			case 0:
-				return SoundID.LEVEL_ACT_1;
+				return ResourceID.AUDIO_BGM_LEVEL_ACT01_MID;
 			case 1:
-				return SoundID.LEVEL_ACT_2;
+				return ResourceID.AUDIO_BGM_LEVEL_ACT02_MID;
 			default:
-				return SoundID.LEVEL_ACT_3;
+				return ResourceID.AUDIO_BGM_LEVEL_ACT03_MID;
 		}
 	}
 
@@ -893,8 +893,8 @@ public final class BounceGame {
 				clearUIBackground(grp);
 				int screenCX = GameRuntime.currentWidth >> 1;
 				int screenCY = GameRuntime.currentHeight >> 1;
-				int b = ((short) GameRuntime.getImageAnimParamEx(331, 2)) + screenCY;
-				int b2 = ((short) GameRuntime.getImageAnimParamEx(331, 3)) + screenCY;
+				int b = ((short) GameRuntime.getCompoundSpriteParamEx(331, 2)) + screenCY;
+				int b2 = ((short) GameRuntime.getCompoundSpriteParamEx(331, 3)) + screenCY;
 				drawBookFrame(screenCX, screenCY, grp);
 				if (selectedLevelId != 0) {
 					GameRuntime.drawImageResAnchored(3, screenCY, 326, 6); //left arrow
@@ -998,10 +998,10 @@ public final class BounceGame {
 			int i20 = GameRuntime.currentWidth >> 1;
 			int i21 = GameRuntime.currentHeight >> 1;
 			if (ui.uiID == GameScene.MENU_TITLE) {
-				int b3 = GameRuntime.getImageAnimParamEx(332, 0);
+				int b3 = GameRuntime.getCompoundSpriteParamEx(332, 0);
 				int i22 = b3 >> 16;
 				short s = (short) b3;
-				int b4 = GameRuntime.getImageAnimParamEx(332, 1);
+				int b4 = GameRuntime.getCompoundSpriteParamEx(332, 1);
 				int i23 = b4 >> 16;
 				int i24 = i20 - 117;
 				int i25 = i21 - 157;
@@ -1316,39 +1316,44 @@ public final class BounceGame {
 		currentCannon = null;
 		parallaxImagesRegColors = null;
 		parallaxImagesStolenColors = null;
-		GameRuntime.unloadResource(2);
-		GameRuntime.unloadResource(1);
-		GameRuntime.unloadResource(6);
-		GameRuntime.unloadResource(5);
-		GameRuntime.unloadResource(24);
-		GameRuntime.unloadResource(0);
-		GameRuntime.unloadResource(3);
-		GameRuntime.unloadResource(26);
-		GameRuntime.unloadResource(20);
-		GameRuntime.unloadResource(19);
-		GameRuntime.unloadResource(16);
-		GameRuntime.unloadResource(25);
-		GameRuntime.unloadResource(22);
-		GameRuntime.unloadResource(27);
-		GameRuntime.unloadResource(21);
-		GameRuntime.unloadResource(23);
-		int act = getLevelType(currentLevel);
-		if (act == 0) {
-			GameRuntime.unloadResource(12);
-			GameRuntime.unloadResource(17);
-			GameRuntime.unloadResource(18);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_BALLHIGHLIGHT_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_BALLPARTS_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJDOOR_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJLEVER_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJSIGNBOARD_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJFRIEND_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJSTONEWALL_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_UIPAUSEMENU_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_ENEMY00CANDLE_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_ENEMY02MOLE_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJHYPNOTOID_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJSPIKE_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJEGG_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_PARTICLESPLASH_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_PARTICLECOMMON_RES);
+		GameRuntime.unloadResource(ResourceID.GRAPHICS_BALLBUMPYCRACKS_RES);
+		switch (getLevelType(currentLevel)) {
+			case 0:
+				GameRuntime.unloadResource(ResourceID.GRAPHICS_LEVELACT01_RES);
+				GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJCOLORMACHINE_RES);
+				GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJCOLORMACHINEBROKEN_RES);
+				break;
+			case 1:
+				GameRuntime.unloadResource(ResourceID.GRAPHICS_LEVELACT02_RES);
+				GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJCOLORMACHINE_RES);
+				GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJCOLORMACHINEBROKEN_RES);
+				break;
+			case 2:
+				GameRuntime.unloadResource(ResourceID.GRAPHICS_LEVELACT03_RES);
+				GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJCANNON_RES);
+				//bugfix: this resource is not unloaded in the original game, causing a resource leak
+				GameRuntime.unloadResource(ResourceID.GRAPHICS_OBJCOLORMACHINE_RES);
+				break;
+			default:
+				break;
 		}
-		if (act == 1) {
-			GameRuntime.unloadResource(11);
-			GameRuntime.unloadResource(17);
-			GameRuntime.unloadResource(18);
-		}
-		if (act == 2) {
-			GameRuntime.unloadResource(8);
-			GameRuntime.unloadResource(4);
-		}
-		GameRuntime.loadResource(10);
-		GameRuntime.loadResource(13);
+		GameRuntime.loadResource(ResourceID.GRAPHICS_UIMAINMENU_RES);
+		GameRuntime.loadResource(ResourceID.GRAPHICS_UILEVELSELECT_RES);
 	}
 
 	/* renamed from: g */
@@ -1416,9 +1421,9 @@ public final class BounceGame {
 				this.ui.loadFromResource(37);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -2); //font
 				this.ui.setAttribute(UILayout.FONT, -2);
-				this.ui.setElemDefaultAttribute(UIElement.AUTO_WIDTH, 256);
+				this.ui.setElemDefaultAttribute(UIElement.AUTO_WIDTH, UIElement.AUTO_WIDTH_BIT);
 				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, LAYOUT_MAIN_MENU_TITLE_PADDING);
-				this.ui.setAttribute(5, 128);
+				this.ui.setAttribute(UILayout.SCROLL_WRAPAROUND, UILayout.SCROLL_WRAPAROUND_BIT);
 
 				//HD
 				this.ui.setAttribute(UILayout.MARGIN_TOP, 14);
@@ -1506,11 +1511,11 @@ public final class BounceGame {
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
 				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME) + 4);
 				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentWidth - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME);
-				this.ui.setAttribute(4, 64);
-				this.ui.setAttribute(3, 32);
-				this.ui.setAttribute(5, 128);
+				this.ui.setAttribute(UILayout.ANCHOR_CENTER, UILayout.ANCHOR_CENTER_BIT);
+				this.ui.setAttribute(UILayout.PACKED_HEIGHT, UILayout.PACKED_HEIGHT_BIT);
+				this.ui.setAttribute(UILayout.SCROLL_WRAPAROUND, UILayout.SCROLL_WRAPAROUND_BIT);
 				this.ui.setElemDefaultAttribute(UIElement.FONT_TEXT_COLOR_SELECTED, 0xFF7800);
-				this.ui.setAttribute(2, 0);
+				this.ui.setAttribute(UILayout.SOFTKEY_BAR, 0);
 				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_PAUSE_MENU), -1, 1);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_SELECT), 0, -2, true);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_QUIT), 0, GameScene.CONFIRM_EXIT_LEVEL, true);
@@ -1528,9 +1533,9 @@ public final class BounceGame {
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
 				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME) + 4);
 				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME);
-				this.ui.setAttribute(4, 64);
-				this.ui.setAttribute(3, 32);
-				this.ui.setAttribute(2, 0);
+				this.ui.setAttribute(UILayout.ANCHOR_CENTER, UILayout.ANCHOR_CENTER_BIT);
+				this.ui.setAttribute(UILayout.PACKED_HEIGHT, UILayout.PACKED_HEIGHT_BIT);
+				this.ui.setAttribute(UILayout.SOFTKEY_BAR, 0);
 				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_RESTART_LEVEL), -1, 1);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_YES), 0, GameScene.RESTART_LEVEL, false);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_NO), 0, GameScene.MENU_PAUSE, true);
@@ -1541,14 +1546,14 @@ public final class BounceGame {
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
 				exitLevelReturnScene = GameScene.MENU_LEVEL_SELECT;
-				this.ui.setElemDefaultAttribute(UIElement.AUTO_WIDTH, 256);
+				this.ui.setElemDefaultAttribute(UIElement.AUTO_WIDTH, UIElement.AUTO_WIDTH_BIT);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
 				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME) + 4);
 				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME);
-				this.ui.setAttribute(4, 64);
-				this.ui.setAttribute(3, 32);
-				this.ui.setAttribute(2, 0);
+				this.ui.setAttribute(UILayout.ANCHOR_CENTER, UILayout.ANCHOR_CENTER_BIT);
+				this.ui.setAttribute(UILayout.PACKED_HEIGHT, UILayout.PACKED_HEIGHT_BIT);
+				this.ui.setAttribute(UILayout.SOFTKEY_BAR, 0);
 				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_RETURN_LEVEL_SELECT), -1, 1);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_YES), 0, GameScene.EXIT_LEVEL, false);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_NO), 0, GameScene.MENU_PAUSE, true);
@@ -1559,14 +1564,14 @@ public final class BounceGame {
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
 				exitLevelReturnScene = GameScene.MENU_TITLE;
-				this.ui.setElemDefaultAttribute(UIElement.AUTO_WIDTH, 256);
+				this.ui.setElemDefaultAttribute(UIElement.AUTO_WIDTH, UIElement.AUTO_WIDTH_BIT);
 				this.ui.setAttribute(UILayout.MARGIN_LEFT, 2);
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
 				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME) + 4);
 				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME);
-				this.ui.setAttribute(4, 64);
-				this.ui.setAttribute(3, 32);
-				this.ui.setAttribute(2, 0);
+				this.ui.setAttribute(UILayout.ANCHOR_CENTER, UILayout.ANCHOR_CENTER_BIT);
+				this.ui.setAttribute(UILayout.PACKED_HEIGHT, UILayout.PACKED_HEIGHT_BIT);
+				this.ui.setAttribute(UILayout.SOFTKEY_BAR, 0);
 				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_QUIT_GAME), -1, 1);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_YES), 0, GameScene.EXIT_LEVEL, false);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_NO), 0, GameScene.MENU_PAUSE, true);
@@ -1602,20 +1607,20 @@ public final class BounceGame {
 				String eggsCollectedStr = eggCount + "/" + bonusLevelEggLimit;
 				UIElement eggsCollectedUI = new UIElement(eggsCollectedStr, 102, this.ui, -1);
 				if (isTextRightToLeft) {
-					eggsCollectedUI.setAttribute(2, 16);
+					eggsCollectedUI.setAttribute(UIElement.ICON_ALIGNMENT, 16);
 					eggsCollectedUI.setText(eggsCollectedStr, 102);
 				}
 				this.ui.addElement(eggsCollectedUI);
 				String timerStr = formatGameTimer(levelTimer / 1000);
 				UIElement timerUI = new UIElement(timerStr, 103, this.ui, -1);
 				if (isTextRightToLeft) {
-					timerUI.setAttribute(2, 16);
+					timerUI.setAttribute(UIElement.ICON_ALIGNMENT, 16);
 					timerUI.setText(timerStr, 103);
 				}
 				this.ui.addElement(timerUI);
 				if (this.highScoreBeaten) {
 					UIElement newHighScoreText = new UIElement(StringManager.getMessage(MessageID.NEW_HIGH_SCORE), -1, this.ui, -1);
-					newHighScoreText.setAttribute(1, 8);
+					newHighScoreText.setAttribute(UIElement.TEXT_ALIGNMENT, 8);
 					newHighScoreText.setText(StringManager.getMessage(MessageID.NEW_HIGH_SCORE), -1);
 					this.ui.addElement(newHighScoreText);
 				}
@@ -1625,9 +1630,9 @@ public final class BounceGame {
 						short timerTrophyImageId = TROPHY_IMAGE_IDS[this.timerChallengeTrophy];
 						anyMedalsWon = true;
 						UIElement timerChallengeText = new UIElement(StringManager.getMessage(MessageID.TIMER_CHALLENGE), timerTrophyImageId, this.ui, -1);
-						timerChallengeText.setAttribute(2, 16);
-						timerChallengeText.setAttribute(3, 64);
-						timerChallengeText.setAttribute(1, 8);
+						timerChallengeText.setAttribute(UIElement.ICON_ALIGNMENT, 16);
+						timerChallengeText.setAttribute(UIElement.FLAG_3, 64);
+						timerChallengeText.setAttribute(UIElement.TEXT_ALIGNMENT, 8);
 						timerChallengeText.setText(StringManager.getMessage(MessageID.TIMER_CHALLENGE), timerTrophyImageId);
 						this.ui.addElement(timerChallengeText);
 					}
@@ -1635,15 +1640,15 @@ public final class BounceGame {
 						short collectionTrophyImageId = TROPHY_IMAGE_IDS[this.collectionChallengeTrophy];
 						anyMedalsWon = true;
 						UIElement collectionChallengeText = new UIElement(StringManager.getMessage(MessageID.COLLECTION_CHALLENGE), collectionTrophyImageId, this.ui, -1);
-						collectionChallengeText.setAttribute(2, 16);
-						collectionChallengeText.setAttribute(3, 64);
-						collectionChallengeText.setAttribute(1, 8);
+						collectionChallengeText.setAttribute(UIElement.ICON_ALIGNMENT, 16);
+						collectionChallengeText.setAttribute(UIElement.FLAG_3, 64);
+						collectionChallengeText.setAttribute(UIElement.TEXT_ALIGNMENT, 8);
 						collectionChallengeText.setText(StringManager.getMessage(MessageID.COLLECTION_CHALLENGE), collectionTrophyImageId);
 						this.ui.addElement(collectionChallengeText);
 					}
 					if (!anyMedalsWon) {
 						UIElement noMedalsWonText = new UIElement(StringManager.getMessage(MessageID.NO_MEDALS_WON), -1, this.ui, -1);
-						noMedalsWonText.setAttribute(1, 8);
+						noMedalsWonText.setAttribute(UIElement.TEXT_ALIGNMENT, 8);
 						noMedalsWonText.setText(StringManager.getMessage(MessageID.NO_MEDALS_WON), -1);
 						this.ui.addElement(noMedalsWonText);
 					}
@@ -1706,9 +1711,9 @@ public final class BounceGame {
 				this.ui.setAttribute(UILayout.MARGIN_RIGHT, 2);
 				this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME) + 4);
 				this.ui.setAttribute(UILayout.FIXED_HEIGHT, GameRuntime.currentHeight - LAYOUT_DEFAULT_HORIZONTAL_MARGIN_INGAME);
-				this.ui.setAttribute(4, 64);
-				this.ui.setAttribute(3, 32);
-				this.ui.setAttribute(2, 0);
+				this.ui.setAttribute(UILayout.ANCHOR_CENTER, UILayout.ANCHOR_CENTER_BIT);
+				this.ui.setAttribute(UILayout.PACKED_HEIGHT, UILayout.PACKED_HEIGHT_BIT);
+				this.ui.setAttribute(UILayout.SOFTKEY_BAR, 0);
 				this.ui.setTitle("", -1, 1);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_OK), 0, GameScene.CLOSE_FIELD_MESSAGE, true);
 				if (reqReloadFieldMsg) {
@@ -1871,7 +1876,7 @@ public final class BounceGame {
 						}
 						break;
 					case PLAYER_STATE_LOSE:
-						GameRuntime.playMusic(SoundID.ME_LOSE, 1);
+						GameRuntime.playMusic(ResourceID.AUDIO_ME_LOSE_MID, 1);
 						setPlayerState(PLAYER_STATE_LOSE_UPDATE);
 						exitWaitTimer = 3000;
 						deathBaseY = bounceObj.localObjectMatrix.translationY;
@@ -1880,7 +1885,7 @@ public final class BounceGame {
 						}
 						break;
 					case PLAYER_STATE_WIN:
-						GameRuntime.playMusic(SoundID.ME_WIN, 1);
+						GameRuntime.playMusic(ResourceID.AUDIO_ME_WIN_MID, 1);
 						setPlayerState(PLAYER_STATE_WIN_UPDATE);
 						exitWaitTimer = 3000;
 						bounceObj.resetPhysics();
@@ -2178,48 +2183,52 @@ public final class BounceGame {
 				} else {
 					this.gameMainState = 3;
 					setUI(exitLevelReturnScene);
-					GameRuntime.playMusic(SoundID.TITLE_MENU, -1);
+					GameRuntime.playMusic(ResourceID.AUDIO_BGM_TITLE_MID, -1);
 					return 0;
 				}
 			case GameScene.LOAD_LEVEL:
 			case 15: //load level
 				if (sceneResult == 0) {
 					GameRuntime.stopMusic();
-					GameRuntime.unloadResource(10);
-					GameRuntime.unloadResource(13);
+					GameRuntime.unloadResource(ResourceID.GRAPHICS_UIMAINMENU_RES);
+					GameRuntime.unloadResource(ResourceID.GRAPHICS_UILEVELSELECT_RES);
 					GameRuntime.loadResource(LEVEL_RESIDS[currentLevel]);
 					GameRuntime.loadResource(LEVEL_RESIDS[CANNON_LEVEL_INDEX]);
-					GameRuntime.loadResource(2);
-					GameRuntime.loadResource(1);
-					GameRuntime.loadResource(6);
-					GameRuntime.loadResource(5);
-					GameRuntime.loadResource(24);
-					GameRuntime.loadResource(0);
-					GameRuntime.loadResource(3);
-					GameRuntime.loadResource(26);
-					GameRuntime.loadResource(20);
-					GameRuntime.loadResource(19);
-					GameRuntime.loadResource(16);
-					GameRuntime.loadResource(25);
-					GameRuntime.loadResource(27);
-					GameRuntime.loadResource(21);
-					GameRuntime.loadResource(23);
-					GameRuntime.loadResource(22);
-					int b = getLevelType(currentLevel);
-					if (b == 0) {
-						GameRuntime.loadResource(12);
-						GameRuntime.loadResource(17);
-						GameRuntime.loadResource(18);
-					}
-					if (b == 1) {
-						GameRuntime.loadResource(11);
-						GameRuntime.loadResource(17);
-						GameRuntime.loadResource(18);
-					}
-					if (b == 2) {
-						GameRuntime.loadResource(8);
-						GameRuntime.loadResource(4);
-						GameRuntime.loadResource(17);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_BALLHIGHLIGHT_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_BALLPARTS_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_OBJDOOR_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_OBJLEVER_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_OBJSIGNBOARD_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_OBJFRIEND_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_OBJSTONEWALL_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_UIPAUSEMENU_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_ENEMY00CANDLE_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_ENEMY02MOLE_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_OBJHYPNOTOID_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_OBJSPIKE_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_PARTICLESPLASH_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_PARTICLECOMMON_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_BALLBUMPYCRACKS_RES);
+					GameRuntime.loadResource(ResourceID.GRAPHICS_OBJEGG_RES);
+					switch (getLevelType(currentLevel)) {
+						case 0:
+							GameRuntime.loadResource(ResourceID.GRAPHICS_LEVELACT01_RES);
+							GameRuntime.loadResource(ResourceID.GRAPHICS_OBJCOLORMACHINE_RES);
+							GameRuntime.loadResource(ResourceID.GRAPHICS_OBJCOLORMACHINEBROKEN_RES);
+							break;
+						case 1:
+							GameRuntime.loadResource(ResourceID.GRAPHICS_LEVELACT02_RES);
+							GameRuntime.loadResource(ResourceID.GRAPHICS_OBJCOLORMACHINE_RES);
+							GameRuntime.loadResource(ResourceID.GRAPHICS_OBJCOLORMACHINEBROKEN_RES);
+							break;
+						case 2:
+							GameRuntime.loadResource(ResourceID.GRAPHICS_LEVELACT03_RES);
+							GameRuntime.loadResource(ResourceID.GRAPHICS_OBJCANNON_RES);
+							//This resource is used for the hypnotoid beam. However, it isn't properly unloaded when the level ends in the original game.
+							GameRuntime.loadResource(ResourceID.GRAPHICS_OBJCOLORMACHINE_RES); 
+							break;
+						default:
+							break;
 					}
 					ballFramebuffer = Image.createImage(BounceObject.BALL_DIMENS_SCREENSPACE[0] * 3, BounceObject.BALL_DIMENS_SCREENSPACE[0] * 3);
 					ballGraphics = ballFramebuffer.getGraphics();
@@ -2497,7 +2506,7 @@ public final class BounceGame {
 					return 0;
 				} else {
 					this.gameMainState = 3;
-					GameRuntime.playMusic(SoundID.TITLE_MENU, -1);
+					GameRuntime.playMusic(ResourceID.AUDIO_BGM_TITLE_MID, -1);
 					setUI(GameScene.MENU_TITLE);
 					return 0;
 				}
@@ -2609,11 +2618,11 @@ public final class BounceGame {
 	/* renamed from: c */
 	public final void onSystemEvent(int eventId) {
 		if (eventId == GameRuntime.SYSTEM_EVENT_START) {
-			GameRuntime.loadResource(9); //game UI
-			GameRuntime.loadResource(14);
-			GameRuntime.loadResource(15);
-			GameRuntime.loadResource(37);
-			GameRuntime.loadResource(36);
+			GameRuntime.loadResource(ResourceID.GRAPHICS_UIARROWS_RES); //game UI
+			GameRuntime.loadResource(ResourceID.GRAPHICS_UILEVELSTATS_RES);
+			GameRuntime.loadResource(ResourceID.GRAPHICS_UINUMBERFONT_RES);
+			GameRuntime.loadResource(ResourceID.LAYOUT_MENULAYOUTA_RES);
+			GameRuntime.loadResource(ResourceID.LAYOUT_INFOLAYOUT_RES);
 			GameRuntime.loadResource(-1);
 			GameRuntime.loadResource(-2);
 			GameRuntime.loadResource(-3);
