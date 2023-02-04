@@ -96,7 +96,7 @@ public final class TrampolineObject extends GameObject {
 	}
 
 	/* renamed from: b */
-	public final void onJumperContact() {
+	public final void onPlayerContact() {
 		loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
 		jumper.localObjectMatrix.translationY = GameObject.tmpObjMatrix.translationY
 				- ((LP32.Int32ToLP32((short) GameRuntime.getCompoundSpriteParamEx(GameRuntime.getImageIdAfterAnimation(this.imageId, this.animFrame), 0)) / GameObject.screenSpaceMatrix.m00) << 16);
@@ -122,7 +122,7 @@ public final class TrampolineObject extends GameObject {
 				this.animFrame = (frameCount * this.progress) / this.period;
 			} else {
 				this.animFrame = (frameCount * this.progress) / this.period;
-				onJumperContact();
+				onPlayerContact();
 			}
 			if (this.progress >= this.period) {
 				this.progress = 0;

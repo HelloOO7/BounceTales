@@ -353,7 +353,7 @@ public final class BounceObject extends GameObject {
 						case CannonObject.TYPEID:
 							CannonObject cannon = (CannonObject) other;
 							if (aabbCheckBoundCross(xRelToOther, yRelToOther, newXRelToOther, newYRelToOther, cannon.loadAABBMinX, cannon.loadAABBMinY, cannon.loadAABBMaxX, cannon.loadAABBMaxY)) {
-								cannon.loadBounceToCannon();
+								cannon.onPlayerContact();
 							}
 							other = other.getNextNodeDescendToChildren(startNode);
 							break;
@@ -389,7 +389,7 @@ public final class BounceObject extends GameObject {
 									}
 									jumpPad.setJumper(this);
 									jumpPad.isJumpFinished = false;
-									jumpPad.onJumperContact();
+									jumpPad.onPlayerContact();
 								}
 							}
 							other = other.getNextNodeDescendToChildren(startNode);
@@ -430,7 +430,7 @@ public final class BounceObject extends GameObject {
 								}
 								if (enemy.enemyType == EnemyObject.TYPE_MOLE) {
 									if (aabbCheckBoundCross(xRelToOther, yRelToOther, newXRelToOther, newYRelToOther, enemy.bboxMinX, enemy.bboxMinY, enemy.bboxMaxX, enemy.bboxMinY + ((((enemy.molePeekTimer * 100) / enemy.molePeekPeriod) * (enemy.bboxMaxY - enemy.bboxMinY)) / 100))) {
-										enemy.propelBounceAway();
+										enemy.onPlayerContact();
 									}
 								}
 							}

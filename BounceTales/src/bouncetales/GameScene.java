@@ -28,4 +28,5 @@ public class GameScene {
 	public static final int CLOSE_FIELD_MESSAGE = 35;
 	public static final int CALL_TITLE_MENU = 36;
 	public static final int RESTART_LEVEL = 37;
+	public static final int OPEN_MORE_GAMES_URL = 38;
 }

@@ -8,13 +8,14 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
+import xstandard.io.util.IndentedPrintStream;
 
 public class GeometryData extends ObjectData {
 
     public int[][] vertices;
     public short[] facepoints;
     public Color color;
-    public int f473a;
+    public int eventId;
 
     public GeometryData(DataInput in, int objId) throws IOException {
         super(in, objId);
@@ -39,7 +40,7 @@ public class GeometryData extends ObjectData {
         int fpBitSize = in.readByte();
         decomposeBytesToShorts(facepoints, fcount, 0, in, fpBitSize);
 
-        f473a = in.readShort();
+        eventId = in.readShort();
 
         makeBBox();
     }
@@ -55,20 +56,20 @@ public class GeometryData extends ObjectData {
     }
 
     @Override
-    public void dump(PrintStream out) {
+    public void dump(IndentedPrintStream out) {
         super.dump(out);
 
         out.println("| TRIANGLE MODEL DATA |");
         dumpBBox(out);
         out.println(" - Fill color: " + color.toString());
-        out.println(" - f473a: " + f473a);
+        out.println(" - Event: " + eventId);
         out.println();
         out.println(" - | DE-INDEXED FACES |");
         for (int i = 0; i < facepoints.length; i += 3) {
             out.print("        ");
-            out.print(getVtxStr(vertices[facepoints[0]]));
-            out.print(getVtxStr(vertices[facepoints[1]]));
-            out.print(getVtxStr(vertices[facepoints[2]]));
+            out.print(getVtxStr(vertices[facepoints[i + 0]]));
+            out.print(getVtxStr(vertices[facepoints[i + 1]]));
+            out.print(getVtxStr(vertices[facepoints[i + 2]]));
             out.println();
         }
         out.println();

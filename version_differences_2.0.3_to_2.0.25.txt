@@ -1,0 +1,64 @@
+2.0.3 to 2.0.25 classes
+ALL GAMEOBJECTS - a method with signature void(void) is used as virtual for collision reactions
+(f. e. propelBounceAway on EnemyObjects). However, no base method for it exists.
+EggObject - a -> h (no updates)
+TextLabel - b -> q (no updates)
+BounceObject - c -> c (no updates afaict - unused field removed (gravity X))
+Matrix - d -> l (no updates)
+TrampolineObject - e -> k (no updates)
+UIElement - f -> r (no updates, unused field removed (String))
+EventObject - g -> m (UPDATED - removed final boss timer, separated interpreter)
+UILayout - h -> s (no updates afaict)
+WaterObject - i -> n (no updates)
+GameObject - j -> f (UPDATED - less recursion when depth sorting)
+CannonObject - k -> d (no updates, except particle function omitting unused args - might have been obfuscated)
+EnemyObject - l -> e (UPDATED:
+after super.updatePhysics, remaining code only runs if:
+(C0001b.f45e != 13 || C0012m.f320a[8] != 5)
+aka
+BounceGame.currentLevel != FINAL_RIDE || EventObject.eventVars[8] != 5
+- might be bugfix for enemies being active after final bos beaten)
+BounceGame - m -> b (UPDATED:
+more games button,
+new game UI width fix,
+summary comparisons >= 0 instead of > -1,
+summary right to left icons fix,
+separate level loader,
+functions for quit/title music after more games,
+reset field message queue during level load,
+inlined initStolenColorData to loadLevel
+)
+ParticleObject - n -> g (UPDATED:
+removed fields v,w,x - obfuscator deleted always zeroes..?)
+GameRuntime - o -> o (UPDATED:
+fix incoming call music bug,
+implement interface p,
+remove unused fields,
+paint -> call super.paint instead of gamePaint
+)
+GeometryObject - p -> i (no updates)
+StringManager - q -> a (UPDATED: print offset of desired string on IO exception)
+SpriteObject - r -> j (UPDATED: Move EventCommand.OBJ_ANIMATE handler from EventObject to SpriteObject)
+IResourceHandler - NONE -> p
+RMIDlet - RMIDlet -> RMIDlet (no updates)
+
+2.0.3 to 2.0.25 levels
+act1 - change terrain decal 254 to 255
+act2 - change terrain decal 164 to 163
+act3 - swap around terrain decals 123 and 354 and 122
+all - update for new message IDs
+campaign02 - optimize objects 18 and 23 as non colliding
+campaign04 - show "new forme unlocked" on level clear
+campaign05 - expand "walls" of central area upwards (objects 17 and 47)
+campaign06 - added some new events and reordered stuff so a diff is not humanly readable
+campaign07 - add ceiling to start of first area
+campaign08 - show "new forme unlocked" on level clear
+campaign10 - extend death barrier, decrease object 58 z-index
+campaign11 - extend death barrier
+campaign12 - 
+pause event 12 on boss death, 
+move auto-checkpoint elsewhere, 
+re-layout eggs in starting area,
+make geometry less spiky (previously could make you fall through the map),
+fix level restart
+extra03 - added some new objects and reordered stuff so a diff is not humanly readable

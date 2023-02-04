@@ -1,14 +1,18 @@
 Manifest-Version: 1.0
-Ant-Version: Apache Ant 1.6.5
+Ant-Version: Apache Ant 1.7.1
 Created-By: 1.6.0_03-b05 (Sun Microsystems Inc.)
-Cheats: On
 MIDlet-Data-Size: 1024
 MicroEdition-Configuration: CLDC-1.1
-MIDlet-Name: Bounce Tales EX
+MIDlet-Name: Bounce Tales
 MIDlet-Icon: /icon.png
 MIDlet-Vendor: Nokia
 MIDlet-1: Bounce Tales EX, /icon.png, bouncetales.RMIDlet
-MIDlet-Version: 2.0.3
+MIDlet-Version: 2.0.25
 MicroEdition-Profile: MIDP-2.0
-Nokia-Platform: Nokia*
+Nokia-MIDlet-Category: Game
+Nokia-Platform: *
+Cheats: On
+more_games_status: on
+more_games_url: http://more.store.ovi.mobi/games_arcade?intc=ovistore-
+ mc-ger-bounce2-acq-na-device-g0-na-1
 

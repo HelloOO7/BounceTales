@@ -226,6 +226,10 @@ public class GameObject {
 	public void checkCollisions(GameObject jVar) {
 	}
 
+	public void onPlayerContact() {
+
+	}
+
 	/* renamed from: a */
 	public void draw(Graphics graphics, DirectGraphics directGraphics, Matrix rootMatrix) {
 
@@ -265,7 +269,7 @@ public class GameObject {
 
 	/* renamed from: a */
 	private static void depthSort(GameObject[] objects, int start, int end) {
-		if (start < end) {
+		while (start < end) {
 			GameObject endObj = objects[end];
 			int swapIdx = start - 1;
 			for (int searchIdx = start; searchIdx < end; searchIdx++) {
@@ -280,7 +284,7 @@ public class GameObject {
 			objects[swapIdx + 1] = endObj;
 			int mid = swapIdx + 1;
 			depthSort(objects, start, mid - 1);
-			depthSort(objects, mid + 1, end);
+			start = mid + 1; //updated in 2.0.25
 		}
 	}
 

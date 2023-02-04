@@ -21,6 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import bouncetools.rlef.RLEF;
+import xstandard.io.util.IndentedPrintStream;
 
 public class ResourceDump {
 
@@ -179,7 +180,7 @@ public class ResourceDump {
 		RLEF rlef = new RLEF(ResourceDump.class.getResourceAsStream("/" + levelPath));
 
 		try {
-			rlef.dump(new PrintStream(target));
+			rlef.dump(new IndentedPrintStream(target));
 		} catch (FileNotFoundException ex) {
 			Logger.getLogger(ResourceDump.class.getName()).log(Level.SEVERE, null, ex);
 		}

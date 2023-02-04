@@ -36,5 +36,6 @@ public final class EggObject extends GameObject {
 		loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
 		Matrix.multMatrices(dVar, GameObject.tmpObjMatrix, Matrix.temp);
 		GameRuntime.drawImageRes(Matrix.temp.translationX >> 16, Matrix.temp.translationY >> 16, 208);
+		debugDraw(graphics, 0xFFBF00, dVar);
 	}
 }

@@ -5,14 +5,18 @@ import bouncetales.ext.rsc.ResourceInfo;
 import bouncetales.ext.rsc.ResourceType;
 import bouncetools.layout.LayoutPreset;
 import bouncetools.message.MessageData;
+import bouncetools.message.MessageMappings;
 import bouncetools.resmap.ResidentResourceList;
 import bouncetools.resmap.ResourceTable;
+import bouncetools.rlef.RLEF;
 import bouncetools.sprites.SpriteLibrary;
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.jar.Manifest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import xstandard.formats.yaml.YamlReflectUtil;
@@ -21,24 +25,102 @@ import xstandard.fs.FSUtil;
 import xstandard.fs.accessors.DiskFile;
 import xstandard.io.base.iface.ReadableStream;
 import xstandard.io.base.impl.ext.data.DataIOStream;
+import xstandard.io.util.IndentedPrintStream;
 import xstandard.util.collections.IntList;
 
 public class ResourceDecomposer {
 
 	public static final String RESOURCE_INDEX_PATH = "/a";
+	public static final String VERSION_2_0_3 = "2.0.3";
+	public static final String VERSION_2_0_25 = "2.0.25";
 
 	public static final String[] LANG_FILENAMES = new String[]{
+		"lang.af-ZA",
+		"lang.am-ET",
+		"lang.ar",
+		"lang.as-IN",
+		"lang.az-AZ",
+		"lang.be",
+		"lang.bg-BG",
+		"lang.bn",
+		"lang.bn-BD",
 		"lang.bs-BA",
+		"lang.ca",
 		"lang.cs-CZ",
+		"lang.da-DK",
 		"lang.de",
+		"lang.el-GR",
+		"lang.en-US",
+		"lang.es-ES",
+		"lang.es-US",
+		"lang.et-EE",
+		"lang.eu",
+		"lang.fa",
+		"lang.fi-FI",
+		"lang.fr",
+		"lang.fr-CA",
+		"lang.gl",
+		"lang.gu-IN",
+		"lang.ha",
+		"lang.he-IL",
+		"lang.hi-IN",
 		"lang.hr-HR",
 		"lang.hu-HU",
+		"lang.hy",
+		"lang.id-ID",
+		"lang.ig-NG",
+		"lang.is-IS",
+		"lang.it",
+		"lang.ka-GE",
+		"lang.kk-KZ",
+		"lang.km-KH",
+		"lang.kn-IN",
+		"lang.ks-IN",
+		"lang.ky-KG",
+		"lang.ln",
+		"lang.lt-LT",
+		"lang.lv-LV",
 		"lang.mk-MK",
+		"lang.ml-IN",
+		"lang.mn-MN",
+		"lang.mr-IN",
+		"lang.ms-MY",
+		"lang.nl-NL",
+		"lang.no-NO",
+		"lang.or-IN",
+		"lang.pa",
+		"lang.pl-PL",
+		"lang.ps",
+		"lang.pt-BR",
+		"lang.pt-PT",
+		"lang.ro-RO",
+		"lang.ru-RU",
+		"lang.si-LK",
 		"lang.sk-SK",
 		"lang.sl-SI",
 		"lang.sq",
 		"lang.sr-YU",
-		"lang.xx"
+		"lang.st",
+		"lang.sv",
+		"lang.sw",
+		"lang.ta",
+		"lang.te-IN",
+		"lang.tg-TJ",
+		"lang.th-TH",
+		"lang.tk",
+		"lang.tl-PH",
+		"lang.tr-TR",
+		"lang.uk-UA",
+		"lang.ur",
+		"lang.uz-UZ",
+		"lang.vi-VN",
+		"lang.xh", //is that freaking xhosa??
+		"lang.xx",
+		"lang.yo",
+		"lang.zh-CN",
+		"lang.zh-HK",
+		"lang.zh-TW",
+		"lang.zu" //...and Zulu??
 	};
 
 	public static final Map<String, String> AUDIO_FILENAME_MAP = makeHashMap(
@@ -191,7 +273,7 @@ public class ResourceDecomposer {
 			FSFile f = root.getChild(path);
 			ReadableStream rs = f.getInputStream();
 			if (rs == null) {
-				throw new FileNotFoundException("Could not find resource " + f + "!");
+				return null;
 			}
 			in = rs.getInputStream();
 		}
@@ -211,6 +293,12 @@ public class ResourceDecomposer {
 	}
 
 	public static void decompose(FSFile src, FSFile dst) throws IOException {
+		Manifest manifest = new Manifest(new ByteArrayInputStream(getResourceData(src, "META-INF/MANIFEST.MF")));
+		String version = manifest.getMainAttributes().getValue("MIDlet-Version");
+		if (!(version.equals(VERSION_2_0_3) || version.equals(VERSION_2_0_25))) {
+			throw new DecomposerException("Unsupported version: " + version);
+		}
+
 		ResourceComposer.cleanDirectory(dst, "composer.yml");
 		dst.mkdirs();
 
@@ -226,11 +314,20 @@ public class ResourceDecomposer {
 		graphicsRoot.mkdir();
 		levelRoot.mkdir();
 
+		short[] msgMap = new short[0];
+		switch (version) {
+			case VERSION_2_0_25:
+				msgMap = MessageMappings.MESSAGE_MAP_2_0_25;
+				break;
+			case VERSION_2_0_3:
+				msgMap = MessageMappings.MESSAGE_MAP_2_0_3;
+				break;
+		}
 		for (String langfile : LANG_FILENAMES) {
 			byte[] data = getResourceData(src, langfile);
 			if (data != null) {
 				try (DataIOStream in = new DataIOStream(data)) {
-					new MessageData(in).writeYmlToFile(msgRoot.getChild(langfile + ResourceComposer.UNCOMPILED_RESOURCE_EXT));
+					new MessageData(in, msgMap).writeYmlToFile(msgRoot.getChild(langfile + ResourceComposer.UNCOMPILED_RESOURCE_EXT));
 				}
 			}
 		}
@@ -262,7 +359,12 @@ public class ResourceDecomposer {
 				case ResourceType.LEVEL:
 					ResourceInfo lvlRes = restbl.infos.get(b.mainResId);
 					filename = ResourceComposer.LEVELS_DIR + "/" + LEVEL_FILENAME_MAP.getOrDefault(lvlRes.resourcePath, lvlRes.resourcePath + ".rlef");
-					dst.getChild(filename).setBytes(getResourceData(src, restbl, b.mainResId));
+					byte[] lvlbin = getResourceData(src, restbl, b.mainResId);
+					dst.getChild(filename).setBytes(lvlbin);
+					RLEF rlef = new RLEF(new ByteArrayInputStream(lvlbin));
+					IndentedPrintStream out = new IndentedPrintStream(dst.getChild(filename + ".txt").getNativeOutputStream());
+					rlef.dump(out);
+					out.close();
 					break;
 				case ResourceType.LAYOUT: {
 					try (DataIOStream in = new DataIOStream(getResourceData(src, restbl, b.mainResId))) {
@@ -342,7 +444,16 @@ public class ResourceDecomposer {
 			if (!composerFile.exists()) {
 				ResourceComposer.Config cfg = new ResourceComposer.Config();
 				cfg.obfuscate = true;
-				cfg.destDir = src != null ? src.getPathRelativeTo(dst) : "compiled";
+				cfg.resMapIncludeClass = "bouncetales.ResourceID";
+				cfg.msgMapIncludeClass = "bouncetales.MessageID";
+				if (src == null) {
+					cfg.destDir = "compiled";
+				} else if (src.getName().endsWith(".jar")) {
+					cfg.includeRoot = "../../BounceTales/src";
+					cfg.destDir = "../../BounceTales/res";
+				} else {
+					cfg.destDir = src.getPathRelativeTo(dst);
+				}
 				YamlReflectUtil.serializeObjectAsYml(cfg).writeToFile(composerFile);
 			}
 		}
@@ -358,6 +469,13 @@ public class ResourceDecomposer {
 			decompose(null, new DiskFile("res_decomposed"));
 		} catch (IOException ex) {
 			Logger.getLogger(ResourceDecomposer.class.getName()).log(Level.SEVERE, null, ex);
+		}
+	}
+
+	public static class DecomposerException extends RuntimeException {
+
+		public DecomposerException(String message) {
+			super(message);
 		}
 	}
 }

@@ -1,6 +1,6 @@
 build/
 dist/
 res_unobf/
-res_decomposed/
+res_decomposed*/
 res_rebuilt/
 dump/

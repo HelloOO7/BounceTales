@@ -94,6 +94,7 @@ public final class StringManager {
 		if (localeProperty == null) {
 			localeProperty = System.getProperty("microedition.locale");
 		}
+		int offset = 0;
 		try {
 			if (mInstance == null) {
 				mInstance = new StringManager();
@@ -113,7 +114,8 @@ public final class StringManager {
 			}
 			textReader.skipBytes(msgId * 2);
 			//skip to actual message offset
-			textReader.skipBytes((textReader.readUnsignedShort() - (msgId * 2)) - 2);
+			offset = textReader.readUnsignedShort();
+			textReader.skipBytes((offset - (msgId * 2)) - 2);
 			String message = textReader.readUTF();
 			if (!textReader.markSupported()) {
 				textReader.close();
@@ -140,7 +142,8 @@ public final class StringManager {
 		} catch (IOException e2) {
 			e2.printStackTrace();
 			textReader = null;
-			return "E";
+			//return "E"; //in 2.0.3
+			return "E:" + offset; //since 2.0.25
 		}
 	}
 

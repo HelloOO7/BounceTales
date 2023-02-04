@@ -14,7 +14,7 @@ public final class SpriteObject extends GameObject {
 
 	private short[] xCoords; //renamed from: c
 	private short[] yCoords; //renamed from: d
-	
+
 	//State
 	short[] actionImageIDs; //renamed from: b
 
@@ -191,6 +191,32 @@ public final class SpriteObject extends GameObject {
 					despawn();
 					return;
 				}
+			}
+		}
+	}
+
+	//@Override
+	public final void onPlayerContact() { //since 2.0.25
+		for (int componentIdx = 0; componentIdx < imageIDs.length; componentIdx++) {
+			short anmImage = -1;
+			short anmLength = 0; //9999 = loop forever
+			switch (imageIDs[componentIdx]) {
+				case 118: //propeller flower
+					anmImage = 485;
+					anmLength = 9999;
+					break;
+				case 334: //bumpy cracks stone wall
+					anmImage = 474;
+					anmLength = 750;
+					break;
+				case 342: //color machine ray
+					anmImage = 480;
+					anmLength = 9999;
+					break;
+			}
+			if (anmImage > -1) {
+				actionImageIDs[componentIdx] = anmImage;
+				imageIDs[componentIdx] = anmLength;
 			}
 		}
 	}

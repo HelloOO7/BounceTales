@@ -12,17 +12,23 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import bouncetools.rlef.data.BounceObjectData;
+import bouncetools.rlef.data.CannonData;
+import bouncetools.rlef.data.EggData;
+import bouncetools.rlef.data.EnemyData;
 import bouncetools.rlef.data.EventData;
 import bouncetools.rlef.data.ObjectData;
 import bouncetools.rlef.data.SpriteData;
 import bouncetools.rlef.data.GeometryData;
+import bouncetools.rlef.data.TrampolineData;
+import bouncetools.rlef.data.WaterData;
+import xstandard.io.util.IndentedPrintStream;
 
 public class RLEF {
 
     public static final int RLEF_SIGNATURE = 0x524C4546;
     public static final int RLEF_VERSION = 0x10000;
 
-    private List<ObjectData> objects = new ArrayList<ObjectData>();
+    private List<ObjectData> objects = new ArrayList<>();
     private int objectCount;
     private int eventCount;
 
@@ -55,7 +61,7 @@ public class RLEF {
                     default:
                         System.out.println("Warning: Unknown command: " + command);
                         int readLen = dis.available();
-                        objects.add(new ObjectData(dis, readLen));
+                        objects.add(new ObjectData(dis, objId));
                         readLen = readLen - dis.available();
                         objId++;
                         System.out.println("skipping " + (dataSize - readLen) + " bytes");
@@ -70,11 +76,27 @@ public class RLEF {
                         objId++;
                         break;
                     case LevelKey.PLAYER:
+					case LevelKey.FRIEND:	
                         System.out.println("Reading Bounce");
-                        objects.add(new BounceObjectData(dis, objId));
+                        objects.add(new BounceObjectData(dis, objId++, command == LevelKey.PLAYER));
                         break;
 					case LevelKey.SPRITE:
-						objects.add(new SpriteData(dis, objId));
+						objects.add(new SpriteData(dis, objId++));
+						break;
+					case LevelKey.CANNON:
+						objects.add(new CannonData(dis, objId++));
+						break;
+					case LevelKey.EGG:
+						objects.add(new EggData(dis, objId++));
+						break;
+					case LevelKey.ENEMY:
+						objects.add(new EnemyData(dis, objId++));
+						break;
+					case LevelKey.TRAMPOLINE:
+						objects.add(new TrampolineData(dis, objId++));
+						break;
+					case LevelKey.WATER:
+						objects.add(new WaterData(dis, objId++));
 						break;
                 }
                 System.out.println("Reading command at 0x" + Integer.toHexString((disLen - dis.available())));
@@ -92,7 +114,9 @@ public class RLEF {
         }
     }
 
-    public void dump(PrintStream out) {
+    public void dump(IndentedPrintStream out) {
+		out.setIndentIsTabs(false);
+		out.setIndentStep(2);
         out.println("---- ROVIO LEVEL FILE v" + Integer.toHexString(RLEF_VERSION) + " ----");
         out.println();
         out.println(" - Scene info: ");

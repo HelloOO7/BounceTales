@@ -4,6 +4,7 @@ import bouncetales.ext.rsc.ImageMap;
 import com.nokia.mid.ui.DirectGraphics;
 import com.nokia.mid.ui.DirectUtils;
 import java.util.Random;
+import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.game.Sprite;
@@ -15,7 +16,7 @@ public final class BounceGame {
 	public static final int CONTROLLER_CANNON = 1;
 	public static final int CONTROLLER_DISABLED = 2;
 	public static final int CONTROLLER_FROZEN = 3;
-	
+
 	public static final int PLAYER_STATE_PLAY = 0;
 	public static final int PLAYER_STATE_LOSE = 1;
 	public static final int PLAYER_STATE_WIN = 2;
@@ -179,110 +180,7 @@ public final class BounceGame {
 
 	private static final short[] TROPHY_IMAGE_IDS = {314, 315, 389}; //renamed from: c
 
-	public static final short[] SCRIPT_MESSAGE_IDS = {
-		MessageID.UI_SELECT, 
-		MessageID.UI_LEAVE, 
-		MessageID.UI_BACK, 
-		MessageID.UI_OK, 
-		MessageID.UI_YES,
-		MessageID.UI_NO,
-		MessageID.UI_QUIT, 
-		
-		MessageID.UI_NEW_GAME, 
-		MessageID.DIALOG_NEW_GAME, 
-		MessageID.UI_HIGH_SCORES, 
-		MessageID.UI_GUIDE,
-		MessageID.UI_CONTINUE, 
-		
-		MessageID.EMPTY, 
-		MessageID.GUIDE_TEXT_1, 
-		MessageID.GUIDE_TEXT_2,
-		MessageID.GUIDE_TEXT_3,
-		MessageID.GUIDE_TEXT_4,
-		MessageID.GUIDE_TEXT_5,
-		
-		MessageID.DIALOG_PAUSE_MENU,
-		MessageID.DIALOG_QUIT_GAME,
-		MessageID.UI_RESTART_LEVEL,
-		MessageID.DIALOG_RESTART_LEVEL,
-		MessageID.UI_CONTINUE_LEVEL,
-		MessageID.UI_RETURN_LEVEL_SELECT,
-		MessageID.DIALOG_RETURN_LEVEL_SELECT,
-		
-		MessageID.GAME_PROGRESS_WILL_BE_LOST,
-		MessageID.LEVEL_PROGRESS_WILL_BE_LOST,
-		
-		MessageID.UI_CHAPTERNO_STD, 
-		MessageID.UI_CHAPTERNO_BONUS, 
-		
-		MessageID.NEED_COLLECT_COUNT,
-		MessageID.BONUS_CHAPTER_UNLOCKED,
-		
-		MessageID.LEVEL_MISTY_MORNING,
-		MessageID.LEVEL_UNFRIENDLY_FRIENDS,
-		MessageID.LEVEL_SEEKING_ANSWERS,
-		MessageID.LEVEL_SECRET_STALKWAY,
-		MessageID.LEVEL_BUMPY_CRACKS,
-		MessageID.LEVEL_INTO_THE_MINES,
-		MessageID.LEVEL_A_GLOOMY_PATH,
-		MessageID.LEVEL_RUMBLING_SOUNDS,
-		MessageID.LEVEL_TUNNEL_OF_TREASURES,
-		MessageID.LEVEL_TRAPPED_IN_MACHINE,
-		MessageID.LEVEL_WICKED_CIRCUS,
-		MessageID.LEVEL_HUNTING_COLOURS,
-		MessageID.LEVEL_ALMOST_THERE,
-		MessageID.LEVEL_FANTASTIC_FAIR,
-		MessageID.LEVEL_FINAL_RIDE,
-		
-		MessageID.CHAPTER_COMPLETE,
-		MessageID.DIALOG_GAME_BEATEN,
-		MessageID.DIALOG_GAME_COMPLETED,
-		MessageID.ALL_LEVELS_BEATEN,
-		MessageID.ALL_LEVELS_COMPLETED,
-		MessageID.TIMER_CHALLENGE,
-		MessageID.COLLECTION_CHALLENGE,
-		MessageID.NO_MEDALS_WON,
-		
-		MessageID.BONUS_CHAPTER_UNLOCKED_DESC,
-		MessageID.NEW_FORME_UNLOCKED,
-		MessageID.NEW_HIGH_SCORE, 
-		MessageID.SCORE,
-		
-		MessageID.SCENARIO_L01E01M01,
-		MessageID.SCENARIO_L01E01M02,
-		MessageID.SCENARIO_L01E01M03,
-		MessageID.SCENARIO_L01E02M01,
-		MessageID.SCENARIO_L01E03M01,
-		MessageID.SCENARIO_L01E03M02,
-		MessageID.SCENARIO_L01E03M03,
-		MessageID.SCENARIO_L01E04M01,
-		MessageID.SCENARIO_L01E04M02,
-		MessageID.SCENARIO_L01E04M03,
-		MessageID.SCENARIO_L02E01M01,
-		MessageID.SCENARIO_L02E01M02,
-		MessageID.SCENARIO_L04E01M01,
-		MessageID.SCENARIO_L04E01M02,
-		MessageID.SCENARIO_L04E02M01,
-		MessageID.SCENARIO_L04E03M01,
-		MessageID.SCENARIO_L04E03M02,
-		MessageID.SCENARIO_L04E03M03,
-		MessageID.SCENARIO_L04E03M04,
-		MessageID.SCENARIO_L05_UNUSED,
-		MessageID.SCENARIO_L08E01M01,
-		MessageID.SCENARIO_L08E01M02,
-		MessageID.SCENARIO_L08E01M03,
-		MessageID.SCENARIO_L08E02M01,
-		MessageID.SCENARIO_L11_UNUSED,
-		MessageID.SCENARIO_L12E01M01,
-		MessageID.SCENARIO_L12E01M02,
-		MessageID.SCENARIO_L12E02M01,
-		MessageID.SCENARIO_L12E02M02,
-		MessageID.SCENARIO_L12E02M03,
-		
-		MessageID.MM_SS,
-		MessageID.GAME_TITLE,
-		MessageID.IS_TEXT_RIGHT_TO_LEFT_RESERVED
-	}; //renamed from: a
+	public static final short[] SCRIPT_MESSAGE_IDS = MessageID.ALL_MESSAGES_SORTED; //renamed from: a
 
 	private static final int[] SPLASH_SCREEN_LAYOUT_RESIDS = {ResourceID.GRAPHICS_SPLASHLOGO_RES}; //renamed from: o
 	private static final int[] SPLASH_SCREEN_DURATIONS = {100}; //renamed from: q
@@ -304,6 +202,12 @@ public final class BounceGame {
 
 	private static int totalGameTime; //renamed from: j
 	private int gameMainState = 1; //renamed from: i
+
+	private static boolean reqQuit = false; //added in 2.0.25 for more game URL action
+	private static boolean reqPlayTitleMusic = false;
+
+	private static final boolean moreGamesStatus;
+	private static final String moreGamesURL;
 
 	private static final boolean enableCheats; //renamed from: f
 	private static byte cheatComboIndex; //renamed from: a
@@ -444,6 +348,9 @@ public final class BounceGame {
 
 	static {
 		enableCheats = GameRuntime.getAppFlag("Cheats");
+		moreGamesStatus = GameRuntime.getAppFlag("more_games_status");
+		moreGamesURL = GameRuntime.mMidLet.getAppProperty("more_games_url");
+
 		generateSinCosTable();
 	}
 
@@ -756,7 +663,7 @@ public final class BounceGame {
 		if (isLevelUnlocked(selectedLevelId)) {
 			ui.changeSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_SELECT), 0);
 		} else {
-			ui.changeSoftkey(GameRuntime.SOFTKEY_CENTER, (String) null, 0);
+			ui.changeSoftkey(GameRuntime.SOFTKEY_CENTER, null, 0);
 		}
 	}
 
@@ -895,6 +802,14 @@ public final class BounceGame {
 				int screenCY = GameRuntime.currentHeight >> 1;
 				int b = ((short) GameRuntime.getCompoundSpriteParamEx(331, 2)) + screenCY;
 				int b2 = ((short) GameRuntime.getCompoundSpriteParamEx(331, 3)) + screenCY;
+
+				//since 2.0.25
+				GameRuntime.setTextStyle(-3, 3);
+				int sanityHeight = 10 + (GameRuntime.getFontHeight(GameRuntime.getCurrentFont()) * 3);
+				if (sanityHeight > b) {
+					b = sanityHeight + 2;
+				}
+
 				drawBookFrame(screenCX, screenCY, grp);
 				if (selectedLevelId != 0) {
 					GameRuntime.drawImageResAnchored(3, screenCY, 326, 6); //left arrow
@@ -1017,8 +932,8 @@ public final class BounceGame {
 				grp.drawRect(i24 + 1, i25 + 1, i26 - 2, 298);
 				GameRuntime.drawImageResTransformed(((i20 + i26) - 117) + 2, (i21 - 157) - 2, 12, Graphics.TOP | Graphics.RIGHT, Sprite.TRANS_ROT270);
 				GameRuntime.drawImageResAnchored(((i20 + i26) - 117) + 2, ((i21 + 300) - 157) + 2, 12, Graphics.BOTTOM | Graphics.RIGHT);
-				GameRuntime.drawImageResAnchored((i20 - 117) - 5, i21 - 75, 15, Graphics.LEFT | Graphics.VCENTER);
-				GameRuntime.drawImageResAnchored((i20 - 117) - 5, i21 + 75, 15, Graphics.LEFT | Graphics.VCENTER);
+				GameRuntime.drawImageResAnchored(i24 - 5, i21 - 75, 15, Graphics.LEFT | Graphics.VCENTER);
+				GameRuntime.drawImageResAnchored(i24 - 5, i21 + 75, 15, Graphics.LEFT | Graphics.VCENTER);
 			} else {
 				drawBookFrame(i20, i21, grp);
 			}
@@ -1216,7 +1131,7 @@ public final class BounceGame {
 	}
 
 	/* renamed from: g */
-	private static void initStolenColorData() {
+	private static void initStolenColorData() { //inlined in 2.0.25
 		stolenColorsAnimationCountdown = 0;
 		stolenColorsFlashCountdown = 0;
 		isFlashToOtherColorMode = false;
@@ -1300,7 +1215,7 @@ public final class BounceGame {
 	}
 
 	/* renamed from: f */
-	private static void freeIngameData() {
+	private static void unloadLevel() {
 		ballFramebuffer = null;
 		ballGraphics = null;
 		ballFramebufferRGB = null;
@@ -1443,6 +1358,11 @@ public final class BounceGame {
 				}
 				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_HIGH_SCORES), -1, this.ui, GameScene.MENU_HIGH_SCORES));
 				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_GUIDE), -1, this.ui, GameScene.MENU_GUIDE));
+				if (moreGamesStatus) { //since 2.0.25
+					if (MessageID.UI_MORE_GAMES > 0) { //for BounceWin32 manifest
+						this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.UI_MORE_GAMES), -1, this.ui, GameScene.OPEN_MORE_GAMES_URL));
+					}
+				}
 				this.ui.setSelectedOption(lastMenuOption);
 				break;
 			case GameScene.MENU_LEVEL_SELECT: //level select
@@ -1454,6 +1374,8 @@ public final class BounceGame {
 				this.ui.loadFromResource(37);
 				this.ui.setElemDefaultAttribute(UIElement.FONT, -3);
 				this.ui.setAttribute(UILayout.FONT, -2);
+				/*this.ui.setAttribute(UILayout.FIXED_WIDTH, (GameRuntime.currentWidth - (LAYOUT_DEFAULT_HORIZONTAL_MARGIN << 1)) + 4);
+				this.ui.setAttribute(UILayout.OFFSET_LEFT, 18);*/ //added in 2.0.25, removed for HD
 				this.ui.setAttribute(UILayout.TITLE_PADDING_TOP, LAYOUT_DEFAULT_TITLE_PADDING_TOP);
 				this.ui.setAttribute(UILayout.TITLE_PADDING_BOTTOM, LAYOUT_DEFAULT_TITLE_PADDING_BOTTOM);
 
@@ -1539,7 +1461,7 @@ public final class BounceGame {
 				this.ui.setTitle(StringManager.getMessage(MessageID.DIALOG_RESTART_LEVEL), -1, 1);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_CENTER, StringManager.getMessage(MessageID.UI_YES), 0, GameScene.RESTART_LEVEL, false);
 				this.ui.setSoftkey(GameRuntime.SOFTKEY_RIGHT, StringManager.getMessage(MessageID.UI_NO), 0, GameScene.MENU_PAUSE, true);
-				this.ui.addElement(new UIElement(StringManager.getMessage(3), -1, this.ui, -1));
+				this.ui.addElement(new UIElement(StringManager.getMessage(MessageID.LEVEL_PROGRESS_WILL_BE_LOST), -1, this.ui, -1));
 				break;
 			case GameScene.CONFIRM_RETURN_LEVEL_SELECT: //confirm return to level select
 				this.ui.loadFromResource(37);
@@ -1626,21 +1548,21 @@ public final class BounceGame {
 				}
 				if (wasLevelBeaten(LevelID.GAME_CLEAR_LEVEL) && !this.wasFinalLevelJustBeaten && !isBonusLevel(currentLevel)) {
 					boolean anyMedalsWon = false;
-					if (this.timerChallengeTrophy > -1) {
+					if (this.timerChallengeTrophy >= 0) {
 						short timerTrophyImageId = TROPHY_IMAGE_IDS[this.timerChallengeTrophy];
 						anyMedalsWon = true;
 						UIElement timerChallengeText = new UIElement(StringManager.getMessage(MessageID.TIMER_CHALLENGE), timerTrophyImageId, this.ui, -1);
-						timerChallengeText.setAttribute(UIElement.ICON_ALIGNMENT, 16);
+						timerChallengeText.setAttribute(UIElement.ICON_ALIGNMENT, isTextRightToLeft ? 0 : 16); //since 2.0.25
 						timerChallengeText.setAttribute(UIElement.FLAG_3, 64);
 						timerChallengeText.setAttribute(UIElement.TEXT_ALIGNMENT, 8);
 						timerChallengeText.setText(StringManager.getMessage(MessageID.TIMER_CHALLENGE), timerTrophyImageId);
 						this.ui.addElement(timerChallengeText);
 					}
-					if (this.collectionChallengeTrophy > -1) {
+					if (this.collectionChallengeTrophy >= 0) {
 						short collectionTrophyImageId = TROPHY_IMAGE_IDS[this.collectionChallengeTrophy];
 						anyMedalsWon = true;
 						UIElement collectionChallengeText = new UIElement(StringManager.getMessage(MessageID.COLLECTION_CHALLENGE), collectionTrophyImageId, this.ui, -1);
-						collectionChallengeText.setAttribute(UIElement.ICON_ALIGNMENT, 16);
+						collectionChallengeText.setAttribute(UIElement.ICON_ALIGNMENT, isTextRightToLeft ? 0 : 16); //since 2.0.25
 						collectionChallengeText.setAttribute(UIElement.FLAG_3, 64);
 						collectionChallengeText.setAttribute(UIElement.TEXT_ALIGNMENT, 8);
 						collectionChallengeText.setText(StringManager.getMessage(MessageID.COLLECTION_CHALLENGE), collectionTrophyImageId);
@@ -1777,16 +1699,23 @@ public final class BounceGame {
 
 	/* renamed from: a */
 	public final int update(int lastUpdateRes) {
+		if (reqQuit) {
+			GameRuntime.quit();
+		}
+		if (reqPlayTitleMusic) {
+			GameRuntime.playMusic(ResourceID.AUDIO_BGM_TITLE_MID, -1);
+			reqPlayTitleMusic = false;
+		}
 		boolean bounceMoving;
 		if (this.drawUI != null) {
 			this.drawUI.setupSoftkeys();
 			this.drawUI.updateTitleScroll();
 		} else if (this.gameMainState == 4) {
 			if (levelPaused) {
-				setUI(25);
+				setUI(GameScene.MENU_PAUSE);
 				GameRuntime.stopMusic();
 			} else if (reqReloadFieldMsg) {
-				setUI(34);
+				setUI(GameScene.INFO_FIELD_MESSAGE);
 				isBlockingEvent = true;
 				isFieldMessageShowing = true;
 			} else {
@@ -1880,9 +1809,9 @@ public final class BounceGame {
 						setPlayerState(PLAYER_STATE_LOSE_UPDATE);
 						exitWaitTimer = 3000;
 						deathBaseY = bounceObj.localObjectMatrix.translationY;
-						if (currentLevel == LevelID.FINAL_RIDE) {
+						/*if (currentLevel == LevelID.FINAL_RIDE) { //removed in 2.0.25
 							EventObject.finalBossTimer = 0;
-						}
+						}*/
 						break;
 					case PLAYER_STATE_WIN:
 						GameRuntime.playMusic(ResourceID.AUDIO_ME_WIN_MID, 1);
@@ -2134,7 +2063,7 @@ public final class BounceGame {
 					return 0;
 				} else {
 					System.out.println("Loading saved data...");
-					freeIngameData();
+					unloadLevel();
 					if (GameRuntime.isMusicEnabled()) {
 						GameRuntime.loadResidentResSet(0);
 					}
@@ -2176,7 +2105,7 @@ public final class BounceGame {
 			case GameScene.EXIT_LEVEL: //exit level
 				if (sceneResult == 0) {
 					GameRuntime.stopMusic();
-					freeIngameData();
+					unloadLevel();
 					return 1;
 				} else if (sceneResult != 1) {
 					return 0;
@@ -2225,7 +2154,7 @@ public final class BounceGame {
 							GameRuntime.loadResource(ResourceID.GRAPHICS_LEVELACT03_RES);
 							GameRuntime.loadResource(ResourceID.GRAPHICS_OBJCANNON_RES);
 							//This resource is used for the hypnotoid beam. However, it isn't properly unloaded when the level ends in the original game.
-							GameRuntime.loadResource(ResourceID.GRAPHICS_OBJCOLORMACHINE_RES); 
+							GameRuntime.loadResource(ResourceID.GRAPHICS_OBJCOLORMACHINE_RES);
 							break;
 						default:
 							break;
@@ -2244,233 +2173,7 @@ public final class BounceGame {
 					if (!this.isLevelActive) {
 						this.isLevelActive = true;
 						levelPaused = false;
-						GameRuntime.setUpdatesPerDraw(2);
-						GameRuntime.setMaxUpdateDelta(150 / GameRuntime.getUpdatesPerDraw());
-						isSuperBounceUnlocked = checkSuperBounceUnlocked();
-						GameObject.cameraBounceFactor = 90;
-						GameObject.cameraStabilizeSpeed = 140;
-						levelTimer = 0;
-						totalGameTime = 0;
-						eggCount = 0;
-						calcScore = 0;
-						isFieldMessageShowing = false;
-						waterSingletonFlag = false;
-						isBlockingEvent = false;
-						GameObject.setScreenSpaceMatrixByWindow(GameRuntime.currentWidth, GameRuntime.currentHeight);
-						BounceObject.updateScreenSpaceConstants();
-						byte[] cannonLevel = (byte[]) GameRuntime.getLoadedResData((int) LEVEL_RESIDS[CANNON_LEVEL_INDEX]);
-						cannonModels = new GameObject[GameObject.readShort(cannonLevel, 8)];
-						byte cmnKey;
-						short cmnObjectId = 0;
-						int maxVerticesPerObj = 0;
-						int pos = 14;
-						while ((cmnKey = cannonLevel[pos++]) != LevelKey.END) {
-							short dataSize = GameObject.readShort(cannonLevel, pos);
-							pos += 2;
-							switch (cmnKey) {
-								case LevelKey.GEOMETRY:
-									GeometryObject geometry = new GeometryObject();
-									geometry.setObjectId(cmnObjectId);
-									geometry.readData(cannonLevel, pos);
-									if (geometry.getVertexCount() > maxVerticesPerObj) {
-										maxVerticesPerObj = geometry.getVertexCount();
-									}
-									cannonModels[cmnObjectId++] = geometry;
-									break;
-								default:
-									break;
-							}
-							pos += dataSize;
-						}
-						byte[] levelData = (byte[]) GameRuntime.getLoadedResData((int) LEVEL_RESIDS[currentLevel]);
-						if (levelData != null) {
-							objectCount = GameObject.readShort(levelData, 8);
-							levelObjects = new GameObject[objectCount];
-							eventCount = GameObject.readShort(levelData, 12);
-							events = new EventObject[eventCount];
-							int currentBytePos = 15;
-							byte key = levelData[14];
-							short objID = 0;
-							int eventId = 0;
-							bonusLevelEggLimit = 0;
-							while (key != LevelKey.END) {
-								short dataLength = GameObject.readShort(levelData, currentBytePos);
-								int afterHeaderPos = currentBytePos + 2;
-								switch (key) {
-									case LevelKey.GEOMETRY: {
-										GeometryObject geometry = new GeometryObject();
-										geometry.setObjectId(objID);
-										geometry.readData(levelData, afterHeaderPos);
-										if (geometry.getVertexCount() > maxVerticesPerObj) {
-											maxVerticesPerObj = geometry.getVertexCount();
-										}
-										levelObjects[objID] = geometry;
-										break;
-									}
-									case 5:
-									case 7:
-									default:
-										levelObjects[objID] = new GameObject();
-										levelObjects[objID].setObjectId(objID);
-										levelObjects[objID].readData(levelData, afterHeaderPos);
-										break;
-									case LevelKey.EVENT:
-										EventObject objEv = new EventObject();
-										objEv.setObjectId(objID);
-										objEv.readData(levelData, afterHeaderPos);
-										levelObjects[objID] = objEv;
-										events[eventId++] = objEv;
-										break;
-									case LevelKey.PLAYER:
-										BounceObject player = new BounceObject(true);
-										bounceObj = player;
-										player.setObjectId(objID);
-										player.readData(levelData, afterHeaderPos);
-										player.initialize();
-										levelObjects[objID] = player;
-										checkpointPosX = player.localObjectMatrix.translationX;
-										checkpointPosY = player.localObjectMatrix.translationY;
-										break;
-									case LevelKey.SPRITE:
-										levelObjects[objID] = new SpriteObject();
-										levelObjects[objID].setObjectId(objID);
-										levelObjects[objID].readData(levelData, afterHeaderPos);
-										levelObjects[objID].initialize();
-										break;
-									case LevelKey.WATER:
-										WaterObject water = new WaterObject();
-										water.setObjectId(objID);
-										water.readData(levelData, afterHeaderPos);
-										water.initialize();
-										if (water.vertexCount > maxVerticesPerObj) {
-											maxVerticesPerObj = water.vertexCount;
-										}
-										levelObjects[objID] = water;
-										break;
-									case LevelKey.CANNON:
-										CannonObject cannon = new CannonObject();
-										cannon.setObjectId(objID);
-										cannon.readData(levelData, afterHeaderPos);
-										cannon.initialize();
-										levelObjects[objID] = cannon;
-										break;
-									case LevelKey.TRAMPOLINE:
-										TrampolineObject jumpPad = new TrampolineObject();
-										jumpPad.setObjectId(objID);
-										jumpPad.readData(levelData, afterHeaderPos);
-										jumpPad.initialize();
-										levelObjects[objID] = jumpPad;
-										break;
-									case LevelKey.EGG:
-										EggObject egg = new EggObject();
-										egg.setObjectId(objID);
-										egg.readData(levelData, afterHeaderPos);
-										egg.initialize();
-										levelObjects[objID] = egg;
-										bonusLevelEggLimit++;
-										break;
-									case LevelKey.FRIEND: {
-										BounceObject friend = new BounceObject(false);
-										friend.setObjectId(objID);
-										friend.readData(levelData, afterHeaderPos);
-										friend.initialize();
-										levelObjects[objID] = friend;
-										break;
-									}
-									case LevelKey.ENEMY: {
-										EnemyObject enemy = new EnemyObject();
-										enemy.setObjectId(objID);
-										enemy.readData(levelData, afterHeaderPos);
-										enemy.initialize();
-										levelObjects[objID] = enemy;
-										bonusLevelEggLimit++;
-										break;
-									}
-								}
-								objID++;
-								int nextKeyIndex = afterHeaderPos + dataLength;
-								currentBytePos = nextKeyIndex + 1;
-								key = levelData[nextKeyIndex];
-							}
-							for (int i = 0; i < levelObjects.length; i++) {
-								if (levelObjects[i] == null) {
-									System.err.println("Object with ID " + i + " is ABSENT!!");
-								}
-							}
-							GameObject.makeObjectLinks(levelObjects);
-							//BUGFIX: BounceObject physics only work if the object isn't parented to anything
-							for (int i = 0; i < levelObjects.length; i++) {
-								if (levelObjects[i].getObjType() == BounceObject.TYPEID) {
-									levelObjects[i].makeIndependent();
-								}
-							}
-							rootLevelObj = levelObjects[0];
-							levelObjects = null;
-							enemyDeadEgg = new EggObject();
-							enemyDeadEgg.setObjectId(objID++);
-							enemyDeadEgg.setParent(rootLevelObj);
-							enemyDeadEgg.localObjectMatrix.m00 = LP32.ONE;
-							enemyDeadEgg.localObjectMatrix.m01 = 0;
-							enemyDeadEgg.localObjectMatrix.translationX = Integer.MAX_VALUE;
-							enemyDeadEgg.localObjectMatrix.m10 = 0;
-							enemyDeadEgg.localObjectMatrix.m11 = LP32.ONE;
-							enemyDeadEgg.localObjectMatrix.translationY = Integer.MAX_VALUE;
-							enemyDeadEgg.renderCalcMatrix.setFromMatrix(enemyDeadEgg.localObjectMatrix);
-							enemyDeadEgg.initialize();
-							bubbleParticle.setObjectId(objID++);
-							bubbleParticle.attachToObject(rootLevelObj);
-							waterSplashParticle.setObjectId(objID++);
-							waterSplashParticle.attachToObject(rootLevelObj);
-							cannonParticle.setObjectId(objID++);
-							cannonParticle.attachToObject(rootLevelObj);
-							eggCollectParticle.setObjectId(objID++);
-							eggCollectParticle.attachToObject(rootLevelObj);
-							enemyDeathParticle.setObjectId(objID++);
-							enemyDeathParticle.attachToObject(rootLevelObj);
-							winParticle.setObjectId(objID++);
-							winParticle.attachToObject(rootLevelObj);
-							superBounceParticle.setObjectId(objID++);
-							superBounceParticle.attachToObject(rootLevelObj);
-							colorMachineDestroyParticle.setObjectId(objID++);
-							colorMachineDestroyParticle.attachToObject(rootLevelObj);
-							airTunnelParticle.setObjectId(objID++);
-							airTunnelParticle.attachToObject(rootLevelObj);
-							GameObject.allocateRenderPool(objID); //okay to be a bit much, it's just a pointer array
-							GeometryObject.TEMP_QUAD_XS = new int[maxVerticesPerObj];
-							GeometryObject.TEMP_QUAD_YS = new int[maxVerticesPerObj];
-							EventObject.eventVars = new int[72];
-							setPlayerState(PLAYER_STATE_PLAY);
-							EventObject.eventVars[1] = 0;
-							EventObject.eventVars[2] = 0;
-							EventObject.eventVars[7] = 0;
-							GameRuntime.unloadResource(LEVEL_RESIDS[currentLevel]);
-							GameRuntime.unloadResource(LEVEL_RESIDS[CANNON_LEVEL_INDEX]);
-							GameObject.cameraTarget = bounceObj;
-							GameObject.snapCameraToTarget();
-							f240F = GameObject.cameraMatrix.translationY;
-							initStolenColorData();
-							waterSplashParticle.particleCount = -1;
-							bubbleParticle.particleCount = -1;
-							cannonParticle.particleCount = -1;
-							eggCollectParticle.particleCount = -1;
-							enemyDeathParticle.particleCount = -1;
-							winParticle.particleCount = -1;
-							superBounceParticle.particleCount = -1;
-							colorMachineDestroyParticle.particleCount = -1;
-							airTunnelParticle.particleCount = -1;
-							bounceObj.fadeColor = 0xFF000000;
-							boolean noBonusLevelsBeaten = true;
-							for (int bonusLevelIdx = 0; bonusLevelIdx < BONUS_LEVEL_INFO.length; bonusLevelIdx += 2) {
-								if (wasLevelBeaten(BONUS_LEVEL_INFO[bonusLevelIdx])) {
-									noBonusLevelsBeaten = false;
-								}
-							}
-							if (noBonusLevelsBeaten && isBonusLevel(currentLevel)) {
-								pushFieldMessage(MessageID.GUIDE_TEXT_3); //bonus chapter guide
-							}
-							bounceObj.eyeFrame = 0;
-							bounceObj.idleAnimStartTimer = 3000;
-						}
+						loadLevel();
 					}
 					this.gameMainState = 4;
 					setIngameHID();
@@ -2513,6 +2216,246 @@ public final class BounceGame {
 			default:
 				return 0;
 		}
+	}
+
+	private static void loadLevel() {
+		GameRuntime.setUpdatesPerDraw(2);
+		GameRuntime.setMaxUpdateDelta(150 / GameRuntime.getUpdatesPerDraw());
+
+		//since 2.0.25
+		for (int i = 0; i < 5; i++) {
+			fieldMessageQueue[i] = -1;
+		}
+		fieldMessagePointer = 0;
+		isFieldMessageShowing = false;
+		reqReloadFieldMsg = false;
+
+		isSuperBounceUnlocked = checkSuperBounceUnlocked();
+		GameObject.cameraBounceFactor = 90;
+		GameObject.cameraStabilizeSpeed = 140;
+		levelTimer = 0;
+		totalGameTime = 0;
+		eggCount = 0;
+		calcScore = 0;
+		isFieldMessageShowing = false;
+		waterSingletonFlag = false;
+		isBlockingEvent = false;
+		GameObject.setScreenSpaceMatrixByWindow(GameRuntime.currentWidth, GameRuntime.currentHeight);
+		BounceObject.updateScreenSpaceConstants();
+		byte[] cannonLevel = (byte[]) GameRuntime.getLoadedResData((int) LEVEL_RESIDS[CANNON_LEVEL_INDEX]);
+		cannonModels = new GameObject[GameObject.readShort(cannonLevel, 8)];
+		byte cmnKey;
+		short cmnObjectId = 0;
+		int maxVerticesPerObj = 0;
+		int pos = 14;
+		while ((cmnKey = cannonLevel[pos++]) != LevelKey.END) {
+			short dataSize = GameObject.readShort(cannonLevel, pos);
+			pos += 2;
+			switch (cmnKey) {
+				case LevelKey.GEOMETRY:
+					GeometryObject geometry = new GeometryObject();
+					geometry.setObjectId(cmnObjectId);
+					geometry.readData(cannonLevel, pos);
+					if (geometry.getVertexCount() > maxVerticesPerObj) {
+						maxVerticesPerObj = geometry.getVertexCount();
+					}
+					cannonModels[cmnObjectId++] = geometry;
+					break;
+				default:
+					break;
+			}
+			pos += dataSize;
+		}
+		byte[] levelData = (byte[]) GameRuntime.getLoadedResData((int) LEVEL_RESIDS[currentLevel]);
+		if (levelData == null) {
+			return;
+		}
+		objectCount = GameObject.readShort(levelData, 8);
+		levelObjects = new GameObject[objectCount];
+		eventCount = GameObject.readShort(levelData, 12);
+		events = new EventObject[eventCount];
+		int currentBytePos = 8 + 6 + 1;
+		byte key = levelData[8 + 6];
+		short objID = 0;
+		int eventId = 0;
+		bonusLevelEggLimit = 0;
+		while (key != LevelKey.END) {
+			short dataLength = GameObject.readShort(levelData, currentBytePos);
+			int afterHeaderPos = currentBytePos + 2;
+			switch (key) {
+				case LevelKey.GEOMETRY: {
+					GeometryObject geometry = new GeometryObject();
+					geometry.setObjectId(objID);
+					geometry.readData(levelData, afterHeaderPos);
+					if (geometry.getVertexCount() > maxVerticesPerObj) {
+						maxVerticesPerObj = geometry.getVertexCount();
+					}
+					levelObjects[objID] = geometry;
+					break;
+				}
+				case 5:
+				case 7:
+				default:
+					levelObjects[objID] = new GameObject();
+					levelObjects[objID].setObjectId(objID);
+					levelObjects[objID].readData(levelData, afterHeaderPos);
+					break;
+				case LevelKey.EVENT:
+					EventObject objEv = new EventObject();
+					objEv.setObjectId(objID);
+					objEv.readData(levelData, afterHeaderPos);
+					levelObjects[objID] = objEv;
+					events[eventId++] = objEv;
+					break;
+				case LevelKey.PLAYER:
+					BounceObject player = new BounceObject(true);
+					bounceObj = player;
+					player.setObjectId(objID);
+					player.readData(levelData, afterHeaderPos);
+					player.initialize();
+					levelObjects[objID] = player;
+					checkpointPosX = player.localObjectMatrix.translationX;
+					checkpointPosY = player.localObjectMatrix.translationY;
+					break;
+				case LevelKey.SPRITE:
+					levelObjects[objID] = new SpriteObject();
+					levelObjects[objID].setObjectId(objID);
+					levelObjects[objID].readData(levelData, afterHeaderPos);
+					levelObjects[objID].initialize();
+					break;
+				case LevelKey.WATER:
+					WaterObject water = new WaterObject();
+					water.setObjectId(objID);
+					water.readData(levelData, afterHeaderPos);
+					water.initialize();
+					if (water.vertexCount > maxVerticesPerObj) {
+						maxVerticesPerObj = water.vertexCount;
+					}
+					levelObjects[objID] = water;
+					break;
+				case LevelKey.CANNON:
+					CannonObject cannon = new CannonObject();
+					cannon.setObjectId(objID);
+					cannon.readData(levelData, afterHeaderPos);
+					cannon.initialize();
+					levelObjects[objID] = cannon;
+					break;
+				case LevelKey.TRAMPOLINE:
+					TrampolineObject jumpPad = new TrampolineObject();
+					jumpPad.setObjectId(objID);
+					jumpPad.readData(levelData, afterHeaderPos);
+					jumpPad.initialize();
+					levelObjects[objID] = jumpPad;
+					break;
+				case LevelKey.EGG:
+					EggObject egg = new EggObject();
+					egg.setObjectId(objID);
+					egg.readData(levelData, afterHeaderPos);
+					egg.initialize();
+					levelObjects[objID] = egg;
+					bonusLevelEggLimit++;
+					break;
+				case LevelKey.FRIEND: {
+					BounceObject friend = new BounceObject(false);
+					friend.setObjectId(objID);
+					friend.readData(levelData, afterHeaderPos);
+					friend.initialize();
+					levelObjects[objID] = friend;
+					break;
+				}
+				case LevelKey.ENEMY: {
+					EnemyObject enemy = new EnemyObject();
+					enemy.setObjectId(objID);
+					enemy.readData(levelData, afterHeaderPos);
+					enemy.initialize();
+					levelObjects[objID] = enemy;
+					bonusLevelEggLimit++;
+					break;
+				}
+			}
+			objID++;
+			int nextKeyIndex = afterHeaderPos + dataLength;
+			currentBytePos = nextKeyIndex + 1;
+			key = levelData[nextKeyIndex];
+		}
+		for (int i = 0; i < levelObjects.length; i++) {
+			if (levelObjects[i] == null) {
+				System.err.println("Object with ID " + i + " is ABSENT!!");
+			}
+		}
+		GameObject.makeObjectLinks(levelObjects);
+		//BUGFIX: BounceObject physics only work if the object isn't parented to anything
+		for (int i = 0; i < levelObjects.length; i++) {
+			if (levelObjects[i].getObjType() == BounceObject.TYPEID) {
+				levelObjects[i].makeIndependent();
+			}
+		}
+		rootLevelObj = levelObjects[0];
+		levelObjects = null;
+		enemyDeadEgg = new EggObject();
+		enemyDeadEgg.setObjectId(objID++);
+		enemyDeadEgg.setParent(rootLevelObj);
+		enemyDeadEgg.localObjectMatrix.m00 = LP32.ONE;
+		enemyDeadEgg.localObjectMatrix.m01 = 0;
+		enemyDeadEgg.localObjectMatrix.translationX = Integer.MAX_VALUE;
+		enemyDeadEgg.localObjectMatrix.m10 = 0;
+		enemyDeadEgg.localObjectMatrix.m11 = LP32.ONE;
+		enemyDeadEgg.localObjectMatrix.translationY = Integer.MAX_VALUE;
+		enemyDeadEgg.renderCalcMatrix.setFromMatrix(enemyDeadEgg.localObjectMatrix);
+		enemyDeadEgg.initialize();
+		bubbleParticle.setObjectId(objID++);
+		bubbleParticle.attachToObject(rootLevelObj);
+		waterSplashParticle.setObjectId(objID++);
+		waterSplashParticle.attachToObject(rootLevelObj);
+		cannonParticle.setObjectId(objID++);
+		cannonParticle.attachToObject(rootLevelObj);
+		eggCollectParticle.setObjectId(objID++);
+		eggCollectParticle.attachToObject(rootLevelObj);
+		enemyDeathParticle.setObjectId(objID++);
+		enemyDeathParticle.attachToObject(rootLevelObj);
+		winParticle.setObjectId(objID++);
+		winParticle.attachToObject(rootLevelObj);
+		superBounceParticle.setObjectId(objID++);
+		superBounceParticle.attachToObject(rootLevelObj);
+		colorMachineDestroyParticle.setObjectId(objID++);
+		colorMachineDestroyParticle.attachToObject(rootLevelObj);
+		airTunnelParticle.setObjectId(objID++);
+		airTunnelParticle.attachToObject(rootLevelObj);
+		GameObject.allocateRenderPool(objID); //okay to be a bit much, it's just a pointer array
+		GeometryObject.TEMP_QUAD_XS = new int[maxVerticesPerObj];
+		GeometryObject.TEMP_QUAD_YS = new int[maxVerticesPerObj];
+		EventObject.eventVars = new int[72];
+		setPlayerState(PLAYER_STATE_PLAY);
+		EventObject.eventVars[1] = 0;
+		EventObject.eventVars[2] = 0;
+		EventObject.eventVars[7] = 0;
+		GameRuntime.unloadResource(LEVEL_RESIDS[currentLevel]);
+		GameRuntime.unloadResource(LEVEL_RESIDS[CANNON_LEVEL_INDEX]);
+		GameObject.cameraTarget = bounceObj;
+		GameObject.snapCameraToTarget();
+		f240F = GameObject.cameraMatrix.translationY;
+		initStolenColorData(); //inlined in 2.0.25
+		waterSplashParticle.particleCount = -1;
+		bubbleParticle.particleCount = -1;
+		cannonParticle.particleCount = -1;
+		eggCollectParticle.particleCount = -1;
+		enemyDeathParticle.particleCount = -1;
+		winParticle.particleCount = -1;
+		superBounceParticle.particleCount = -1;
+		colorMachineDestroyParticle.particleCount = -1;
+		airTunnelParticle.particleCount = -1;
+		bounceObj.fadeColor = 0xFF000000;
+		boolean noBonusLevelsBeaten = true;
+		for (int bonusLevelIdx = 0; bonusLevelIdx < BONUS_LEVEL_INFO.length; bonusLevelIdx += 2) {
+			if (wasLevelBeaten(BONUS_LEVEL_INFO[bonusLevelIdx])) {
+				noBonusLevelsBeaten = false;
+			}
+		}
+		if (noBonusLevelsBeaten && isBonusLevel(currentLevel)) {
+			pushFieldMessage(MessageID.GUIDE_TEXT_3); //bonus chapter guide
+		}
+		bounceObj.eyeFrame = 0;
+		bounceObj.idleAnimStartTimer = 3000;
 	}
 
 	private static final int[] CHEAT_COMBO_DEBUG_SCENE_CALL = new int[]{KeyCode.NUM3, KeyCode.NUM1, KeyCode.NUM3};
@@ -2722,6 +2665,17 @@ public final class BounceGame {
 				}
 				break;
 			}
+			case GameScene.OPEN_MORE_GAMES_URL: //since 2.0.25
+				reqPlayTitleMusic = true;
+				GameRuntime.stopMusic();
+				try {
+					if (GameRuntime.mMidLet.platformRequest(moreGamesURL)) {
+						reqQuit = true;
+					}
+				} catch (ConnectionNotFoundException ex) {
+
+				}
+				break;
 		}
 	}
 }

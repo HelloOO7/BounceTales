@@ -33,7 +33,7 @@ import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 
 /* renamed from: o */
-public final class GameRuntime extends GameCanvas implements Runnable, CommandListener {
+public final class GameRuntime extends GameCanvas implements Runnable, CommandListener, IResourceHandler {
 
 	/*
 	Constants
@@ -95,7 +95,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 
 	private static boolean midletIsPaused = false; //renamed from: d
 
-	private static GameRuntime[] gameRuntimes; //renamed from: a 
+	private static IResourceHandler[] resHandlers; //renamed from: a 
 	private static GameRuntime mInstance = null; //renamed from: a 
 
 	private static final Object gameMutex = new Object(); //renamed from: b 
@@ -229,7 +229,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 			return false;
 		}
 		String property = GameRuntime.mMidLet.getAppProperty(name);
-		return property != null && property.equals("On");
+		return property != null && (property.equals("On") || property.equals("on"));
 	}
 
 	/* renamed from: a */
@@ -860,13 +860,16 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 	private float debugFps = 0f;
 
 	private void paintDebugOverlay(Graphics g) {
+		GameRuntime.setTextStyle(-3, 1);
+		g.setColor(0xFF0000);
 		if (debugFps != 0f) {
-			GameRuntime.setTextStyle(-3, 1);
-			g.setColor(0xFF0000);
-			String fpsStr = String.valueOf(debugFps);
+			String fpsStr = String.valueOf((int)debugFps);
 			int len = Math.min(fpsStr.length(), 4);
-			fpsStr = "FPS: " + fpsStr.substring(0, len) + "0000".substring(len);
+			fpsStr = "FPS: " + "0000".substring(len) + fpsStr.substring(0, len);
 			g.drawString(fpsStr, currentWidth >> 1, 2, Graphics.HCENTER | Graphics.TOP);
+		}
+		if (BounceGame.bounceObj != null) {
+			g.drawString("Pos: (" + (BounceGame.bounceObj.localObjectMatrix.translationX >> 16) + ", " + (BounceGame.bounceObj.localObjectMatrix.translationY >> 16) + ")", currentWidth >> 1, 2 + getFontHeight(getCurrentFont()) + 1, Graphics.HCENTER | Graphics.TOP);
 		}
 	}
 
@@ -1282,8 +1285,8 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 					ResidentResHeader h = resident[i];
 					DataInputStream strm = getStreamForRscId(h.resId);
 					if (strm != null) {
-						for (int gameRtIdx = 0; gameRtIdx < gameRuntimes.length; gameRtIdx++) {
-							if (gameRuntimes[gameRtIdx].loadResidentData(strm, h.type)) {
+						for (int gameRtIdx = 0; gameRtIdx < resHandlers.length; gameRtIdx++) {
+							if (resHandlers[gameRtIdx].loadResidentData(strm, h.type)) {
 								break;
 							}
 						}
@@ -1291,7 +1294,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 					}
 				}
 
-				gameRuntimes[0].loadResidentData((DataInputStream) null, -1);
+				resHandlers[0].loadResidentData((DataInputStream) null, -1);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -1334,6 +1337,31 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 				resLoadQueue.addElement(integer);
 			}
 			resUnloadQueue.removeElement(integer);
+		}
+	}
+
+	public final boolean loadResource(DataInputStream dis, String finalRscPath, int readLength, int resType, int batchId, int subResIdx) throws IOException {
+		switch (resType) {
+			case ResourceType.IMAGE:
+				int imgResNo = getShortFromByteArray(getLoadedResData(batchId), 0) //table.baseImageID
+						+ subResIdx;
+				if (dis != null) {
+					byte[] bytes = readInputStreamToBytes(dis, readLength);
+					imageResources[imgResNo] = Image.createImage(bytes, 0, bytes.length);
+				} else {
+					imageResources[imgResNo] = Image.createImage("/" + finalRscPath);
+				}
+				return true;
+			case ResourceType.MIDI:
+			case ResourceType.LEVEL:
+				if (dis != null) {
+					preloadResourceImpl(readInputStreamToBytes(dis, readLength), batchId, null);
+				} else {
+					preloadResourceImpl(null, batchId, "/" + finalRscPath);
+				}
+				return true;
+			default:
+				return false;
 		}
 	}
 
@@ -1408,9 +1436,9 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 					if (rscStream == null && rscPath.trim().length() > 0) {
 						throw new IOException("Could not open stream for resource " + rscPath + " (ID " + rscId + ")");
 					}
-					for (int rtIdx = 0; rtIdx < gameRuntimes.length; rtIdx++) {
+					for (int rtIdx = 0; rtIdx < resHandlers.length; rtIdx++) {
 						try {
-							Object friendlyArray = gameRuntimes[rtIdx].readResource(
+							Object friendlyArray = resHandlers[rtIdx].readResource(
 									readLength != 0 ? rscStream : null,
 									readLength,
 									resourceBatchInfo[batchId].resType,
@@ -1431,34 +1459,10 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 					}
 					lastStream = rscStream;
 				} else if (readLength != 0) {
-					for (int i = 0; i < gameRuntimes.length; i++) {
-						String finalRscPath = readLength == -1 ? rscPath : null;
-						short resType = resourceBatchInfo[batchId].resType;
-
-						switch (resType) {
-							case ResourceType.IMAGE:
-								int imgResNo = getShortFromByteArray(getLoadedResData(batchId), 0) //table.baseImageID
-										+ subResIdx;
-								if (lastStream != null) {
-									byte[] bytes = readInputStreamToBytes((InputStream) lastStream, readLength);
-									imageResources[imgResNo] = Image.createImage(bytes, 0, bytes.length);
-								} else {
-									imageResources[imgResNo] = Image.createImage("/" + finalRscPath);
-								}
-								subResLoadSuccess = true;
-								break;
-							case ResourceType.MIDI:
-							case ResourceType.LEVEL:
-								if (lastStream != null) {
-									preloadResourceImpl(readInputStreamToBytes(lastStream, readLength), batchId, null);
-								} else {
-									preloadResourceImpl(null, batchId, "/" + finalRscPath);
-								}
-								subResLoadSuccess = true;
-								break;
-							default:
-								subResLoadSuccess = false;
-								break;
+					for (int i = 0; i < resHandlers.length; i++) {
+						if (resHandlers[i].loadResource(lastStream, readLength == -1 ? rscPath : null, readLength, resourceBatchInfo[batchId].resType, batchId, subResIdx)) {
+							subResLoadSuccess = true;
+							break;
 						}
 					}
 				}
@@ -1540,52 +1544,53 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 		}
 	}
 
+	//@Override
+	public final boolean unloadResource(int resType, int unloadResId) {
+		switch (resType) {
+			case ResourceType.IMAGE:
+				byte[] texAtlasInfo = (byte[]) loadedResources[unloadResId];
+				for (int k = 0; k < imageMaps2.length; k++) {
+					ImageMapEx m2 = imageMaps2[k];
+					if (m2.resBatchId == unloadResId) {
+						m2.clear();
+					}
+				}
+				short startImageId = getShortFromByteArray(texAtlasInfo, 0);
+				short endImageId = getShortFromByteArray(texAtlasInfo, 2);
+				for (int k = 0; k < imageMaps.length; k++) {
+					ImageMap m = imageMaps[k];
+					if (m.imageId >= startImageId && m.imageId < endImageId) {
+						m.clear();
+					}
+				}
+				for (int imgResIdx = startImageId; imgResIdx < endImageId; imgResIdx++) {
+					imageResources[imgResIdx] = null;
+				}
+				return true;
+			case ResourceType.MIDI:
+				return true;
+			case ResourceType.STRINGS:
+				short[] stringDesc = (short[]) loadedResources[unloadResId];
+				int stringCount = stringDesc[0] + stringDesc[1];
+				for (int s2 = stringDesc[0]; s2 < stringCount; s2++) {
+					residentStrings[s2 == 1 ? 1 : 0] = null;
+					s2 = (s2 == 1 ? 1 : 0) + 1;
+				}
+				return true;
+			default:
+				return false;
+		}
+	}
+
 	/* renamed from: g */
 	private static void processResourceUnload() {
 		for (int i = 0; i < resUnloadQueue.size(); i++) {
 			int unloadResId = ((Integer) resUnloadQueue.elementAt(i)).intValue();
 			if (isResourceLoaded[unloadResId]) {
 				short resType = resourceBatchInfo[unloadResId].resType;
-				boolean unloadSuccess = false;
-				for (int j = 0; j < gameRuntimes.length; j++) {
-					switch (resType) {
-						case ResourceType.IMAGE:
-							byte[] texAtlasInfo = (byte[]) loadedResources[unloadResId];
-							for (int k = 0; k < imageMaps2.length; k++) {
-								ImageMapEx m2 = imageMaps2[k];
-								if (m2.resBatchId == unloadResId) {
-									m2.clear();
-								}
-							}
-							short startImageId = getShortFromByteArray(texAtlasInfo, 0);
-							short endImageId = getShortFromByteArray(texAtlasInfo, 2);
-							for (int k = 0; k < imageMaps.length; k++) {
-								ImageMap m = imageMaps[k];
-								if (m.imageId >= startImageId && m.imageId < endImageId) {
-									m.clear();
-								}
-							}
-							for (int imgResIdx = startImageId; imgResIdx < endImageId; imgResIdx++) {
-								imageResources[imgResIdx] = null;
-							}
-							unloadSuccess = true;
-							break;
-						case ResourceType.MIDI:
-							unloadSuccess = true;
-							break;
-						case ResourceType.STRINGS:
-							short[] stringDesc = (short[]) loadedResources[unloadResId];
-							int stringCount = stringDesc[0] + stringDesc[1];
-							for (int s2 = stringDesc[0]; s2 < stringCount; s2++) {
-								residentStrings[s2 == 1 ? 1 : 0] = null;
-								s2 = (s2 == 1 ? 1 : 0) + 1;
-							}
-							unloadSuccess = true;
-							break;
-					}
-					if (unloadSuccess) {
-						loadedResources[unloadResId] = null;
-						isResourceLoaded[unloadResId] = false;
+				for (int j = 0; j < resHandlers.length; j++) {
+					if (resHandlers[j].unloadResource(resType, unloadResId)) {
+						break;
 					}
 				}
 				loadedResources[unloadResId] = null;
@@ -1642,6 +1647,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 		return resId >= 0 && isResourceLoaded != null && isResourceLoaded[resId];
 	}
 
+	//@Override
 	/* renamed from: a */
 	public final Object readResource(DataInputStream dis, int readLength, int type, int resBatchId) throws IOException {
 		switch (type) {
@@ -1704,6 +1710,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 		}
 	}
 
+	//@Override
 	/* renamed from: a */
 	public final boolean loadResidentData(DataInputStream dis, int type) throws IOException {
 		switch (type) {
@@ -1770,7 +1777,8 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 
 	//@Override
 	public final void paint(Graphics graphics) {
-		gamePaint(graphics);
+		//gamePaint(graphics);
+		super.paint(graphics); //since 2.0.25
 	}
 
 	//@Override
@@ -1810,7 +1818,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 			updateViewport();
 			resLoadQueue = new Vector();
 			resUnloadQueue = new Vector();
-			gameRuntimes = new GameRuntime[]{mInstance};
+			resHandlers = new GameRuntime[]{mInstance};
 			mBounceGame = new BounceGame();
 			notifySystemEvent(SYSTEM_EVENT_START);
 			resumeRuntime();
@@ -1837,9 +1845,11 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 									//this is bugged as the menu music will be muted on incoming call
 									//however, the straightforward way to fix it wouldn't work, as sounds are not allowed when this part of the code runs
 									//not sure if I want to rewrite this or preserve the original behavior
-									if (music_IdBeforeSysPause != music_IdQueuedAfterSysUnpause) {
-										playMusic(music_IdQueuedAfterSysUnpause, -1);
-									}
+
+									//if (music_IdBeforeSysPause != music_IdQueuedAfterSysUnpause) { //REMOVED IN 2.0.25
+									playMusic(music_IdQueuedAfterSysUnpause, -1);
+
+									//}
 									music_IdQueuedAfterSysUnpause = -1;
 								}
 							}
@@ -1955,6 +1965,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 						midletIsPaused = true;
 						reqSystemGamePause = true;
 						int returnMusic = music_IdCurrent;
+						stopMusic(); //since 2.0.25
 						music_IdQueuedAfterSysUnpause = returnMusic;
 						music_IdBeforeSysPause = returnMusic;
 					}

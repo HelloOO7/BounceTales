@@ -3,6 +3,7 @@ package bouncetools.rlef.data;
 import java.io.DataInput;
 import java.io.IOException;
 import java.io.PrintStream;
+import xstandard.io.util.IndentedPrintStream;
 
 public class SpriteData extends ObjectData {
 
@@ -35,7 +36,7 @@ public class SpriteData extends ObjectData {
 	}
 
 	@Override
-	public void dump(PrintStream out) {
+	public void dump(IndentedPrintStream out) {
 		out.println("| SPRITE |");
 		for (int i = 0; i < xCoords.length; i++) {
 			out.println("  Image " + imageIDs[i] + " @ (" + xCoords[i] + ", " + yCoords[i] + ")");

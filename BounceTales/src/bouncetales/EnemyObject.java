@@ -173,7 +173,7 @@ public final class EnemyObject extends GameObject {
 	}
 
 	/* renamed from: b */
-	public final void propelBounceAway() {
+	public final void onPlayerContact() {
 		loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
 		int myX = GameObject.tmpObjMatrix.translationX;
 		int bounceX = BounceGame.bounceObj.localObjectMatrix.translationX;
@@ -250,144 +250,146 @@ public final class EnemyObject extends GameObject {
 		int otherMovePointX;
 		setIsDirtyRecursive();
 		super.updatePhysics();
-		int tx = this.localObjectMatrix.translationX;
-		int ty = this.localObjectMatrix.translationY;
-		if (this.rechargeTimer > 0) {
-			this.rechargeTimer -= GameRuntime.updateDelta;
-			if (this.rechargeTimer <= 0) {
-				this.rechargeTimer = 0;
-				if (this.enemyType == TYPE_STALKER_UNUSED) {
-					this.rechargeTimer = STALKER_RECHARGE_TIME;
-					this.movePoint2X = this.movePoint1X;
-					this.movePoint2Y = this.movePoint1Y;
-					int i7 = this.movePoint2X - tx;
-					int i8 = this.movePoint2Y - ty;
-					float f = (float) (i7 >> 16);
-					float f2 = (float) (i8 >> 16);
-					int sqrt = LP32.FP64ToLP32(Math.sqrt((f * f) + (f2 * f2)));
-					int i9 = (STALKER_RECHARGE_TIME << 1) * ENEMY_MOTION_SPEEDS[this.enemyType];
-					if (i9 > sqrt) {
-						double d = ((double) i9) / ((double) sqrt);
-						this.movePoint2X = ((int) (((double) i7) * (d - 1.0d))) + this.movePoint2X;
-						this.movePoint2Y += (int) ((d - 1.0d) * ((double) i8));
-					}
-					this.movePoint1X = BounceGame.bounceObj.localObjectMatrix.translationX;
-					this.movePoint1Y = BounceGame.bounceObj.localObjectMatrix.translationY;
-				}
-			}
-		}
-		if (this.enemyType == TYPE_STALKER_UNUSED) {
-			int i10 = this.movePoint2X - tx;
-			int i11 = this.movePoint2Y - ty;
-			float f3 = (float) (i10 >> 16);
-			float f4 = (float) (i11 >> 16);
-			int sqrt2 = LP32.FP64ToLP32(Math.sqrt((f3 * f3) + (f4 * f4)));
-			if (sqrt2 != 0) {
-				double d2 = ((double) (ENEMY_MOTION_SPEEDS[this.enemyType] * GameRuntime.updateDelta)) / ((double) sqrt2);
-				tx += (int) (((double) i10) * d2);
-				ty += (int) (((double) i11) * d2);
-			}
-		} else {
-			if (this.enemyType == TYPE_MOLE) {
-				if (this.moleWaitTimer > 0) {
-					this.moleWaitTimer -= GameRuntime.updateDelta;
-					if (this.moleWaitTimer <= 0) {
-						if (this.propelType == 0) {
-							this.propelType = 1;
-							this.moleWaitTimer = 2000;
-							this.state = 1;
-							this.molePeekPeriod = 800;
-						} else {
-							this.propelType = 0;
-							this.moleWaitTimer = 5000;
-							this.state = 2;
-							this.molePeekPeriod = 800;
-							this.moleIsVulnerable = true;
+		if (BounceGame.currentLevel != LevelID.FINAL_RIDE || EventObject.eventVars[8] != 5) { //since 2.0.25 - final boss death bugfix
+			int tx = this.localObjectMatrix.translationX;
+			int ty = this.localObjectMatrix.translationY;
+			if (this.rechargeTimer > 0) {
+				this.rechargeTimer -= GameRuntime.updateDelta;
+				if (this.rechargeTimer <= 0) {
+					this.rechargeTimer = 0;
+					if (this.enemyType == TYPE_STALKER_UNUSED) {
+						this.rechargeTimer = STALKER_RECHARGE_TIME;
+						this.movePoint2X = this.movePoint1X;
+						this.movePoint2Y = this.movePoint1Y;
+						int i7 = this.movePoint2X - tx;
+						int i8 = this.movePoint2Y - ty;
+						float f = (float) (i7 >> 16);
+						float f2 = (float) (i8 >> 16);
+						int sqrt = LP32.FP64ToLP32(Math.sqrt((f * f) + (f2 * f2)));
+						int i9 = (STALKER_RECHARGE_TIME << 1) * ENEMY_MOTION_SPEEDS[this.enemyType];
+						if (i9 > sqrt) {
+							double d = ((double) i9) / ((double) sqrt);
+							this.movePoint2X = ((int) (((double) i7) * (d - 1.0d))) + this.movePoint2X;
+							this.movePoint2Y += (int) ((d - 1.0d) * ((double) i8));
 						}
-					}
-				}
-				if (this.state == 1) {
-					this.molePeekTimer += GameRuntime.updateDelta;
-					if (this.molePeekTimer >= this.molePeekPeriod) {
-						if (this.propelType == 0) {
-							this.state = 2;
-							this.molePeekPeriod = 200;
-						}
-						this.molePeekTimer = this.molePeekPeriod;
-					}
-				} else if (this.state == 2) {
-					this.molePeekTimer -= GameRuntime.updateDelta;
-					if (this.molePeekTimer <= 0) {
-						this.state = 0;
-						this.molePeekTimer = 0;
-						this.moleIsVulnerable = false;
+						this.movePoint1X = BounceGame.bounceObj.localObjectMatrix.translationX;
+						this.movePoint1Y = BounceGame.bounceObj.localObjectMatrix.translationY;
 					}
 				}
 			}
-			if (this.curMovePoint == 0) {
-				targetTX = this.movePoint1X;
-				targetTY = this.movePoint1Y;
-				otherMovePointX = this.movePoint2X;
+			if (this.enemyType == TYPE_STALKER_UNUSED) {
+				int i10 = this.movePoint2X - tx;
+				int i11 = this.movePoint2Y - ty;
+				float f3 = (float) (i10 >> 16);
+				float f4 = (float) (i11 >> 16);
+				int sqrt2 = LP32.FP64ToLP32(Math.sqrt((f3 * f3) + (f4 * f4)));
+				if (sqrt2 != 0) {
+					double d2 = ((double) (ENEMY_MOTION_SPEEDS[this.enemyType] * GameRuntime.updateDelta)) / ((double) sqrt2);
+					tx += (int) (((double) i10) * d2);
+					ty += (int) (((double) i11) * d2);
+				}
 			} else {
-				targetTX = this.movePoint2X;
-				targetTY = this.movePoint2Y;
-				otherMovePointX = this.movePoint1X;
-			}
-			if (this.enemyType == TYPE_CANDLE && Math.abs(tx - targetTX) > LP32.Int32ToLP32(70) && Math.abs(tx - otherMovePointX) > LP32.Int32ToLP32(70)) {
-				loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-				int myAbsX = GameObject.tmpObjMatrix.translationX;
-				int bounceX = BounceGame.bounceObj.localObjectMatrix.translationX;
-				if (Math.abs(bounceX - myAbsX) < LP32.Int32ToLP32(120) && ((myAbsX < bounceX && targetTX < tx) || (myAbsX > bounceX && targetTX > tx))) {
+				if (this.enemyType == TYPE_MOLE) {
+					if (this.moleWaitTimer > 0) {
+						this.moleWaitTimer -= GameRuntime.updateDelta;
+						if (this.moleWaitTimer <= 0) {
+							if (this.propelType == 0) {
+								this.propelType = 1;
+								this.moleWaitTimer = 2000;
+								this.state = 1;
+								this.molePeekPeriod = 800;
+							} else {
+								this.propelType = 0;
+								this.moleWaitTimer = 5000;
+								this.state = 2;
+								this.molePeekPeriod = 800;
+								this.moleIsVulnerable = true;
+							}
+						}
+					}
+					if (this.state == 1) {
+						this.molePeekTimer += GameRuntime.updateDelta;
+						if (this.molePeekTimer >= this.molePeekPeriod) {
+							if (this.propelType == 0) {
+								this.state = 2;
+								this.molePeekPeriod = 200;
+							}
+							this.molePeekTimer = this.molePeekPeriod;
+						}
+					} else if (this.state == 2) {
+						this.molePeekTimer -= GameRuntime.updateDelta;
+						if (this.molePeekTimer <= 0) {
+							this.state = 0;
+							this.molePeekTimer = 0;
+							this.moleIsVulnerable = false;
+						}
+					}
+				}
+				if (this.curMovePoint == 0) {
+					targetTX = this.movePoint1X;
+					targetTY = this.movePoint1Y;
+					otherMovePointX = this.movePoint2X;
+				} else {
+					targetTX = this.movePoint2X;
+					targetTY = this.movePoint2Y;
+					otherMovePointX = this.movePoint1X;
+				}
+				if (this.enemyType == TYPE_CANDLE && Math.abs(tx - targetTX) > LP32.Int32ToLP32(70) && Math.abs(tx - otherMovePointX) > LP32.Int32ToLP32(70)) {
+					loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
+					int myAbsX = GameObject.tmpObjMatrix.translationX;
+					int bounceX = BounceGame.bounceObj.localObjectMatrix.translationX;
+					if (Math.abs(bounceX - myAbsX) < LP32.Int32ToLP32(120) && ((myAbsX < bounceX && targetTX < tx) || (myAbsX > bounceX && targetTX > tx))) {
+						if (this.curMovePoint == 0) {
+							targetTX = this.movePoint2X;
+							targetTY = this.movePoint2Y;
+							this.curMovePoint = 1;
+						} else {
+							targetTX = this.movePoint1X;
+							targetTY = this.movePoint1Y;
+							this.curMovePoint = 0;
+						}
+					}
+				}
+				int xdiff = targetTX - tx;
+				int ydiff = targetTY - ty;
+				float f5 = (float) (xdiff >> 16);
+				float f6 = (float) (ydiff >> 16);
+				int distToTarget = LP32.FP64ToLP32(Math.sqrt((f5 * f5) + (f6 * f6)));
+				boolean xDone = false;
+				boolean yDone = false;
+				if (distToTarget != 0) {
+					double d3 = ((double) (GameRuntime.updateDelta * ENEMY_MOTION_SPEEDS[this.enemyType])) / ((double) distToTarget);
+					int i16 = (int) (xdiff * d3);
+					int i17 = (int) (ydiff * d3);
+					tx += i16;
+					ty += i17;
+					if ((i16 >= 0 && tx >= targetTX) || (i16 <= 0 && tx <= targetTX)) {
+						xDone = true;
+						tx = targetTX;
+					}
+					if ((i17 >= 0 && ty >= targetTY) || (i17 <= 0 && ty <= targetTY)) {
+						yDone = true;
+						ty = targetTY;
+					}
+				}
+
+				if ((xDone && yDone) || distToTarget == 0) {
+					tx = targetTX;
+					ty = targetTY;
 					if (this.curMovePoint == 0) {
-						targetTX = this.movePoint2X;
-						targetTY = this.movePoint2Y;
 						this.curMovePoint = 1;
 					} else {
-						targetTX = this.movePoint1X;
-						targetTY = this.movePoint1Y;
 						this.curMovePoint = 0;
 					}
 				}
 			}
-			int xdiff = targetTX - tx;
-			int ydiff = targetTY - ty;
-			float f5 = (float) (xdiff >> 16);
-			float f6 = (float) (ydiff >> 16);
-			int distToTarget = LP32.FP64ToLP32(Math.sqrt((f5 * f5) + (f6 * f6)));
-			boolean xDone = false;
-			boolean yDone = false;
-			if (distToTarget != 0) {
-				double d3 = ((double) (GameRuntime.updateDelta * ENEMY_MOTION_SPEEDS[this.enemyType])) / ((double) distToTarget);
-				int i16 = (int) (xdiff * d3);
-				int i17 = (int) (ydiff * d3);
-				tx += i16;
-				ty += i17;
-				if ((i16 >= 0 && tx >= targetTX) || (i16 <= 0 && tx <= targetTX)) {
-					xDone = true;
-					tx = targetTX;
-				}
-				if ((i17 >= 0 && ty >= targetTY) || (i17 <= 0 && ty <= targetTY)) {
-					yDone = true;
-					ty = targetTY;
-				}
+			if (this.enemyType != TYPE_MOLE || (this.enemyType == TYPE_MOLE && this.propelType == 0 && this.state == 0)) {
+				this.facingLeft = this.localObjectMatrix.translationX < tx;
+				this.localObjectMatrix.translationX = tx;
+				this.localObjectMatrix.translationY = ty;
+				this.renderMatrixIsDirty = true;
+				this.objectMatrixIsDirty = true;
 			}
-
-			if ((xDone && yDone) || distToTarget == 0) {
-				tx = targetTX;
-				ty = targetTY;
-				if (this.curMovePoint == 0) {
-					this.curMovePoint = 1;
-				} else {
-					this.curMovePoint = 0;
-				}
-			}
-		}
-		if (this.enemyType != TYPE_MOLE || (this.enemyType == TYPE_MOLE && this.propelType == 0 && this.state == 0)) {
-			this.facingLeft = this.localObjectMatrix.translationX < tx;
-			this.localObjectMatrix.translationX = tx;
-			this.localObjectMatrix.translationY = ty;
-			this.renderMatrixIsDirty = true;
-			this.objectMatrixIsDirty = true;
 		}
 	}
 

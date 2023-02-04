@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import xstandard.formats.yaml.Yaml;
 import xstandard.formats.yaml.YamlNode;
 import xstandard.fs.FSFile;
@@ -13,9 +15,11 @@ import xstandard.util.collections.IntList;
 
 public class MessageData {
 
-	public List<String> lines = new ArrayList<>();
+	public Map<String, String> lines = new LinkedHashMap<>();
 
-	public MessageData(DataIOStream in) throws IOException {
+	public MessageData(DataIOStream in, short[] mapping) throws IOException {
+		String[] names = MessageIDStrMaker.getNames(mapping);
+		List<String> linesUnsorted = new ArrayList<>();
 		in.order(ByteOrder.BIG_ENDIAN);
 		int limit = in.getLength() - Short.BYTES;
 		IntList offsets = new IntList();
@@ -34,15 +38,17 @@ public class MessageData {
 		}
 		for (int i = 0; i < offsets.size(); i++) {
 			in.seek(offsets.get(i));
-			lines.add(new String(in.readBytes(in.readUnsignedShort()), StandardCharsets.UTF_8));
+			linesUnsorted.add(new String(in.readBytes(in.readUnsignedShort()), StandardCharsets.UTF_8));
+		}
+		int index = 0;
+		for (short s : mapping) {
+			lines.put(names[index++], linesUnsorted.get(s));
 		}
 	}
 	
 	public void serialize(YamlNode dest) {
-		int idx = 0;
-		for (String line : lines) {
-			dest.addChild(String.valueOf(idx), line);
-			idx++;
+		for (Map.Entry<String, String> e : lines.entrySet()) {
+			dest.addChild(e.getKey(), e.getValue());
 		}
 	}
 	

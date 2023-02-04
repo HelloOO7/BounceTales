@@ -8,6 +8,7 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
+import xstandard.io.util.IndentedPrintStream;
 
 public class ObjectData {
 
@@ -82,7 +83,7 @@ public class ObjectData {
         return mtx;
     }
 
-    public void dump(PrintStream out) {
+    public void dump(IndentedPrintStream out) {
         out.println("-- OBJECT " + idx + " --");
         out.println(" - Relations:");
         out.println("     - Previous: " + prevIdx);

@@ -14,7 +14,7 @@ public final class EventObject extends GameObject {
 	public static final byte STATE_PAUSED = 3;
 
 	//Global state
-	public static int finalBossTimer = 0; //renamed from: a
+	//public static int finalBossTimer = 0; //renamed from: a //removed in 2.0.25
 	public static int[] eventVars; //renamed from: a
 
 	//Global - stream pos after read function return
@@ -168,6 +168,12 @@ public final class EventObject extends GameObject {
 		}
 	}
 
+	/* renamed from: a  reason: collision with other method in class */
+	private static void write16(byte[] bArr, int offset, int value) { //since 2.0.25, offset parameter assumed to be obfuscated
+		bArr[offset] = (byte) (value >> 8);
+		bArr[offset + 1] = (byte) value;
+	}
+
 	/* renamed from: a */
 	private static void write32(byte[] bArr, int offset, int value) {
 		bArr[offset] = (byte) (value >>> 24);
@@ -180,9 +186,360 @@ public final class EventObject extends GameObject {
 		System.out.println(str);
 	}
 
+	private boolean executeEvent(byte[] evCmd) { //since 2.0.25
+		switch (evCmd[0]) {
+			case EventCommand.MESSAGE: //display message
+				short msg = BounceGame.SCRIPT_MESSAGE_IDS[GameObject.readShort(evCmd, 1)];
+				if (!BounceGame.wasLevelBeaten(LevelID.GAME_CLEAR_LEVEL)) {
+					BounceGame.pushFieldMessage(msg);
+				}
+				return true;
+			case EventCommand.OBJ_ANIMATE: //start hit animation
+				GameObject spriteGO = getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
+				if (spriteGO != null) {
+					eventLog("Start sprite animation @ " + spriteGO.getObjectId());
+					SpriteObject sprite = (SpriteObject) spriteGO;
+					sprite.onPlayerContact();
+				}
+				return true;
+			case EventCommand.EVENT_TERMINATE: //terminate event definitely
+				currentEvents[evCmd[1]].changeEventState(STATE_TERMINATED);
+				return true;
+			case EventCommand.EVENT_CANCEL: //end event, but allow repeated execution
+				currentEvents[evCmd[1]].changeEventState(STATE_WAITING);
+				return true;
+			case EventCommand.EVENT_START: //activate event
+				eventLog("Activate event " + currentEvents[evCmd[1]].getObjectId() + " (evId: " + evCmd[1] + ")");
+				currentEvents[evCmd[1]].changeEventState(STATE_ACTIVE);
+				return true;
+			case EventCommand.EVENT_PAUSE:
+				currentEvents[evCmd[1]].changeEventState(STATE_PAUSED);
+				return true;
+			case EventCommand.WAIT: //wait
+				short waitTime = GameObject.readShort(evCmd, 3);
+				if (evCmd[3] == evCmd[1] && evCmd[4] == evCmd[2]) {
+					eventLog("Waiting for " + waitTime);
+				}
+				if (waitTime < 0) {
+					evCmd[3] = evCmd[1];
+					evCmd[4] = evCmd[2];
+					return true;
+				} else {
+					write16(evCmd, 3, waitTime - GameRuntime.updateDelta);
+					return false;
+				}
+			case EventCommand.VAR_SET: //set event variable
+				if (evCmd[1] == 1) {
+					setFloatEventVar(evCmd[2], readFloat(evCmd, 3));
+				}
+				if (evCmd[1] == 2) {
+					eventVars[evCmd[2]] = readInteger(evCmd, 3);
+				}
+				return true;
+			case EventCommand.VAR_ADD: //event var +
+				if (evCmd[1] == 1) {
+					setFloatEventVar(evCmd[2], getFloatEventVar(evCmd[2]) + readFloat(evCmd, 3));
+				}
+				if (evCmd[1] == 2) {
+					eventVars[evCmd[2]] += readInteger(evCmd, 3);
+				}
+				return true;
+			case EventCommand.VAR_SUB: //event var -
+				if (evCmd[1] == 1) {
+					setFloatEventVar(evCmd[2], getFloatEventVar(evCmd[2]) - readFloat(evCmd, 3));
+				}
+				if (evCmd[1] == 2) {
+					eventVars[evCmd[2]] -= readInteger(evCmd, 3);
+				}
+				return true;
+			case EventCommand.VAR_MUL: //event var *
+				if (evCmd[1] == 1) {
+					setFloatEventVar(evCmd[2], getFloatEventVar(evCmd[2]) * readFloat(evCmd, 3));
+				}
+				if (evCmd[1] == 2) {
+					eventVars[evCmd[2]] *= readInteger(evCmd, 3);
+				}
+				return true;
+			case EventCommand.VAR_DIV: //event var /
+				if (evCmd[1] == 1) {
+					setFloatEventVar(evCmd[2], getFloatEventVar(evCmd[2]) / readFloat(evCmd, 3));
+				}
+				if (evCmd[1] == 2) {
+					eventVars[evCmd[2]] /= readInteger(evCmd, 3);
+				}
+				return true;
+			case EventCommand.BRANCH_IF_NE: //event var CMPEQ
+				if (evCmd[1] == 2) {
+					if (eventVars[evCmd[2]] == readInteger(evCmd, 3)) {
+						return true;
+					}
+				} else if (evCmd[1] == 1 && getFloatEventVar(evCmd[2]) == readFloat(evCmd, 3)) {
+					return true;
+				}
+				currentEvent = (byte) (evCmd[readPtr] - 2);
+				return true;
+			case EventCommand.BRANCH_IF_EQ: //event var CMPNE
+				if (evCmd[1] == 2) {
+					if (eventVars[evCmd[2]] != readInteger(evCmd, 3)) {
+						return true;
+					}
+				} else if (evCmd[1] == 1 && getFloatEventVar(evCmd[2]) != readFloat(evCmd, 3)) {
+					return true;
+				}
+				currentEvent = (byte) (evCmd[readPtr] - 2);
+				return true;
+			case EventCommand.BRANCH_IF_GEQ: //event var CMPLESS
+				if (evCmd[1] == 2) {
+					if (eventVars[evCmd[2]] < readInteger(evCmd, 3)) {
+						return true;
+					}
+				} else if (evCmd[1] == 1 && getFloatEventVar(evCmd[2]) < readFloat(evCmd, 3)) {
+					return true;
+				}
+				currentEvent = (byte) (evCmd[readPtr] - 2);
+				return true;
+			case EventCommand.BRANCH_IF_LEQ: //event var CMPGRTR
+				if (evCmd[1] == 2) {
+					if (eventVars[evCmd[2]] > readInteger(evCmd, 3)) {
+						return true;
+					}
+				} else if (evCmd[1] == 1 && getFloatEventVar(evCmd[2]) > readFloat(evCmd, 3)) {
+					return true;
+				}
+				currentEvent = (byte) (evCmd[readPtr] - 2);
+				return true;
+			case EventCommand.OBJ_MOVE: //move object to position
+				GameObject moveobj = getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
+				if (moveobj == null) {
+					return true;
+				} else {
+					int counter = GameObject.readInt(evCmd, 15);
+					int delta = GameRuntime.updateDelta;
+					if (delta >= counter) {
+						evCmd[15] = evCmd[11];
+						evCmd[16] = evCmd[12];
+						evCmd[17] = evCmd[13];
+						evCmd[18] = evCmd[14];
+						delta = counter;
+					}
+					moveobj.localObjectMatrix.translationX += GameObject.readInt(evCmd, 3) * delta;
+					moveobj.localObjectMatrix.translationY += GameObject.readInt(evCmd, 7) * delta;
+					moveobj.setIsDirtyRecursive();
+					moveobj.setBBoxIsDirty();
+					int newCounter = counter - delta;
+					if (newCounter <= 0) {
+						return true;
+					} else {
+						write32(evCmd, 15, newCounter);
+						return false;
+					}
+				}
+			case EventCommand.OBJ_ROTATE: //rotate object
+				GameObject rotObj = getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
+				if (rotObj == null) {
+					return true;
+				} else {
+					int counter = GameObject.readInt(evCmd, 11);
+					int duration = GameObject.readInt(evCmd, 7);
+					int delta = GameRuntime.updateDelta;
+					if (counter == duration) {
+						write32(evCmd, 15, rotObj.localObjectMatrix.m00); //save initial rotation
+						write32(evCmd, 19, rotObj.localObjectMatrix.m01);
+						write32(evCmd, 23, rotObj.localObjectMatrix.m10);
+						write32(evCmd, 27, rotObj.localObjectMatrix.m11);
+					}
+					if (counter - delta <= 0) {
+						evCmd[11] = evCmd[7];
+						evCmd[12] = evCmd[8];
+						evCmd[13] = evCmd[9];
+						evCmd[14] = evCmd[10];
+						counter = 0;
+					}
+					float rotation = LP32.LP32ToFP32((int) ((((long) GameObject.readInt(evCmd, 3)) * ((long) (duration - counter))) / ((long) duration)));
+					Matrix.temp.setRotation(rotation);
+					Matrix.temp.translationX = 0;
+					Matrix.temp.translationY = 0;
+					rotObj.localObjectMatrix.m00 = GameObject.readInt(evCmd, 15);
+					rotObj.localObjectMatrix.m01 = GameObject.readInt(evCmd, 19);
+					rotObj.localObjectMatrix.m10 = GameObject.readInt(evCmd, 23);
+					rotObj.localObjectMatrix.m11 = GameObject.readInt(evCmd, 27);
+					rotObj.localObjectMatrix.mul(Matrix.temp);
+					rotObj.setIsDirtyRecursive();
+					rotObj.setBBoxIsDirty();
+					int newCounter = counter - delta;
+					if (newCounter <= 0) {
+						return true;
+					} else {
+						write32(evCmd, 11, newCounter);
+						return false;
+					}
+				}
+			case EventCommand.OBJ_SETPOS: //copy translation from other object or eventcmd
+			{
+				GameObject destObj = getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
+				if (destObj != null) {
+					short srcObjId = GameObject.readShort(evCmd, 3);
+					if (srcObjId < 0) {
+						destObj.localObjectMatrix.translationX = GameObject.readInt(evCmd, 5);
+						destObj.localObjectMatrix.translationY = GameObject.readInt(evCmd, 9);
+						eventLog("Set translation of object " + destObj.getObjectId() + " to (" + (destObj.localObjectMatrix.translationX >> 16) + ", " + (destObj.localObjectMatrix.translationY >> 16) + ")");
+					} else {
+						eventLog("Set translation of object " + destObj.getObjectId() + " from " + srcObjId);
+						GameObject srcObj = getObjectRoot().searchByObjId(srcObjId);
+						if (srcObj != null) {
+							srcObj.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
+							int srcTxAbs = GameObject.tmpObjMatrix.translationX;
+							int srcTyAbs = GameObject.tmpObjMatrix.translationY;
+							destObj.localObjectMatrix.translationX = 0;
+							destObj.localObjectMatrix.translationY = 0;
+							destObj.objectMatrixIsDirty = true;
+							destObj.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
+							GameObject.tmpObjMatrix.invert(Matrix.temp); //load inverse rotation matrix
+							Matrix.temp.mulVector(srcTxAbs, srcTyAbs);
+							destObj.localObjectMatrix.translationX = Matrix.vectorMulRslX;
+							destObj.localObjectMatrix.translationY = Matrix.vectorMulRslY;
+						}
+					}
+					destObj.setIsDirtyRecursive();
+					destObj.setBBoxIsDirty();
+					destObj.loadObjectMatrixToTarget(destObj.renderCalcMatrix);
+				}
+				return true;
+			}
+			case EventCommand.OBJ_ATTACH: //reset parent to level root
+			{
+				short parentWhoId = GameObject.readShort(evCmd, 1);
+				short parentToId = GameObject.readShort(evCmd, 3);
+				GameObject parentWho = GameObject.dummyParent.searchByObjId(parentWhoId);
+				if (parentWho != null) {
+					GameObject parentTo = getObjectRoot().searchByObjId(parentToId);
+					if (parentTo != null) {
+						parentWho.setParent(parentTo);
+						parentWho.setBBoxIsDirty();
+					}
+				}
+				return true;
+			}
+			case EventCommand.OBJ_DETACH: //parent to dummy
+			{
+				GameObject parentWho = getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
+				if (parentWho != null) {
+					parentWho.setBBoxIsDirty();
+					parentWho.setParent(GameObject.dummyParent);
+				}
+				return true;
+			}
+			case EventCommand.BRANCH: //branch to event unconditionally
+				currentEvent = (byte) (evCmd[1] - 2);
+				eventLog("BranchEvent " + currentEvent);
+				return true;
+			case EventCommand.NOP: //NOP
+				return true;
+			case EventCommand.END: //end event
+				if (repeatable == 1) {
+					eventState = STATE_WAITING;
+				} else {
+					eventState = STATE_TERMINATED;
+				}
+				return true;
+			case EventCommand.WAIT_ACTOR_GONE:
+				return !arrayContains(lastActorsInArea, lastAreaActorCount, getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1)));
+			case EventCommand.CHECKPOINT: //checkpoint reached
+				BounceGame.checkpointPosX = renderCalcMatrix.translationX;
+				BounceGame.checkpointPosY = renderCalcMatrix.translationY;
+				eventLog("Checkpoint reached: " + BounceGame.checkpointPosX + ", " + BounceGame.checkpointPosY);
+				return true;
+			case EventCommand.PUSH: //force gravity push
+				GameObject pushTarget = getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
+				if (pushTarget.objType == BounceObject.TYPEID) {
+					BounceObject bounce = (BounceObject) pushTarget;
+					bounce.pushX += (float) GameObject.readShort(evCmd, 3);
+					bounce.pushY += (float) GameObject.readShort(evCmd, 5);
+				}
+				return true;
+			case EventCommand.GRAVITATE:
+				GameObject gravityTarget = getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
+				if (gravityTarget.objType == BounceObject.TYPEID) {
+					BounceObject bounce = (BounceObject) gravityTarget;
+					bounce.gravityX += (float) GameObject.readShort(evCmd, 3);
+					bounce.gravityY += (float) GameObject.readShort(evCmd, 5);
+				}
+				return true;
+			case EventCommand.ACCELERATE:
+				GameObject accelTarget = getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
+				if (accelTarget.objType == BounceObject.TYPEID) {
+					BounceObject bounce = (BounceObject) accelTarget;
+					bounce.curXVelocity += (float) GameObject.readShort(evCmd, 3);
+					bounce.curYVelocity += (float) GameObject.readShort(evCmd, 5);
+				}
+				return true;
+			case EventCommand.OBJ_SET_FLAGS: {
+				GameObject obj = getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
+				if (obj != null) {
+					eventLog("evcmd 29 on object " + obj.getObjectId());
+					int flagExistMask = GameObject.readInt(evCmd, 3);
+					int flagValues = GameObject.readInt(evCmd, 7);
+					if ((flagExistMask & 1) != 0) {
+						obj.flags &= ~FLAG_Z_COORD_MASK;
+						obj.flags |= flagValues & FLAG_Z_COORD_MASK;
+						obj.zCoord = (byte) ((obj.flags & FLAG_Z_COORD_MASK) - 16);
+					}
+					if ((flagExistMask & FLAG_NOCOLLIDE) != 0) {
+						obj.flags &= ~FLAG_NOCOLLIDE;
+						obj.flags |= flagValues & FLAG_NOCOLLIDE;
+					}
+					if ((flagExistMask & FLAG_NODRAW) != 0) {
+						obj.flags &= ~FLAG_NODRAW;
+						obj.flags |= flagValues & FLAG_NODRAW;
+						if (obj.getObjType() == SpriteObject.TYPEID) {
+							SpriteObject sprite = (SpriteObject) obj;
+							if (sprite.imageIDs[0] == 358) { //evil machine
+								sprite.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
+								BounceGame.colorMachineDestroyParticle.emitIndependentBursts(
+										24,
+										sprite.bboxMinX + (60 << 16) + GameObject.tmpObjMatrix.translationX,
+										sprite.bboxMinY + (60 << 16) + GameObject.tmpObjMatrix.translationY,
+										(sprite.bboxMaxX - (60 << 16)) + GameObject.tmpObjMatrix.translationX,
+										(sprite.bboxMaxY - (60 << 16)) + GameObject.tmpObjMatrix.translationY,
+										840,
+										0,
+										0,
+										360,
+										2040,
+										510
+								);
+							}
+						}
+					}
+					if ((flagExistMask & 256) > 0) {
+						obj.flags &= ~256;
+						obj.flags |= flagValues & 0x100;
+					}
+				}
+				return true;
+			}
+			case EventCommand.CAMERA_TARGET: //change camera target
+				GameObject.cameraTarget = getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
+				eventLog("New camera target: " + GameObject.cameraTarget);
+				return true;
+			case EventCommand.CAMERA_SETPARAM:
+				BounceGame.reqCameraSnap = evCmd[1] == 1;
+				GameObject.cameraBounceFactor = GameObject.readShort(evCmd, 2);
+				GameObject.cameraStabilizeSpeed = GameObject.readShort(evCmd, 4);
+				eventLog("Camera return: snap " + BounceGame.reqCameraSnap + " / a " + GameObject.cameraBounceFactor + " / b " + GameObject.cameraStabilizeSpeed);
+				return true;
+			case EventCommand.CAMERA_SETPARAM_DEFAULT:
+				BounceGame.reqCameraSnap = false;
+				GameObject.cameraBounceFactor = 90;
+				GameObject.cameraStabilizeSpeed = 140;
+				return true;
+			default:
+				return true;
+		}
+	}
+
 	/* renamed from: a */
 	public static void updateEvents(EventObject[] events) {
-		boolean advanceEvent;
 		currentEvents = events;
 		for (int eventIdx = 0; eventIdx < events.length; eventIdx++) {
 			EventObject event = events[eventIdx];
@@ -219,8 +576,8 @@ public final class EventObject extends GameObject {
 		for (int i = 0; i < events.length; i++) {
 			EventObject event = events[i];
 			EventLoop:
-			while (event.isChildOf(BounceGame.rootLevelObj) && event.eventState == STATE_ACTIVE) {
-				if (BounceGame.currentLevel == LevelID.FINAL_RIDE) {
+			while (event.isChildOf(BounceGame.rootLevelObj) && event.eventState == STATE_ACTIVE && event.executeEvent(event.events[event.currentEvent])) {
+				/*if (BounceGame.currentLevel == LevelID.FINAL_RIDE) {
 					finalBossTimer += GameRuntime.updateDelta;
 					//kinda bug, kinda snack. this probably shouldn't be getting updated with each event.
 					if (event.objectId == 15) {
@@ -228,437 +585,19 @@ public final class EventObject extends GameObject {
 							event.eventState = STATE_WAITING;
 						}
 					}
+				}*/ //removed in 2.0.25
+				
+				if (event.currentEvent < -1) {
+					event.currentEvent = -1;
 				}
-				byte[] evCmd = event.events[event.currentEvent];
-				switch (evCmd[0]) {
-					case EventCommand.MESSAGE: //display message
-						short msg = BounceGame.SCRIPT_MESSAGE_IDS[GameObject.readShort(evCmd, 1)];
-						if (!BounceGame.wasLevelBeaten(LevelID.GAME_CLEAR_LEVEL)) {
-							BounceGame.pushFieldMessage(msg);
-						}
-						advanceEvent = true;
-						break;
-					case EventCommand.OBJ_ANIMATE: //start ambient animation
-						GameObject spriteGO = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
-						if (spriteGO != null) {
-							eventLog("Start sprite animation @ " + spriteGO.getObjectId());
-							SpriteObject sprite = (SpriteObject) spriteGO;
-							for (int componentIdx = 0; componentIdx < sprite.imageIDs.length; componentIdx++) {
-								short anmImage = -1;
-								short anmLength = 0; //9999 = loop forever
-								switch (sprite.imageIDs[componentIdx]) {
-									case 118: //propeller flower
-										anmImage = 485;
-										anmLength = 9999;
-										break;
-									case 334: //bumpy cracks stone wall
-										anmImage = 474;
-										anmLength = 750;
-										break;
-									case 342: //color machine ray
-										anmImage = 480;
-										anmLength = 9999;
-										break;
-								}
-								if (anmImage > -1) {
-									sprite.actionImageIDs[componentIdx] = anmImage;
-									sprite.imageIDs[componentIdx] = anmLength;
-								}
-							}
-						}
-						advanceEvent = true;
-						break;
-					case EventCommand.EVENT_TERMINATE: //terminate event definitely
-						currentEvents[evCmd[1]].changeEventState(STATE_TERMINATED);
-						advanceEvent = true;
-						break;
-					case EventCommand.EVENT_CANCEL: //end event, but allow repeated execution
-						currentEvents[evCmd[1]].changeEventState(STATE_WAITING);
-						advanceEvent = true;
-						break;
-					case EventCommand.EVENT_START: //activate event
-						eventLog("Activate event " + currentEvents[evCmd[1]].getObjectId() + " (evId: " + evCmd[1] + ")");
-						currentEvents[evCmd[1]].changeEventState(STATE_ACTIVE);
-						advanceEvent = true;
-						break;
-					case EventCommand.EVENT_PAUSE:
-						currentEvents[evCmd[1]].changeEventState(STATE_PAUSED);
-						advanceEvent = true;
-						break;
-					case EventCommand.WAIT: //wait
-						short waitTime = GameObject.readShort(evCmd, 3);
-						if (evCmd[3] == evCmd[1] && evCmd[4] == evCmd[2]) {
-							eventLog("Waiting for " + waitTime);
-						}
-						if (waitTime < 0) {
-							evCmd[3] = evCmd[1];
-							evCmd[4] = evCmd[2];
-							advanceEvent = true;
-						} else {
-							short s4 = (short) (waitTime - GameRuntime.updateDelta);
-							evCmd[3] = (byte) (s4 >> 8);
-							evCmd[4] = (byte) s4;
-							advanceEvent = false;
-						}
-						break;
-					case EventCommand.VAR_SET: //set event variable
-						if (evCmd[1] == 1) {
-							setFloatEventVar(evCmd[2], readFloat(evCmd, 3));
-						}
-						if (evCmd[1] == 2) {
-							eventVars[evCmd[2]] = readInteger(evCmd, 3);
-						}
-						advanceEvent = true;
-						break;
-					case EventCommand.VAR_ADD: //event var +
-						if (evCmd[1] == 1) {
-							setFloatEventVar(evCmd[2], getFloatEventVar(evCmd[2]) + readFloat(evCmd, 3));
-						}
-						if (evCmd[1] == 2) {
-							eventVars[evCmd[2]] += readInteger(evCmd, 3);
-						}
-						advanceEvent = true;
-						break;
-					case EventCommand.VAR_SUB: //event var -
-						if (evCmd[1] == 1) {
-							setFloatEventVar(evCmd[2], getFloatEventVar(evCmd[2]) - readFloat(evCmd, 3));
-						}
-						if (evCmd[1] == 2) {
-							eventVars[evCmd[2]] -= readInteger(evCmd, 3);
-						}
-						advanceEvent = true;
-						break;
-					case EventCommand.VAR_MUL: //event var *
-						if (evCmd[1] == 1) {
-							setFloatEventVar(evCmd[2], getFloatEventVar(evCmd[2]) * readFloat(evCmd, 3));
-						}
-						if (evCmd[1] == 2) {
-							eventVars[evCmd[2]] *= readInteger(evCmd, 3);
-						}
-						advanceEvent = true;
-						break;
-					case EventCommand.VAR_DIV: //event var /
-						if (evCmd[1] == 1) {
-							setFloatEventVar(evCmd[2], getFloatEventVar(evCmd[2]) / readFloat(evCmd, 3));
-						}
-						if (evCmd[1] == 2) {
-							eventVars[evCmd[2]] /= readInteger(evCmd, 3);
-						}
-						advanceEvent = true;
-						break;
-					case EventCommand.BRANCH_IF_NE: //event var CMPEQ
-						if (evCmd[1] == 2) {
-							if (eventVars[evCmd[2]] == readInteger(evCmd, 3)) {
-								advanceEvent = true;
-								break;
-							}
-						} else if (evCmd[1] == 1 && getFloatEventVar(evCmd[2]) == readFloat(evCmd, 3)) {
-							advanceEvent = true;
-							break;
-						}
-						event.currentEvent = (byte) (evCmd[readPtr] - 2);
-						advanceEvent = true;
-						break;
-					case EventCommand.BRANCH_IF_EQ: //event var CMPNE
-						if (evCmd[1] == 2) {
-							if (eventVars[evCmd[2]] != readInteger(evCmd, 3)) {
-								advanceEvent = true;
-								break;
-							}
-						} else if (evCmd[1] == 1 && getFloatEventVar(evCmd[2]) != readFloat(evCmd, 3)) {
-							advanceEvent = true;
-							break;
-						}
-						event.currentEvent = (byte) (evCmd[readPtr] - 2);
-						advanceEvent = true;
-						break;
-					case EventCommand.BRANCH_IF_GEQ: //event var CMPLESS
-						if (evCmd[1] == 2) {
-							if (eventVars[evCmd[2]] < readInteger(evCmd, 3)) {
-								advanceEvent = true;
-								break;
-							}
-						} else if (evCmd[1] == 1 && getFloatEventVar(evCmd[2]) < readFloat(evCmd, 3)) {
-							advanceEvent = true;
-							break;
-						}
-						event.currentEvent = (byte) (evCmd[readPtr] - 2);
-						advanceEvent = true;
-						break;
-					case EventCommand.BRANCH_IF_LEQ: //event var CMPGRTR
-						if (evCmd[1] == 2) {
-							if (eventVars[evCmd[2]] > readInteger(evCmd, 3)) {
-								advanceEvent = true;
-								break;
-							}
-						} else if (evCmd[1] == 1 && getFloatEventVar(evCmd[2]) > readFloat(evCmd, 3)) {
-							advanceEvent = true;
-							break;
-						}
-						event.currentEvent = (byte) (evCmd[readPtr] - 2);
-						advanceEvent = true;
-						break;
-					case EventCommand.OBJ_MOVE: //move object to position
-						GameObject moveobj = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
-						if (moveobj == null) {
-							advanceEvent = true;
-						} else {
-							int moveSpeed = GameObject.readInt(evCmd, 15);
-							int delta = GameRuntime.updateDelta;
-							if (delta >= moveSpeed) {
-								evCmd[15] = evCmd[11];
-								evCmd[16] = evCmd[12];
-								evCmd[17] = evCmd[13];
-								evCmd[18] = evCmd[14];
-								delta = moveSpeed;
-							}
-							moveobj.localObjectMatrix.translationX += GameObject.readInt(evCmd, 3) * delta;
-							moveobj.localObjectMatrix.translationY += GameObject.readInt(evCmd, 7) * delta;
-							moveobj.setIsDirtyRecursive();
-							moveobj.setBBoxIsDirty();
-							int deltaDiff = moveSpeed - delta;
-							if (deltaDiff <= 0) {
-								advanceEvent = true;
-							} else {
-								write32(evCmd, 15, deltaDiff);
-								advanceEvent = false;
-							}
-						}
-						break;
-					case EventCommand.OBJ_ROTATE: //rotate object
-						GameObject rotObj = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
-						if (rotObj == null) {
-							advanceEvent = true;
-						} else {
-							int b6 = GameObject.readInt(evCmd, 11);
-							int b7 = GameObject.readInt(evCmd, 7);
-							int i8 = GameRuntime.updateDelta;
-							if (b6 == b7) {
-								write32(evCmd, 15, rotObj.localObjectMatrix.m00); //save initial rotation
-								write32(evCmd, 19, rotObj.localObjectMatrix.m01);
-								write32(evCmd, 23, rotObj.localObjectMatrix.m10);
-								write32(evCmd, 27, rotObj.localObjectMatrix.m11);
-							}
-							if (b6 - i8 <= 0) {
-								evCmd[11] = evCmd[7];
-								evCmd[12] = evCmd[8];
-								evCmd[13] = evCmd[9];
-								evCmd[14] = evCmd[10];
-								b6 = 0;
-							}
-							float rotation = LP32.LP32ToFP32((int) ((((long) GameObject.readInt(evCmd, 3)) * ((long) (b7 - b6))) / ((long) b7)));
-							Matrix.temp.setRotation(rotation);
-							Matrix.temp.translationX = 0;
-							Matrix.temp.translationY = 0;
-							rotObj.localObjectMatrix.m00 = GameObject.readInt(evCmd, 15);
-							rotObj.localObjectMatrix.m01 = GameObject.readInt(evCmd, 19);
-							rotObj.localObjectMatrix.m10 = GameObject.readInt(evCmd, 23);
-							rotObj.localObjectMatrix.m11 = GameObject.readInt(evCmd, 27);
-							rotObj.localObjectMatrix.mul(Matrix.temp);
-							rotObj.setIsDirtyRecursive();
-							rotObj.setBBoxIsDirty();
-							int i9 = b6 - i8;
-							if (i9 <= 0) {
-								advanceEvent = true;
-							} else {
-								write32(evCmd, 11, i9);
-								advanceEvent = false;
-							}
-						}
-						break;
-					case EventCommand.OBJ_SETPOS: //copy translation from other object or eventcmd
-					{
-						GameObject destObj = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
-						if (destObj != null) {
-							short srcObjId = GameObject.readShort(evCmd, 3);
-							if (srcObjId < 0) {
-								destObj.localObjectMatrix.translationX = GameObject.readInt(evCmd, 5);
-								destObj.localObjectMatrix.translationY = GameObject.readInt(evCmd, 9);
-								eventLog("Set translation of object " + destObj.getObjectId() + " to (" + (destObj.localObjectMatrix.translationX >> 16) + ", " + (destObj.localObjectMatrix.translationY >> 16) + ")");
-							} else {
-								eventLog("Set translation of object " + destObj.getObjectId() + " from " + srcObjId);
-								GameObject srcObj = event.getObjectRoot().searchByObjId(srcObjId);
-								if (srcObj != null) {
-									srcObj.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-									int srcTxAbs = GameObject.tmpObjMatrix.translationX;
-									int srcTyAbs = GameObject.tmpObjMatrix.translationY;
-									destObj.localObjectMatrix.translationX = 0;
-									destObj.localObjectMatrix.translationY = 0;
-									destObj.objectMatrixIsDirty = true;
-									destObj.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-									GameObject.tmpObjMatrix.invert(Matrix.temp); //load inverse rotation matrix
-									Matrix.temp.mulVector(srcTxAbs, srcTyAbs);
-									destObj.localObjectMatrix.translationX = Matrix.vectorMulRslX;
-									destObj.localObjectMatrix.translationY = Matrix.vectorMulRslY;
-								}
-							}
-							destObj.setIsDirtyRecursive();
-							destObj.setBBoxIsDirty();
-							destObj.loadObjectMatrixToTarget(destObj.renderCalcMatrix);
-						}
-						advanceEvent = true;
-						break;
+				event.currentEvent++;
+				if (event.currentEvent >= event.eventCount) {
+					if (event.repeatable == 1) {
+						event.eventState = STATE_WAITING;
+						event.resetTransformEvents();
+					} else {
+						event.eventState = STATE_TERMINATED;
 					}
-					case EventCommand.OBJ_ATTACH: //reset parent to level root
-					{
-						short parentWhoId = GameObject.readShort(evCmd, 1);
-						short parentToId = GameObject.readShort(evCmd, 3);
-						GameObject parentWho = GameObject.dummyParent.searchByObjId(parentWhoId);
-						if (parentWho != null) {
-							GameObject parentTo = event.getObjectRoot().searchByObjId(parentToId);
-							if (parentTo != null) {
-								parentWho.setParent(parentTo);
-								parentWho.setBBoxIsDirty();
-							}
-						}
-						advanceEvent = true;
-						break;
-					}
-					case EventCommand.OBJ_DETACH: //parent to dummy
-					{
-						GameObject parentWho = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
-						if (parentWho != null) {
-							parentWho.setBBoxIsDirty();
-							parentWho.setParent(GameObject.dummyParent);
-						}
-						advanceEvent = true;
-						break;
-					}
-					case EventCommand.BRANCH: //branch to event unconditionally
-						event.currentEvent = (byte) (evCmd[1] - 2);
-						eventLog("BranchEvent " + event.currentEvent);
-						advanceEvent = true;
-						break;
-					case EventCommand.NOP: //NOP
-						advanceEvent = true;
-						break;
-					case EventCommand.END: //end event
-						if (event.repeatable == 1) {
-							event.eventState = STATE_WAITING;
-						} else {
-							event.eventState = STATE_TERMINATED;
-						}
-						advanceEvent = false;
-						break;
-					case EventCommand.WAIT_ACTOR_GONE:
-						advanceEvent = !arrayContains(event.lastActorsInArea, event.lastAreaActorCount, event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1)));
-						break;
-					case EventCommand.CHECKPOINT: //checkpoint reached
-						BounceGame.checkpointPosX = event.renderCalcMatrix.translationX;
-						BounceGame.checkpointPosY = event.renderCalcMatrix.translationY;
-						advanceEvent = true;
-						eventLog("Checkpoint reached: " + BounceGame.checkpointPosX + ", " + BounceGame.checkpointPosY);
-						break;
-					case EventCommand.PUSH: //force gravity push
-						GameObject pushTarget = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
-						if (pushTarget.objType == BounceObject.TYPEID) {
-							BounceObject bounce = (BounceObject) pushTarget;
-							bounce.pushX += (float) GameObject.readShort(evCmd, 3);
-							bounce.pushY += (float) GameObject.readShort(evCmd, 5);
-						}
-						advanceEvent = true;
-						break;
-					case EventCommand.GRAVITATE:
-						GameObject gravityTarget = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
-						if (gravityTarget.objType == BounceObject.TYPEID) {
-							BounceObject bounce = (BounceObject) gravityTarget;
-							bounce.gravityX += (float) GameObject.readShort(evCmd, 3);
-							bounce.gravityY += (float) GameObject.readShort(evCmd, 5);
-						}
-						advanceEvent = true;
-						break;
-					case EventCommand.ACCELERATE:
-						GameObject accelTarget = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
-						if (accelTarget.objType == BounceObject.TYPEID) {
-							BounceObject bounce = (BounceObject) accelTarget;
-							bounce.curXVelocity += (float) GameObject.readShort(evCmd, 3);
-							bounce.curYVelocity += (float) GameObject.readShort(evCmd, 5);
-						}
-						advanceEvent = true;
-						break;
-					case EventCommand.OBJ_SET_FLAGS: {
-						GameObject obj = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
-						if (obj != null) {
-							eventLog("evcmd 29 on object " + obj.getObjectId());
-							int flagExistMask = GameObject.readInt(evCmd, 3);
-							int flagValues = GameObject.readInt(evCmd, 7);
-							if ((flagExistMask & 1) != 0) {
-								obj.flags &= ~FLAG_Z_COORD_MASK;
-								obj.flags |= flagValues & FLAG_Z_COORD_MASK;
-								obj.zCoord = (byte) ((obj.flags & FLAG_Z_COORD_MASK) - 16);
-							}
-							if ((flagExistMask & FLAG_NOCOLLIDE) != 0) {
-								obj.flags &= ~FLAG_NOCOLLIDE;
-								obj.flags |= flagValues & FLAG_NOCOLLIDE;
-							}
-							if ((flagExistMask & FLAG_NODRAW) != 0) {
-								obj.flags &= ~FLAG_NODRAW;
-								obj.flags |= flagValues & FLAG_NODRAW;
-								if (obj.getObjType() == SpriteObject.TYPEID) {
-									SpriteObject sprite = (SpriteObject) obj;
-									if (sprite.imageIDs[0] == 358) { //evil machine
-										sprite.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-										BounceGame.colorMachineDestroyParticle.emitIndependentBursts(
-												24,
-												sprite.bboxMinX + (60 << 16) + GameObject.tmpObjMatrix.translationX,
-												sprite.bboxMinY + (60 << 16) + GameObject.tmpObjMatrix.translationY,
-												(sprite.bboxMaxX - (60 << 16)) + GameObject.tmpObjMatrix.translationX,
-												(sprite.bboxMaxY - (60 << 16)) + GameObject.tmpObjMatrix.translationY,
-												840,
-												0,
-												0,
-												360,
-												2040,
-												510
-										);
-									}
-								}
-							}
-							if ((flagExistMask & 256) > 0) {
-								obj.flags &= ~256;
-								obj.flags |= flagValues & 0x100;
-							}
-						}
-						advanceEvent = true;
-						break;
-					}
-					case EventCommand.CAMERA_TARGET: //change camera target
-						GameObject.cameraTarget = event.getObjectRoot().searchByObjId(GameObject.readShort(evCmd, 1));
-						eventLog("New camera target: " + GameObject.cameraTarget);
-						advanceEvent = true;
-						break;
-					case EventCommand.CAMERA_SETPARAM:
-						BounceGame.reqCameraSnap = evCmd[1] == 1;
-						GameObject.cameraBounceFactor = GameObject.readShort(evCmd, 2);
-						GameObject.cameraStabilizeSpeed = GameObject.readShort(evCmd, 4);
-						eventLog("Camera return: snap " + BounceGame.reqCameraSnap + " / a " + GameObject.cameraBounceFactor + " / b " + GameObject.cameraStabilizeSpeed);
-						advanceEvent = true;
-						break;
-					case EventCommand.CAMERA_SETPARAM_DEFAULT:
-						BounceGame.reqCameraSnap = false;
-						GameObject.cameraBounceFactor = 90;
-						GameObject.cameraStabilizeSpeed = 140;
-						advanceEvent = true;
-						break;
-					default:
-						advanceEvent = true;
-						break;
-				}
-				if (advanceEvent) {
-					if (event.currentEvent < -1) {
-						event.currentEvent = -1;
-					}
-					event.currentEvent++;
-					if (event.currentEvent >= event.eventCount) {
-						if (event.repeatable == 1) {
-							event.eventState = STATE_WAITING;
-							event.resetTransformEvents();
-						} else {
-							event.eventState = STATE_TERMINATED;
-						}
-					}
-				} else {
-					break;
 				}
 			}
 		}

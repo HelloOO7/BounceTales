@@ -6,6 +6,7 @@ import bouncetales.ext.rsc.ResourceInfo;
 import bouncetales.ext.rsc.ResourceType;
 import bouncetools.layout.LayoutPreset;
 import bouncetools.message.MessageCompiler;
+import bouncetools.message.MessageIncludeGenerator;
 import bouncetools.resmap.ResidentResourceList;
 import bouncetools.resmap.ResourceTable;
 import bouncetools.sprites.SpriteLibrary;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -28,19 +30,19 @@ import xstandard.io.base.impl.ext.data.DataOutStream;
 public class ResourceComposer {
 
 	public static final String VERSION = "1.0.0";
-	
+
 	public static final String CONFIG_FILENAME = "composer.yml";
 	public static final String VERSION_FILENAME = "composer_version.txt";
 
 	public static final String UNCOMPILED_RESOURCE_EXT = ".res";
-	
+
 	public static final String MESSAGEDATA_DIR = "Localized";
 	public static final String GRAPHICS_DIR = "Graphics";
 	public static final String AUDIO_DIR = "Audio";
 	public static final String LAYOUT_DIR = "Layout";
 	public static final String LEVELS_DIR = "Levels";
 
-	public static final String ICON_FILENAME = "icon.png";	
+	public static final String ICON_FILENAME = "icon.png";
 	public static final String GRAPHICS_LIST_FILENAME = "master.res";
 	public static final String AUDIO_LIST_FILENAME = "sound_list.res";
 	public static final String RESIDENT_FILENAME = "resident.res";
@@ -56,7 +58,7 @@ public class ResourceComposer {
 			Logger.getLogger(ResourceComposer.class.getName()).log(Level.SEVERE, null, ex);
 		}
 	}
-	
+
 	public static void cleanDirectory(FSFile dir, String... exclude) {
 		if (dir.exists()) {
 			Set<String> excludeSet = new HashSet<>();
@@ -76,7 +78,7 @@ public class ResourceComposer {
 		FSFile dstDir = srcDir.getChild(cfg.destDir);
 		cleanDirectory(dstDir, ".gitignore");
 		dstDir.mkdirs();
-		
+
 		srcDir.getChild(ResourceComposer.ICON_FILENAME).copyTo(dstDir.getChild(ResourceComposer.ICON_FILENAME));
 
 		IFilenameSupplier fn = cfg.obfuscate ? OBFUSCATE_FILENAME : KEEP_FILENAME;
@@ -87,7 +89,7 @@ public class ResourceComposer {
 		FSFile graphicsRoot = srcDir.getChild(ResourceComposer.GRAPHICS_DIR);
 		FSFile levelRoot = srcDir.getChild(ResourceComposer.LEVELS_DIR);
 
-		MessageCompiler.compileMessageDataDir(msgRoot, dstDir);
+		LinkedHashMap<String, Short> msgMap = MessageCompiler.compileMessageDataDir(msgRoot, dstDir);
 
 		String resTableFn = fn.getFilename("index.bin");
 		FSFile resTableFile = dstDir.getChild(resTableFn);
@@ -149,11 +151,13 @@ public class ResourceComposer {
 
 		//Compile levels
 		for (FSFile levelFile : levelRoot.listFiles()) {
-			String srcFilename = LEVELS_DIR + "/" + levelFile.getName();
-			String dstFilename = fn.getFilename(srcFilename);
-			short mainIdx = restbl.addResInfo(createResInfo(dstFilename, 0, levelFile.length()));
-			resNameMap.put(srcFilename, restbl.addResBatch(createResBatch(ResourceType.LEVEL, mainIdx)));
-			copyFile(levelFile, dstDir.getChild(dstFilename));
+			if (levelFile.getName().endsWith(".rlef")) {
+				String srcFilename = LEVELS_DIR + "/" + levelFile.getName();
+				String dstFilename = fn.getFilename(srcFilename);
+				short mainIdx = restbl.addResInfo(createResInfo(dstFilename, 0, levelFile.length()));
+				resNameMap.put(srcFilename, restbl.addResBatch(createResBatch(ResourceType.LEVEL, mainIdx)));
+				copyFile(levelFile, dstDir.getChild(dstFilename));
+			}
 		}
 
 		//Compile resident resource map
@@ -169,14 +173,29 @@ public class ResourceComposer {
 			restbl.write(out);
 		}
 
-		if (cfg.resMapIncludeClass != null && cfg.includeRoot != null) {
-			String className = cfg.resMapIncludeClass.substring(cfg.resMapIncludeClass.lastIndexOf('.') + 1); //if not found, -1 + 1 = 0 = entire string
-			String packageName = cfg.resMapIncludeClass.substring(0, cfg.resMapIncludeClass.length() - className.length());
-			if (packageName.endsWith(".")) {
-				packageName = packageName.substring(0, packageName.length() - 1);
+		if (cfg.includeRoot != null) {
+			if (cfg.resMapIncludeClass != null) {
+				String[] tgt = getIncludeTarget(cfg.resMapIncludeClass);
+				ResourceIncludeGenerator.generate(srcDir.getChild(cfg.includeRoot).getChild(tgt[0]), tgt[1], resTableFn, resNameMap);
 			}
-			ResourceIncludeGenerator.generate(srcDir.getChild(cfg.includeRoot).getChild(packageName.replace('.', '/') + "/" + className + ".java"), packageName, resTableFn, resNameMap);
+			if (cfg.msgMapIncludeClass != null) {
+				if (!msgMap.containsKey("UI_MORE_GAMES")) {
+					msgMap.put("UI_MORE_GAMES", (short) -1); //fix compile errors when loading pre-2.0.25 resources
+				}
+				String[] tgt = getIncludeTarget(cfg.msgMapIncludeClass);
+				MessageIncludeGenerator.generate(srcDir.getChild(cfg.includeRoot).getChild(tgt[0]), tgt[1], msgMap);
+			}
 		}
+	}
+
+	private static String[] getIncludeTarget(String cfgValue) {
+		String className = cfgValue.substring(cfgValue.lastIndexOf('.') + 1); //if not found, -1 + 1 = 0 = entire string
+		String packageName = cfgValue.substring(0, cfgValue.length() - className.length());
+		if (packageName.endsWith(".")) {
+			packageName = packageName.substring(0, packageName.length() - 1);
+		}
+		String basepath = packageName.replace('.', '/') + "/";
+		return new String[]{basepath + className + ".java", packageName};
 	}
 
 	public static short resolveTagName(String name, Map<String, Short> nameToResIDMap) {
@@ -281,5 +300,6 @@ public class ResourceComposer {
 		public String destDir;
 		public String includeRoot;
 		public String resMapIncludeClass;
+		public String msgMapIncludeClass;
 	}
 }

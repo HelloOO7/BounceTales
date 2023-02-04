@@ -115,7 +115,7 @@ public final class CannonObject extends GameObject {
 	}
 
 	/* renamed from: b */
-	public final void loadBounceToCannon() {
+	public final void onPlayerContact() {
 		if (this.reloadCooldown == 0 && EventObject.eventVars[1] == BounceGame.CONTROLLER_NORMAL) {
 			EventObject.eventVars[1] = BounceGame.CONTROLLER_CANNON;
 			BounceGame.currentCannon = this;
