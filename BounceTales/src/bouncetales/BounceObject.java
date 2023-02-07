@@ -47,30 +47,42 @@ public final class BounceObject extends GameObject {
 	//Dimensions
 	public static final int[] BALL_DIMENS = {20, 20, 20}; //renamed from: a
 	public static int[] BALL_DIMENS_SCREENSPACE = new int[3]; //renamed from: b
-	
+
 	static {
 		updateScreenSpaceConstants();
 	}
 
 	//Physics
+	/*
+	List of physics variables (1cm = 1px):
+	
+	Base gravity - natural gravity present in the overworld [cm/s]
+	Gravity - per-ball multiplier of the base gravity [1]
+	Friction - how much surface contact deccelerates the ball [1]
+	Ricochet factor - how much the ball bounces away from walls [(cm/s)/(cm/s)] = [1]
+	Movement acceleration - amount of speed added when moving with the keypad [cm/s/s]
+	Maximum movement speed - maximum velocity achievable through natural motion [cm/s]
+	Mid-air movement suppression - Mid-air acceleration mitigation intensity [1]
+	Jump acceleration - vertical acceleration added when jumping [cm/s/s]
+	Inverse maximum jump slope - the maximum slope on which jumping is still possible, written as the minimum absolute cosine value of it [1]
+	 */
 	private static final float BASE_GRAVITY_X = 0.0f; //renamed from: l
 	private static final float BASE_GRAVITY_Y = -400.0f; //renamed from: m
 	public static final float[] GRAVITY = {1.0f, 1.4f, 0.5f}; //renamed from: a
 
-	private static final float[] f19b = {0.6f, 0.3f, 0.6f}; //renamed from: b
-	private static final float[] f22c = {0.1f, 0.1f, 0.1f}; //renamed from: c
+	private static final float[] FRICTION = {0.6f, 0.3f, 0.6f}; //renamed from: b
+	private static final float[] RICOCHET_FACTOR = {0.1f, 0.1f, 0.1f}; //renamed from: c
 
+	private static final float[] MOVEMENT_ACCELERATION = {500.0f, 350.0f, 312.5f}; //renamed from: e
+	private static final float[] MAXIMUM_MOVEMENT_SPEED = {280.0f, 350.0f, 150.0f}; //renamed from: f
+	private static final float[] MIDAIR_MOVEMENT_SUPPRESSION = {1.5f, 2.5f, 1.2f}; //renamed from: g
+
+	private static final float[] JUMP_ACCELERATION = {288.0f, 255.0f, 162.5f}; //renamed from: h
 	private static final float[] MAX_JUMP_SLOPE_INV = {
 		(float) Math.cos(0.9599310755729675d), //cos 55deg
 		(float) Math.cos(0.9599310755729675d),
 		(float) Math.cos(0.9599310755729675d)
 	}; //renamed from: d
-
-	private static final float[] MOVEMENT_TRACTIONS = {500.0f, 350.0f, 312.5f}; //renamed from: e
-	private static final float[] MOVEMENT_SPEEDS = {280.0f, 350.0f, 150.0f}; //renamed from: f
-	private static final float[] MIDAIR_MOVEMENT_SUPPRESSION = {1.5f, 2.5f, 1.2f}; //renamed from: g
-
-	private static final float[] JUMP_MODIFIERS = {288.0f, 255.0f, 162.5f}; //renamed from: h
 
 	//Global state - AABB collisions
 	private static boolean aabbRayResult; //renamed from: i
@@ -484,13 +496,13 @@ public final class BounceObject extends GameObject {
 					float f21 = (f17 * xslope) + (f18 * yslope);
 					float f22 = f21 * xslope;
 					float f23 = f21 * yslope;
-					float f24 = f13 + f4 + ((f17 - f22) - (f22 * f22c[this.ballForme])) + (0.01f * xslope);
-					float f25 = f14 + ((f18 - f23) - (f23 * f22c[this.ballForme])) + f5 + (0.01f * yslope);
+					float f24 = f13 + f4 + ((f17 - f22) - (f22 * RICOCHET_FACTOR[this.ballForme])) + (0.01f * xslope);
+					float f25 = f14 + ((f18 - f23) - (f23 * RICOCHET_FACTOR[this.ballForme])) + f5 + (0.01f * yslope);
 					float f26 = (this.curXVelocity * xslope) + (this.curYVelocity * yslope);
 					float f27 = f26 * xslope;
 					float f28 = f26 * yslope;
-					float f29 = (this.curXVelocity - f27) - (f27 * f22c[this.ballForme]);
-					float f30 = (this.curYVelocity - f28) - (f28 * f22c[this.ballForme]);
+					float f29 = (this.curXVelocity - f27) - (f27 * RICOCHET_FACTOR[this.ballForme]);
+					float f30 = (this.curYVelocity - f28) - (f28 * RICOCHET_FACTOR[this.ballForme]);
 					float f31 = (f15 * xslope) + (f16 * yslope);
 					this.curXVelocity = f29 + (f31 * xslope);
 					this.curYVelocity = f30 + (f31 * yslope);
@@ -499,7 +511,7 @@ public final class BounceObject extends GameObject {
 					float sqrt3 = (float) Math.sqrt((double) ((f32 * f32) + (f33 * f33)));
 					float f34 = sqrt3 != 0.0f ? f32 / sqrt3 : 0.0f;
 					float f35 = sqrt3 != 0.0f ? f33 / sqrt3 : 0.0f;
-					float f36 = (-((0.0f * xslope) + (BASE_GRAVITY_Y * yslope))) * f19b[this.ballForme] * GRAVITY[this.ballForme];
+					float f36 = (-((0.0f * xslope) + (BASE_GRAVITY_Y * yslope))) * FRICTION[this.ballForme] * GRAVITY[this.ballForme];
 					float f37 = f34 * f36;
 					float f38 = f35 * f36;
 					float f39 = f3 * GRAVITY[this.ballForme];
@@ -1067,9 +1079,9 @@ public final class BounceObject extends GameObject {
 	public final void jump(boolean small) {
 		if (this.slopeCosAbs > MAX_JUMP_SLOPE_INV[this.ballForme] && this.isGrounded) {
 			if (small) {
-				this.pushY += JUMP_MODIFIERS[this.ballForme] / 2.0f;
+				this.pushY += JUMP_ACCELERATION[this.ballForme] / 2.0f;
 			} else {
-				this.pushY += JUMP_MODIFIERS[this.ballForme];
+				this.pushY += JUMP_ACCELERATION[this.ballForme];
 			}
 			this.isGrounded = false;
 			if (this.isPlayer) {
@@ -1091,11 +1103,11 @@ public final class BounceObject extends GameObject {
 			speedBoost = 50.0f;
 		}
 		if (this.isGrounded) {
-			if (this.curXVelocity > (-MOVEMENT_SPEEDS[this.ballForme]) - speedBoost) {
-				this.gravityX -= speedBoost + MOVEMENT_TRACTIONS[this.ballForme];
+			if (this.curXVelocity > (-MAXIMUM_MOVEMENT_SPEED[this.ballForme]) - speedBoost) {
+				this.gravityX -= speedBoost + MOVEMENT_ACCELERATION[this.ballForme];
 			}
-		} else if (this.curXVelocity > (-MOVEMENT_SPEEDS[this.ballForme]) - speedBoost) {
-			this.gravityX -= (speedBoost + MOVEMENT_TRACTIONS[this.ballForme]) / MIDAIR_MOVEMENT_SUPPRESSION[this.ballForme];
+		} else if (this.curXVelocity > (-MAXIMUM_MOVEMENT_SPEED[this.ballForme]) - speedBoost) {
+			this.gravityX -= (speedBoost + MOVEMENT_ACCELERATION[this.ballForme]) / MIDAIR_MOVEMENT_SUPPRESSION[this.ballForme];
 		}
 	}
 
@@ -1106,11 +1118,11 @@ public final class BounceObject extends GameObject {
 			speedBoost = 50.0f;
 		}
 		if (this.isGrounded) {
-			if (this.curXVelocity < MOVEMENT_SPEEDS[this.ballForme] + speedBoost) {
-				this.gravityX += speedBoost + MOVEMENT_TRACTIONS[this.ballForme];
+			if (this.curXVelocity < MAXIMUM_MOVEMENT_SPEED[this.ballForme] + speedBoost) {
+				this.gravityX += speedBoost + MOVEMENT_ACCELERATION[this.ballForme];
 			}
-		} else if (this.curXVelocity < MOVEMENT_SPEEDS[this.ballForme] + speedBoost) {
-			this.gravityX += ((speedBoost + MOVEMENT_TRACTIONS[this.ballForme]) / MIDAIR_MOVEMENT_SUPPRESSION[this.ballForme]);
+		} else if (this.curXVelocity < MAXIMUM_MOVEMENT_SPEED[this.ballForme] + speedBoost) {
+			this.gravityX += ((speedBoost + MOVEMENT_ACCELERATION[this.ballForme]) / MIDAIR_MOVEMENT_SUPPRESSION[this.ballForme]);
 		}
 	}
 
