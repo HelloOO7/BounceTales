@@ -1,6 +1,5 @@
 package bouncetales;
 
-import com.nokia.mid.ui.DirectGraphics;
 import javax.microedition.lcdui.Graphics;
 
 /* renamed from: c */
@@ -682,8 +681,8 @@ public final class BounceObject extends GameObject {
 	// p000.GameObject
 	/* renamed from: a */
 	//@Override
-	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix rootMatrix) {
-		super.draw(graphics, directGraphics, rootMatrix);
+	public final void draw(Graphics graphics, Matrix rootMatrix) {
+		super.draw(graphics, rootMatrix);
 		int fbBallCY;
 		int fbBallCX;
 		Graphics graphics2;

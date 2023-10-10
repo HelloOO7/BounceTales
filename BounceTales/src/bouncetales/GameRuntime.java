@@ -6,7 +6,6 @@ import bouncetales.ext.rsc.ResidentResHeader;
 import bouncetales.ext.rsc.ResourceBatch;
 import bouncetales.ext.rsc.ResourceInfo;
 import bouncetales.ext.rsc.ResourceType;
-import com.nokia.mid.ui.DeviceControl;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -15,10 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
 import javax.microedition.lcdui.Canvas;
-import javax.microedition.lcdui.Command;
-import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
-import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
@@ -33,7 +29,7 @@ import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 
 /* renamed from: o */
-public final class GameRuntime extends GameCanvas implements Runnable, CommandListener, IResourceHandler {
+public final class GameRuntime extends GameCanvas implements Runnable, IResourceHandler {
 
 	/*
 	Constants
@@ -209,6 +205,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 
 	public GameRuntime() {
 		super(false);
+                GraphicsUtils.init();
 	}
 
 	public static void resetGlobalState() {
@@ -918,7 +915,8 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 					paintDebugOverlay(graphics);
 				}
 			} catch (Throwable th) {
-				th.printStackTrace();
+                                drawErr(graphics, th);
+                                th.printStackTrace();
 			}
 		}
 	}
@@ -926,14 +924,16 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 	/* renamed from: j */
 	private void callGamePaint(int mode) {
 		paintMode = mode;
-		gamePaint(mInstance.getGraphics());
-		mInstance.flushGraphics();
+		gamePaint(getGraphics());
+		flushGraphics();
 		paintMode = 0;
 	}
 
 	/* renamed from: b */
 	public static void setBacklight(boolean isOn) {
-		DeviceControl.setLights(0, isOn ? 100 : 0);
+                try {
+                        com.nokia.mid.ui.DeviceControl.setLights(0, isOn ? 100 : 0);
+                } catch (NoClassDefFoundError err) {}
 	}
 
 	/* renamed from: b */
@@ -1752,9 +1752,6 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 		}
 	}
 
-	public final void commandAction(Command command, Displayable displayable) {
-	}
-
 	//@Override
 	protected final void showNotify() {
 		setState(GameState.SHOWN);
@@ -1905,6 +1902,7 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 						}
 					} catch (Throwable th) {
 						th.printStackTrace();
+                                                drawErr(getGraphicsObj(), th);
 					}
 				} //end game loop
 			}
@@ -1921,9 +1919,15 @@ public final class GameRuntime extends GameCanvas implements Runnable, CommandLi
 			m.notifyDestroyed();
 		} catch (Throwable th2) {
 			th2.printStackTrace();
+                        drawErr(getGraphicsObj(), th2);
 		}
 		System.out.println("BounceThread died");
 	}
+
+        private void drawErr(Graphics g, Throwable th) {
+            g.setColor(0xff0000);
+            g.drawString(th.toString(), 0, 30, Graphics.LEFT | Graphics.TOP);
+        }
 
 	/* renamed from: l */
 	private static void waitPausedRuntime() {

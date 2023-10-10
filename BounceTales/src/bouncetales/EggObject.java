@@ -1,6 +1,5 @@
 package bouncetales;
 
-import com.nokia.mid.ui.DirectGraphics;
 import javax.microedition.lcdui.Graphics;
 
 /* renamed from: a */
@@ -32,7 +31,7 @@ public final class EggObject extends GameObject {
 	// p000.GameObject
 	/* renamed from: a */
 	//@Override
-	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix dVar) {
+	public final void draw(Graphics graphics, Matrix dVar) {
 		loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
 		Matrix.multMatrices(dVar, GameObject.tmpObjMatrix, Matrix.temp);
 		GameRuntime.drawImageRes(Matrix.temp.translationX >> 16, Matrix.temp.translationY >> 16, 208);

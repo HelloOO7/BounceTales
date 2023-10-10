@@ -1,6 +1,5 @@
 package bouncetales;
 
-import com.nokia.mid.ui.DirectGraphics;
 import javax.microedition.lcdui.Graphics;
 
 /* renamed from: k */
@@ -74,8 +73,8 @@ public final class CannonObject extends GameObject {
 	// p000.GameObject
 	/* renamed from: a */
 	//@Override
-	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix dVar) {
-		super.draw(graphics, directGraphics, dVar);
+	public final void draw(Graphics graphics, Matrix dVar) {
+		super.draw(graphics, dVar);
 		if (this.animCountdown > 0) {
 			int currentCannonFrame = CANNON_TOTAL_FRAMES - this.animCountdown;
 			int frameStartFrames = 0;
@@ -109,7 +108,7 @@ public final class CannonObject extends GameObject {
 			model.localObjectMatrix.m01 = this.localObjectMatrix.m01;
 			model.localObjectMatrix.m11 = this.localObjectMatrix.m11;
 			model.setIsDirtyRecursive();
-			model.draw(graphics, directGraphics, dVar);
+			model.draw(graphics, dVar);
 		}
 		GameRuntime.drawImageRes(imageX, imageY, 48);
 	}

@@ -1,6 +1,5 @@
 package bouncetales;
 
-import com.nokia.mid.ui.DirectGraphics;
 import javax.microedition.lcdui.Graphics;
 
 /* renamed from: l */
@@ -126,7 +125,7 @@ public final class EnemyObject extends GameObject {
 	// p000.GameObject
 	/* renamed from: a */
 	//@Override
-	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix rootMatrix) {
+	public final void draw(Graphics graphics, Matrix rootMatrix) {
 		loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
 		Matrix.multMatrices(rootMatrix, GameObject.tmpObjMatrix, Matrix.temp);
 		int posX = Matrix.temp.translationX >> 16;

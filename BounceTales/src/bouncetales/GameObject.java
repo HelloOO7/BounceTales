@@ -1,6 +1,5 @@
 package bouncetales;
 
-import com.nokia.mid.ui.DirectGraphics;
 import javax.microedition.lcdui.Graphics;
 
 /* renamed from: j */
@@ -231,7 +230,7 @@ public class GameObject {
 	}
 
 	/* renamed from: a */
-	public void draw(Graphics graphics, DirectGraphics directGraphics, Matrix rootMatrix) {
+	public void draw(Graphics graphics, Matrix rootMatrix) {
 
 	}
 
@@ -291,7 +290,7 @@ public class GameObject {
 	protected static int[] screenAABB = new int[4];
 
 	/* renamed from: a */
-	public static void drawSceneTree(GameObject root, Graphics g, DirectGraphics dg) {
+	public static void drawSceneTree(GameObject root, Graphics g) {
 		getWorldMatrix(rootMatrix);
 		rootMatrix.invert(inverseRootMatrix);
 		getScreenWorldAABB(inverseRootMatrix, screenAABB);
@@ -322,7 +321,7 @@ public class GameObject {
 			}
 		}
 		for (int i = 0; i < renderObjCount; i++) {
-			objectsToRender[i].draw(g, dg, rootMatrix);
+			objectsToRender[i].draw(g, rootMatrix);
 		}
 		renderObjCount = 0;
 		for (int i = 0; i < objectsToRender.length; i++) {

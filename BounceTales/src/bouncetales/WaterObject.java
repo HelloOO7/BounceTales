@@ -1,6 +1,5 @@
 package bouncetales;
 
-import com.nokia.mid.ui.DirectGraphics;
 import javax.microedition.lcdui.Graphics;
 
 /* renamed from: i */
@@ -129,7 +128,7 @@ public final class WaterObject extends GameObject {
 	// p000.GameObject
 	/* renamed from: a */
 	//@Override
-	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix rootMatrix) {
+	public final void draw(Graphics graphics, Matrix rootMatrix) {
 		int airEmitDir;
 		int airYMax;
 		int airXMin;
@@ -249,7 +248,7 @@ public final class WaterObject extends GameObject {
 					nPoints++;
 					vertIdx++;
 				}
-				directGraphics.fillPolygon(xPoints, 0, yPoints, 0, nPoints, BounceGame.getStolenColorIfApplicable(this.color));
+                                GraphicsUtils.fillPolygonARGB(graphics, xPoints, 0, yPoints, 0, nPoints, BounceGame.getStolenColorIfApplicable(this.color), false);
 			} else {
 				int[] polyX = GeometryObject.TEMP_QUAD_XS;
 				int[] polyY = GeometryObject.TEMP_QUAD_YS;
@@ -261,7 +260,7 @@ public final class WaterObject extends GameObject {
 				polyY[2] = maxy;
 				polyX[3] = minx;
 				polyY[3] = maxy;
-				directGraphics.fillPolygon(polyX, 0, polyY, 0, 4, BounceGame.getStolenColorIfApplicable(this.color));
+                                GraphicsUtils.fillPolygonARGB(graphics, polyX, 0, polyY, 0, 4, BounceGame.getStolenColorIfApplicable(this.color), false);
 			}
 		} else if (!BounceGame.levelPaused) { //air tunnel
 			this.ambientParticleTimer += delta;

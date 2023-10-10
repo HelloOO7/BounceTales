@@ -1,6 +1,5 @@
 package bouncetales;
 
-import com.nokia.mid.ui.DirectGraphics;
 import javax.microedition.lcdui.Graphics;
 
 /* renamed from: g */
@@ -81,7 +80,7 @@ public final class EventObject extends GameObject {
 	// p000.GameObject
 	/* renamed from: a */
 	//@Override
-	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix rootMatrix) {
+	public final void draw(Graphics graphics, Matrix rootMatrix) {
 		if (DEBUG_DRAW_ON) {
 			int[] colors = new int[]{0x0000FF, 0xFF0000, 0x00FF00, 0x00CC00};
 			debugDraw(graphics, colors[eventState], rootMatrix);

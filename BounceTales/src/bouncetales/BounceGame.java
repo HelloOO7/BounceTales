@@ -1,8 +1,6 @@
 package bouncetales;
 
 import bouncetales.ext.rsc.ImageMap;
-import com.nokia.mid.ui.DirectGraphics;
-import com.nokia.mid.ui.DirectUtils;
 import java.util.Random;
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.Graphics;
@@ -631,7 +629,7 @@ public final class BounceGame {
 	}
 
 	/* renamed from: a */
-	private static void drawTranslucentSoftkeyBar(DirectGraphics directGraphics) {
+	private static void drawTranslucentSoftkeyBar(Graphics grp) {
 		int skbHeight = GameRuntime.getSoftkeyBarHeight();
 		int width = GameRuntime.currentWidth;
 		int height = GameRuntime.currentHeight - skbHeight;
@@ -643,7 +641,7 @@ public final class BounceGame {
 		xluSoftkeyBarYs[2] = height + skbHeight;
 		xluSoftkeyBarXs[3] = 0;
 		xluSoftkeyBarYs[3] = skbHeight + height;
-		directGraphics.fillPolygon(xluSoftkeyBarXs, 0, xluSoftkeyBarYs, 0, 4, 0x55000000);
+		GraphicsUtils.fillPolygonARGB(grp, xluSoftkeyBarXs, 0, xluSoftkeyBarYs, 0, 4, 0x55000000, true);
 	}
 
 	/* renamed from: a */
@@ -669,32 +667,32 @@ public final class BounceGame {
 
 	private static void cycleLevelSelectLeft(UILayout layout, boolean updateSoftkeys) {
 		if (selectedLevelId != 0) {
-			boolean fast = lastSelectedLevelId > selectedLevelId;
-			lastSelectedLevelId = selectedLevelId;
-			selectedLevelId--;
+                        boolean fast = lastSelectedLevelId > selectedLevelId;
+                        lastSelectedLevelId = selectedLevelId;
+                        selectedLevelId--;
 			if (bookAnimationTime == 650 || fast) {
 				bookAnimationTime = 0;
 			}
 			targetBookAnimationTime = 650;
-			if (updateSoftkeys) {
-				updateLevelStartSoftkeyByUnlock(layout);
-			}
+                        if (updateSoftkeys) {
+                                updateLevelStartSoftkeyByUnlock(layout);
+                        }
 		}
 	}
 
 	/* renamed from: a */
 	private static void cycleLevelSelectRight(UILayout layout, boolean updateSoftkeys) {
 		if (selectedLevelId != 14) {
-			boolean fast = lastSelectedLevelId < selectedLevelId;
-			lastSelectedLevelId = selectedLevelId;
-			selectedLevelId++;
+                        boolean fast = lastSelectedLevelId < selectedLevelId;
+                        lastSelectedLevelId = selectedLevelId;
+                        selectedLevelId++;
 			if (bookAnimationTime == 0 || fast) {
 				bookAnimationTime = 650;
 			}
 			targetBookAnimationTime = 0;
-			if (updateSoftkeys) {
-				updateLevelStartSoftkeyByUnlock(layout);
-			}
+                        if (updateSoftkeys) {
+                                updateLevelStartSoftkeyByUnlock(layout);
+                        }
 		}
 	}
 
@@ -771,7 +769,6 @@ public final class BounceGame {
 		GameRuntime.setBacklight(true);
 		Graphics grp = GameRuntime.getGraphicsObj();
 		int delta = GameRuntime.updateDelta * GameRuntime.getUpdatesPerDraw();
-		DirectGraphics directGraphics = DirectUtils.getDirectGraphics(grp);
 		if ((ui.uiID == GameScene.INFO_FIELD_MESSAGE
 				|| ui.uiID == GameScene.MENU_PAUSE
 				|| ui.uiID == GameScene.CONFIRM_RESTART_LEVEL
@@ -788,12 +785,12 @@ public final class BounceGame {
 			ypoints[2] = ypos + height;
 			xpoints[3] = xpos;
 			ypoints[3] = ypos + height;
-			directGraphics.fillPolygon(xpoints, 0, ypoints, 0, 4, 0x55000000);
+			GraphicsUtils.fillPolygonARGB(grp, xpoints, 0, ypoints, 0, 4, 0x55000000, true);
 			GameRuntime.drawImageRes(xpos, ypos, 311);
 			GameRuntime.drawImageRes(xpos + width, ypos, 312);
 			GameRuntime.drawImageRes(xpos, ypos + height, 309);
 			GameRuntime.drawImageRes(xpos + width, ypos + height, 310);
-			drawTranslucentSoftkeyBar(directGraphics);
+			drawTranslucentSoftkeyBar(grp);
 			return false;
 		} else if (ui.uiID == GameScene.MENU_LEVEL_SELECT) {
 			if (type == 1) {
@@ -869,10 +866,10 @@ public final class BounceGame {
 				GameRuntime.drawImageRes(9, 9, 102);
 				String stringBuffer = getTotalEggCount() + "/450";
 				GameRuntime.drawText(stringBuffer, 0, stringBuffer.length(), 41, 10, 20);
-				drawTranslucentSoftkeyBar(directGraphics);
+				drawTranslucentSoftkeyBar(grp);
 			}
 			return false;
-		} else if (ui.uiID == GameScene.MENU_PAUSE
+                } else if (ui.uiID == GameScene.MENU_PAUSE
 				|| ui.uiID == GameScene.CONFIRM_RESTART_LEVEL
 				|| ui.uiID == GameScene.CONFIRM_RETURN_LEVEL_SELECT
 				|| ui.uiID == GameScene.CONFIRM_EXIT_LEVEL
@@ -880,7 +877,7 @@ public final class BounceGame {
 				|| ui.uiID == GameScene.INFO_FIELD_MESSAGE
 				|| type != 1) {
 			if (type == 1) {
-				drawTranslucentSoftkeyBar(directGraphics);
+				drawTranslucentSoftkeyBar(grp);
 			}
 			if (type == 4 || type == 2 || type == 9) {
 				return false;
@@ -937,7 +934,7 @@ public final class BounceGame {
 			} else {
 				drawBookFrame(i20, i21, grp);
 			}
-			drawTranslucentSoftkeyBar(directGraphics);
+			drawTranslucentSoftkeyBar(grp);
 			return false;
 		}
 	}
@@ -1939,7 +1936,6 @@ public final class BounceGame {
 			if (this.gameMainState == 4) { //in-game
 				GameRuntime.setBacklight(true);
 				Graphics graphics = GameRuntime.getGraphicsObj();
-				DirectGraphics directGraphics = DirectUtils.getDirectGraphics(graphics);
 				graphics.setClip(0, 0, renderClipWidth, renderClipHeight);
 				int levelType = getLevelType(currentLevel);
 				short[] sArr4 = f307i;
@@ -2012,7 +2008,7 @@ public final class BounceGame {
 					drawBGParallax(sArr3, 80, 100, 150, 100, -70, 300, PARALLAX_MAX_COUNT * pscale, -1, graphics);
 				}
 				mRNG.setSeed(System.currentTimeMillis());
-				GameObject.drawSceneTree(rootLevelObj, graphics, directGraphics);
+				GameObject.drawSceneTree(rootLevelObj, graphics);
 				graphics.setClip(0, 0, GameRuntime.currentWidth, GameRuntime.currentHeight);
 				GameRuntime.setTextStyle(-3, 1);
 				GameRuntime.setTextColor(0, 0);
@@ -2528,7 +2524,7 @@ public final class BounceGame {
 						cycleLevelSelectRight(ui, true);
 						break;
 				}
-			}
+                        }
 			ui.handleKeyCode(keyCode);
 		} else if (this.gameMainState == 2) {
 			updateLoadingScreen();

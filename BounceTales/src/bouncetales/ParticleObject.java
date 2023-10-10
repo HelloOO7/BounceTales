@@ -1,6 +1,5 @@
 package bouncetales;
 
-import com.nokia.mid.ui.DirectGraphics;
 import javax.microedition.lcdui.Graphics;
 
 /* renamed from: n */
@@ -89,7 +88,7 @@ public final class ParticleObject extends GameObject {
 	// p000.GameObject
 	/* renamed from: a */
 	//@Override
-	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix rootMatrix) {
+	public final void draw(Graphics graphics, Matrix rootMatrix) {
 		boolean lifespanEnd;
 		int i;
 		int delta = GameRuntime.updateDelta * GameRuntime.getUpdatesPerDraw();

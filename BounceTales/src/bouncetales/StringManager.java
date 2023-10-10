@@ -3,7 +3,6 @@ package bouncetales;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Vector;
 
 /* renamed from: q */
 public final class StringManager {
@@ -12,61 +11,6 @@ public final class StringManager {
 	private static String localeProperty = null; //renamed from: a
 	
 	private static DataInputStream textReader = null; //renamed from: a
-
-	static {
-		System.out.println("LocalizedData init...");
-		boolean matchedPlatform = false;
-		String platformProperty = System.getProperty("microedition.platform");
-		StringBuffer sb = new StringBuffer();
-		InputStream manifestStrm = StringManager.class.getResourceAsStream("/META-INF/MANIFEST.MF");
-		if (manifestStrm != null) {
-			while (true) {
-				try {
-					int read = manifestStrm.read();
-					if (read < 0) {
-						break;
-					} else if (((char) read) == '\r') {
-						continue;
-					} else if (((char) read) != '\n') {
-						sb.append((char) read);
-					} else if (sb.toString().trim().startsWith("Nokia-Platform:")) {
-						sb.append(readPropertyValue(manifestStrm));
-						String nokiaPlatform = sb.toString().trim().substring("Nokia-Platform:".length());
-						System.out.println("Check Nokia-Platform " + nokiaPlatform + " against " + platformProperty);
-						Vector nokiaPlatforms = new Vector();
-						while (true) {
-							int indexOf = nokiaPlatform.indexOf("@");
-							if (indexOf == -1) {
-								break;
-							}
-							nokiaPlatforms.addElement(nokiaPlatform.substring(0, indexOf));
-							nokiaPlatform = nokiaPlatform.substring(indexOf + 1, nokiaPlatform.length());
-						}
-						nokiaPlatforms.addElement(nokiaPlatform);
-						for (int i = 0; i < nokiaPlatforms.size(); i++) {
-							String plaf = (String) nokiaPlatforms.elementAt(i);
-							if (checkNokiaPlatform(platformProperty, plaf.trim(), 0, 0)) {
-								matchedPlatform = true;
-								break;
-							}
-						}
-						break;
-					} else {
-						sb.delete(0, sb.length());
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-					break;
-				}
-			}
-		}
-		if (!matchedPlatform) {
-			System.out.println("LocalizedData init failure!");
-			System.exit(0);
-		} else {
-			System.out.println("LocalizedData init success.");
-		}
-	}
 
 	private StringManager() {
 	}
@@ -155,63 +99,5 @@ public final class StringManager {
 			indexOf = str.indexOf(toFind);
 		}
 		return str;
-	}
-
-	/* renamed from: a */
-	private static StringBuffer readPropertyValue(final InputStream inputStream) {
-		final StringBuffer sb = new StringBuffer();
-		try {
-			if ((char) inputStream.read() != ' ') {
-				return sb;
-			}
-			char character;
-			while ((character = (char) inputStream.read()) != -1) {
-				if (character != '\r') {
-					if (character == '\n') {
-						sb.append((Object) readPropertyValue(inputStream));
-						break;
-					}
-					sb.append(character);
-				}
-			}
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		}
-		return sb;
-	}
-
-	/* renamed from: a */
-	private static boolean checkNokiaPlatform(String platform, String filter, int offsetPlatform, int offsetFilter) {
-		if (platform == null) {
-			return true; //running most likely on a PC
-		}
-		while (true) {
-			if (offsetPlatform == platform.length() && offsetFilter == filter.length()) {
-				return true;
-			}
-			if (offsetPlatform != platform.length() && offsetFilter != filter.length()) {
-				switch (filter.charAt(offsetFilter)) {
-					case '*':
-						if (offsetFilter != filter.length() - 1 && !checkNokiaPlatform(platform, filter, offsetPlatform, offsetFilter + 1)) {
-							offsetPlatform++;
-						} else {
-							return true;
-						}
-						break;
-					case '?':
-						offsetPlatform++;
-						offsetFilter++;
-						break;
-					default:
-						if (platform.charAt(offsetPlatform) == filter.charAt(offsetFilter)) {
-							offsetPlatform++;
-							offsetFilter++;
-						} else {
-							return false;
-						}
-						break;
-				}
-			}
-		}
 	}
 }

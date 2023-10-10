@@ -1,7 +1,6 @@
 package bouncetales;
 
 import bouncetales.ext.rsc.ImageMap;
-import com.nokia.mid.ui.DirectGraphics;
 import javax.microedition.lcdui.Graphics;
 
 /* renamed from: r */
@@ -48,7 +47,7 @@ public final class SpriteObject extends GameObject {
 				}
 			}
 			pos = decomposeBytesToShorts(this.imageIDs, count, 0, 1, bArr, pos, 16);
-			for (int i = 0; i < count; i++) {
+                        for (int i = 0; i < count; i++) {
 				this.actionImageIDs[i] = -1;
 			}
 		}
@@ -91,8 +90,8 @@ public final class SpriteObject extends GameObject {
 	// p000.GameObject
 	/* renamed from: a */
 	//@Override 
-	public final void draw(Graphics graphics, DirectGraphics directGraphics, Matrix rootMatrix) {
-		super.draw(graphics, directGraphics, rootMatrix);
+	public final void draw(Graphics graphics, Matrix rootMatrix) {
+		super.draw(graphics, rootMatrix);
 		int anmTime;
 		int fadeColor;
 		int actYPos;
