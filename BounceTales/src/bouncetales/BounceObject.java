@@ -85,10 +85,10 @@ public final class BounceObject extends GameObject {
 	}; //renamed from: d
 
 	//Global state - AABB collisions
-	private static boolean aabbRayResult; //renamed from: i
-	private static int aabbRayX; //renamed from: x
-	private static int aabbRayY; //renamed from: y
-	private static int aabbRayWeight; //renamed from: z
+	private static boolean reverseCollision; //renamed from: i
+	private static int collPointX; //renamed from: x
+	private static int collPointY; //renamed from: y
+	private static int collisionWeight; //renamed from: z
 
 	//Parameters
 	private boolean isPlayer = false; //renamed from: h
@@ -149,16 +149,16 @@ public final class BounceObject extends GameObject {
 	//State - collision
 	private int collPointCount; //renamed from: t
 
-	private final boolean[] f41a = new boolean[MAX_COLLISION_POINTS]; //renamed from: a
+	private final boolean[] reverseByCollpoint = new boolean[MAX_COLLISION_POINTS]; //renamed from: a
 
 	private final int[] collPointsX = new int[MAX_COLLISION_POINTS]; //renamed from: j
 	private final int[] collPointsY = new int[MAX_COLLISION_POINTS]; //renamed from: k
 
-	private final int[] f65l = new int[MAX_COLLISION_POINTS]; //renamed from: l
-	private final int[] f66m = new int[MAX_COLLISION_POINTS]; //renamed from: m
+	private final int[] collPointsUnnormalizedPushVectorX = new int[MAX_COLLISION_POINTS]; //renamed from: l
+	private final int[] collPointsUnnormalizedPushVectorY = new int[MAX_COLLISION_POINTS]; //renamed from: m
 
-	private final int[] f68n = new int[MAX_COLLISION_POINTS]; //renamed from: n
-	private final int[] f70o = new int[MAX_COLLISION_POINTS]; //renamed from: o
+	private final int[] deltaCollPointsX = new int[MAX_COLLISION_POINTS]; //renamed from: n
+	private final int[] deltaCollPointsY = new int[MAX_COLLISION_POINTS]; //renamed from: o
 
 	//State - Super Bounce
 	private int superBounceParticleTimer = 0; //renamed from: r
@@ -226,12 +226,12 @@ public final class BounceObject extends GameObject {
 		int xmin;
 		int ymax;
 		int ymin;
-		int i9;
+		int cosMove;
 		boolean z;
 		for (int i10 = 2; i10 < 10; i10++) {
 			this.collPointCount = 0;
-			int ballDiameter = BALL_DIMENS[this.ballForme] << 16;
-			int ballDiameterSquared = (BALL_DIMENS[this.ballForme] * BALL_DIMENS[this.ballForme]) << 16;
+			int ballRadius = BALL_DIMENS[this.ballForme] << 16;
+			int ballRadiusSquared = (BALL_DIMENS[this.ballForme] * BALL_DIMENS[this.ballForme]) << 16;
 			int xChange = this.localObjectMatrix.translationX - this.renderCalcMatrix.translationX;
 			int yChange = this.localObjectMatrix.translationY - this.renderCalcMatrix.translationY;
 			GameObject other = startNode;
@@ -259,10 +259,10 @@ public final class BounceObject extends GameObject {
 					higherY = newYRelToOther;
 					lowerY = yRelToOther;
 				}
-				int collAABBMinX = lowerX - ballDiameter;
-				int collAABBMinY = lowerY - ballDiameter;
-				int collAABBMaxX = higherX + ballDiameter;
-				int collAABBMaxY = higherY + ballDiameter;
+				int collAABBMinX = lowerX - ballRadius;
+				int collAABBMinY = lowerY - ballRadius;
+				int collAABBMaxX = higherX + ballRadius;
+				int collAABBMaxY = higherY + ballRadius;
 				if (!aabbIntersects(other.allBBoxMinX, other.allBBoxMinY, other.allBBoxMaxX, other.allBBoxMaxY, collAABBMinX, collAABBMinY, collAABBMaxX, collAABBMaxY)) {
 					other = other.getNextNode(startNode);
 				} else if ((other.flags & FLAG_NOCOLLIDE) == 0) {
@@ -271,11 +271,11 @@ public final class BounceObject extends GameObject {
 						case GeometryObject.TYPEID:
 							GeometryObject geom = (GeometryObject) other;
 							boolean z2 = false;
-							int i24 = 0;
-							int i25 = 0;
-							int i26 = 0;
+							int moveX = 0;
+							int moveY = 0;
+							int moveLength = 0;
 							int i27 = 0;
-							int i28 = 0;
+							int sinMove = 0;
 							int vertCount = geom.getVertexCount() - 1;
 							for (int vertIdx = 0; vertIdx < vertCount; vertIdx++) {
 								int x1 = geom.xCoordBuffer[vertIdx];
@@ -299,44 +299,45 @@ public final class BounceObject extends GameObject {
 								if (aabbIntersects(xmin, ymin, xmax, ymax, collAABBMinX, collAABBMinY, collAABBMaxX, collAABBMaxY)) {
 									if (!z2) {
 										z = true;
-										i24 = newXRelToOther - xRelToOther;
-										i25 = newYRelToOther - yRelToOther;
-										i26 = (int) Math.sqrt((double) ((((long) i24) * ((long) i24)) + (((long) i25) * ((long) i25))));
-										if (i26 != 0) {
-											i9 = (int) ((((long) i24) << 16) / ((long) i26));
-											i28 = (int) ((((long) i25) << 16) / ((long) i26));
+										moveX = newXRelToOther - xRelToOther;
+										moveY = newYRelToOther - yRelToOther;
+										moveLength = (int) Math.sqrt((double) ((((long) moveX) * ((long) moveX)) + (((long) moveY) * ((long) moveY))));
+										if (moveLength != 0) {
+											cosMove = (int) ((((long) moveX) << 16) / ((long) moveLength));
+											sinMove = (int) ((((long) moveY) << 16) / ((long) moveLength));
 										} else {
-											i9 = i27;
+											cosMove = i27;
 										}
 									} else {
-										i9 = i27;
+										cosMove = i27;
 										z = z2;
 									}
+									// Calculating normal vector counterclockwise to the line
 									int lineYDim = y1 - y2;
 									int lineXDimNeg = -(x1 - x2);
-									int sqrt = (int) Math.sqrt((double) ((((long) lineYDim) * ((long) lineYDim)) + (((long) lineXDimNeg) * ((long) lineXDimNeg))));
-									int i37 = (int) (((((long) lineYDim) * ((long) BALL_DIMENS[this.ballForme])) << 16) / ((long) sqrt));
-									int i38 = (int) (((((long) lineXDimNeg) * ((long) BALL_DIMENS[this.ballForme])) << 16) / ((long) sqrt));
-									int i39 = x1 + i37;
-									int i40 = y1 + i38;
-									int i41 = x2 + i37;
-									int i42 = y2 + i38;
-									if ((((long) i24) * ((long) lineYDim)) + (((long) i25) * ((long) lineXDimNeg)) < 0) {
-										if (aabbIntersectRay(xRelToOther, yRelToOther, i24, i25, i39, i40, i41, i42, ballDiameterSquared)) {
-											registCollPoint(geom, aabbRayWeight, xChange, yChange, lineYDim, lineXDimNeg, aabbRayResult);
+									int polygonLineLength = (int) Math.sqrt((double) ((((long) lineYDim) * ((long) lineYDim)) + (((long) lineXDimNeg) * ((long) lineXDimNeg))));
+									int ballRadiusSizedNormalVectorX = (int) (((((long) lineYDim) * ((long) BALL_DIMENS[this.ballForme])) << 16) / ((long) polygonLineLength));
+									int ballRadiusSizedNormalVectorY = (int) (((((long) lineXDimNeg) * ((long) BALL_DIMENS[this.ballForme])) << 16) / ((long) polygonLineLength));
+									int radiusFromX1 = x1 + ballRadiusSizedNormalVectorX;
+									int radiusFromY1 = y1 + ballRadiusSizedNormalVectorY;
+									int radiusFromX2 = x2 + ballRadiusSizedNormalVectorX;
+									int radiusFromY2 = y2 + ballRadiusSizedNormalVectorY;
+									if ((((long) moveX) * ((long) lineYDim)) + (((long) moveY) * ((long) lineXDimNeg)) < 0) {
+										if (vectorIntersectLine(xRelToOther, yRelToOther, moveX, moveY, radiusFromX1, radiusFromY1, radiusFromX2, radiusFromY2, ballRadiusSquared)) {
+											registCollPoint(geom, collisionWeight, xChange, yChange, lineYDim, lineXDimNeg, reverseCollision);
 										}
-										if (m9c(xRelToOther, yRelToOther, i9, i28, i26, x1, y1, BALL_DIMENS[this.ballForme])) {
-											registCollPoint(geom, aabbRayWeight, xChange, yChange, aabbRayX - x1, aabbRayY - y1, aabbRayResult);
+										if (finiteRayIntersectsCircle(xRelToOther, yRelToOther, cosMove, sinMove, moveLength, x1, y1, BALL_DIMENS[this.ballForme])) {
+											registCollPoint(geom, collisionWeight, xChange, yChange, collPointX - x1, collPointY - y1, reverseCollision);
 										}
-										if (m9c(xRelToOther, yRelToOther, i9, i28, i26, x2, y2, BALL_DIMENS[this.ballForme])) {
-											registCollPoint(geom, aabbRayWeight, xChange, yChange, aabbRayX - x2, aabbRayY - y2, aabbRayResult);
+										if (finiteRayIntersectsCircle(xRelToOther, yRelToOther, cosMove, sinMove, moveLength, x2, y2, BALL_DIMENS[this.ballForme])) {
+											registCollPoint(geom, collisionWeight, xChange, yChange, collPointX - x2, collPointY - y2, reverseCollision);
 										}
 									}
 								} else {
-									i9 = i27;
+									cosMove = i27;
 									z = z2;
 								}
-								i27 = i9;
+								i27 = cosMove;
 								z2 = z;
 							}
 							other = other.getNextNodeDescendToChildren(startNode);
@@ -353,11 +354,11 @@ public final class BounceObject extends GameObject {
 						{
 							WaterObject water = (WaterObject) other;
 							int waterMinX = water.areaMinX << 16;
-							if (aabbIntersectRay(waterMinX, water.areaMinY << 16, (water.areaMaxX << 16) - waterMinX, 0, xRelToOther, yRelToOther, newXRelToOther, newYRelToOther, 0)) {
-								water.onBounceSurfaceContact(aabbRayWeight, this.curYVelocity, BALL_DIMENS[this.ballForme], this);
+							if (vectorIntersectLine(waterMinX, water.areaMinY << 16, (water.areaMaxX << 16) - waterMinX, 0, xRelToOther, yRelToOther, newXRelToOther, newYRelToOther, 0)) {
+								water.onBounceSurfaceContact(collisionWeight, this.curYVelocity, BALL_DIMENS[this.ballForme], this);
 							}
-							if (newYRelToOther - ballDiameter < water.surfaceY) {
-								water.updateBounceSwim(newXRelToOther, newYRelToOther - ballDiameter, this);
+							if (newYRelToOther - ballRadius < water.surfaceY) {
+								water.updateBounceSwim(newXRelToOther, newYRelToOther - ballRadius, this);
 							}
 							other = other.getNextNodeDescendToChildren(startNode);
 							break;
@@ -371,7 +372,7 @@ public final class BounceObject extends GameObject {
 							break;
 						case TrampolineObject.TYPEID: //jump pad
 							TrampolineObject jumpPad = (TrampolineObject) other;
-							if (aabbIntersectRay(
+							if (vectorIntersectLine(
 									LP32.Int32ToLP32(-70),
 									LP32.Int32ToLP32(95),
 									LP32.Int32ToLP32(140),
@@ -459,7 +460,7 @@ public final class BounceObject extends GameObject {
 					long distX = (long) (this.collPointsX[collIndex] - this.renderCalcMatrix.translationX);
 					long distY = (long) (this.collPointsY[collIndex] - this.renderCalcMatrix.translationY);
 					long distance = (distX * distX) + (distY * distY);
-					if (this.f41a[collIndex]) {
+					if (this.reverseByCollpoint[collIndex]) {
 						distance = -distance;
 					}
 					if (distance > 0x271000000000L) {
@@ -470,70 +471,75 @@ public final class BounceObject extends GameObject {
 					}
 				}
 				if (nearestCollIdx != -1) {
-					float f3 = 1000.0f / ((float) GameRuntime.updateDelta);
-					float f4 = ((float) this.collPointsX[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
-					float f5 = ((float) this.collPointsY[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
-					float f6 = ((float) this.f65l[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
-					float f7 = ((float) this.f66m[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
-					float sqrt2 = 1.0f / ((float) Math.sqrt((double) ((f6 * f6) + (f7 * f7))));
-					float xslope = sqrt2 * f6;
-					float yslope = sqrt2 * f7;
-					float f10 = ((float) this.f68n[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
-					float f11 = ((float) this.f70o[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
-					float f12 = (f10 * xslope) + (f11 * yslope);
-					float f13 = f12 * xslope;
-					float f14 = f12 * yslope;
-					if ((xslope * f10) + (yslope * f11) < 0.0f) {
-						f13 = -f13;
-						f14 = -f14;
-					}
-					float f15 = f10 * f3;
-					float f16 = f11 * f3;
-					float f17 = ((float) (this.localObjectMatrix.translationX - this.collPointsX[nearestCollIdx])) * LP32_TO_FP32_MULTIPLIER;
-					float f18 = ((float) (this.localObjectMatrix.translationY - this.collPointsY[nearestCollIdx])) * LP32_TO_FP32_MULTIPLIER;
-					float f19 = f10 + f4;
-					float f20 = f11 + f5;
-					float f21 = (f17 * xslope) + (f18 * yslope);
-					float f22 = f21 * xslope;
-					float f23 = f21 * yslope;
-					float f24 = f13 + f4 + ((f17 - f22) - (f22 * RICOCHET_FACTOR[this.ballForme])) + (0.01f * xslope);
-					float f25 = f14 + ((f18 - f23) - (f23 * RICOCHET_FACTOR[this.ballForme])) + f5 + (0.01f * yslope);
-					float f26 = (this.curXVelocity * xslope) + (this.curYVelocity * yslope);
-					float f27 = f26 * xslope;
-					float f28 = f26 * yslope;
-					float f29 = (this.curXVelocity - f27) - (f27 * RICOCHET_FACTOR[this.ballForme]);
-					float f30 = (this.curYVelocity - f28) - (f28 * RICOCHET_FACTOR[this.ballForme]);
-					float f31 = (f15 * xslope) + (f16 * yslope);
-					this.curXVelocity = f29 + (f31 * xslope);
-					this.curYVelocity = f30 + (f31 * yslope);
-					float f32 = this.curXVelocity - f15;
-					float f33 = this.curYVelocity - f16;
-					float sqrt3 = (float) Math.sqrt((double) ((f32 * f32) + (f33 * f33)));
-					float f34 = sqrt3 != 0.0f ? f32 / sqrt3 : 0.0f;
-					float f35 = sqrt3 != 0.0f ? f33 / sqrt3 : 0.0f;
-					float f36 = (-((0.0f * xslope) + (BASE_GRAVITY_Y * yslope))) * FRICTION[this.ballForme] * GRAVITY[this.ballForme];
-					float f37 = f34 * f36;
-					float f38 = f35 * f36;
-					float f39 = f3 * GRAVITY[this.ballForme];
-					float f40 = f32 * f39;
-					float f41 = f39 * f33;
-					if ((f40 * f40) + (f41 * f41) < (f37 * f37) + (f38 * f38)) {
-						this.gravityX -= f40;
-						this.gravityY -= f41;
+					// since calculations are made in float instead of fixed point, it may be subject to floating point inprecision
+					float collisionChecksPerSecond = 1000.0f / ((float) GameRuntime.updateDelta);
+					float previousCollPointX = ((float) this.collPointsX[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
+					float previousCollPointY = ((float) this.collPointsY[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
+					float unnormalizedPushVectorX = ((float) this.collPointsUnnormalizedPushVectorX[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
+					float unnormalizedPushVectorY = ((float) this.collPointsUnnormalizedPushVectorY[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;
+					float sqrt2 = 1.0f / ((float) Math.sqrt((double) ((unnormalizedPushVectorX * unnormalizedPushVectorX) + (unnormalizedPushVectorY * unnormalizedPushVectorY))));
+					float CosPushVector = sqrt2 * unnormalizedPushVectorX;
+					float SinPushVector = sqrt2 * unnormalizedPushVectorY;
+					float collPointDX = ((float) this.deltaCollPointsX[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;  // | 
+					float collPointDY = ((float) this.deltaCollPointsY[nearestCollIdx]) * LP32_TO_FP32_MULTIPLIER;  // |
+					float projectedDeltaLength = (collPointDX * CosPushVector) + (collPointDY * SinPushVector);     // |
+					float projectedCollPointDeltaX = projectedDeltaLength * CosPushVector; 							// |
+					float projectedCollPointDeltaY = projectedDeltaLength * SinPushVector; 							// | 
+					if ((CosPushVector * collPointDX) + (SinPushVector * collPointDY) < 0.0f) { 				   	// | For collisions with moving/rotating objects, all at 0 if not moving
+						projectedCollPointDeltaX = -projectedCollPointDeltaX; 										// |
+						projectedCollPointDeltaY = -projectedCollPointDeltaY; 										// |
+					} 																							   	// |
+					float collPointDeltaXForOneSecond = collPointDX * collisionChecksPerSecond;						// |
+					float collPointDeltaYForOneSecond = collPointDY * collisionChecksPerSecond;						// |
+					float movePastPreviousCollPointX = ((float) (this.localObjectMatrix.translationX - this.collPointsX[nearestCollIdx])) * LP32_TO_FP32_MULTIPLIER;
+					float movePastPreviousCollPointY = ((float) (this.localObjectMatrix.translationY - this.collPointsY[nearestCollIdx])) * LP32_TO_FP32_MULTIPLIER;
+					float nextCollPointX = collPointDX + previousCollPointX;
+					float nextCollPointY = collPointDY + previousCollPointY;
+					float projectedMovePastLength = (movePastPreviousCollPointX * CosPushVector) + (movePastPreviousCollPointY * SinPushVector);
+					float projectedMovePastX = projectedMovePastLength * CosPushVector;
+					float projectedMovePastY = projectedMovePastLength * SinPushVector;
+
+					// mirror move past vector times ricochet factor (0.1) plus the projected coll point delta across the normal vector
+					float newBouncePosForNextCheckX = projectedCollPointDeltaX + previousCollPointX + ((movePastPreviousCollPointX - projectedMovePastX) - (projectedMovePastX * RICOCHET_FACTOR[this.ballForme])) + (0.01f * CosPushVector);
+					float newBouncePosForNextCheckY = projectedCollPointDeltaY + ((movePastPreviousCollPointY - projectedMovePastY) - (projectedMovePastY * RICOCHET_FACTOR[this.ballForme])) + previousCollPointY + (0.01f * SinPushVector);
+					float projectedVelocity = (this.curXVelocity * CosPushVector) + (this.curYVelocity * SinPushVector);
+					float projectedVelocityX = projectedVelocity * CosPushVector;
+					float projectedVelocityY = projectedVelocity * SinPushVector;
+
+					// mirror velocity times ricochet factor (0.1) plus the projected coll point delta across the normal vector
+					float ricochetVelocityX = (this.curXVelocity - projectedVelocityX) - (projectedVelocityX * RICOCHET_FACTOR[this.ballForme]);
+					float ricochetVelocityY = (this.curYVelocity - projectedVelocityY) - (projectedVelocityY * RICOCHET_FACTOR[this.ballForme]);
+					float projectedDeltaForOneSecondLength = (collPointDeltaXForOneSecond * CosPushVector) + (collPointDeltaYForOneSecond * SinPushVector);
+					this.curXVelocity = ricochetVelocityX + (projectedDeltaForOneSecondLength * CosPushVector);
+					this.curYVelocity = ricochetVelocityY + (projectedDeltaForOneSecondLength * SinPushVector);
+					float dragX = this.curXVelocity - collPointDeltaXForOneSecond;
+					float dragY = this.curYVelocity - collPointDeltaYForOneSecond;
+					float dragLength = (float) Math.sqrt((double) ((dragX * dragX) + (dragY * dragY)));
+					float dragCos = dragLength != 0.0f ? dragX / dragLength : 0.0f;
+					float dragSin = dragLength != 0.0f ? dragY / dragLength : 0.0f;
+					float projectedGravity = (-((0.0f * CosPushVector) + (BASE_GRAVITY_Y * SinPushVector))) * FRICTION[this.ballForme] * GRAVITY[this.ballForme];
+					float gravityOnDragX = dragCos * projectedGravity;
+					float gravityOnDragY = dragSin * projectedGravity;
+					float dragFactor = collisionChecksPerSecond * GRAVITY[this.ballForme];
+					float dragXOverOneSecond = dragX * dragFactor;
+					float dragYOverOneSecond = dragY * dragFactor;
+					if ((dragXOverOneSecond * dragXOverOneSecond) + (dragYOverOneSecond * dragYOverOneSecond) < (gravityOnDragX * gravityOnDragX) + (gravityOnDragY * gravityOnDragY)) {
+						this.gravityX -= dragXOverOneSecond;
+						this.gravityY -= dragYOverOneSecond;
 					} else {
-						this.gravityX -= f37;
-						this.gravityY -= f38;
+						this.gravityX -= gravityOnDragX;
+						this.gravityY -= gravityOnDragY;
 					}
-					this.torqueX = (this.torqueX * (1.0f - this.torqueFalloff)) + (this.torqueFalloff * f32);
-					this.torqueY = (this.torqueY * (1.0f - this.torqueFalloff)) + (this.torqueFalloff * f33);
+					this.torqueX = (this.torqueX * (1.0f - this.torqueFalloff)) + (this.torqueFalloff * dragX);
+					this.torqueY = (this.torqueY * (1.0f - this.torqueFalloff)) + (this.torqueFalloff * dragY);
 					this.airTimeCounter = 0.0f;
 					this.isGrounded = true;
-					this.slopeSinAbs = xslope;
-					this.slopeCosAbs = yslope;
-					this.renderCalcMatrix.translationX = LP32.FP32ToLP32(f19);
-					this.renderCalcMatrix.translationY = LP32.FP32ToLP32(f20);
-					this.localObjectMatrix.translationX = LP32.FP32ToLP32(f24);
-					this.localObjectMatrix.translationY = LP32.FP32ToLP32(f25);
+					this.slopeSinAbs = CosPushVector;
+					this.slopeCosAbs = SinPushVector;
+					this.renderCalcMatrix.translationX = LP32.FP32ToLP32(nextCollPointX);
+					this.renderCalcMatrix.translationY = LP32.FP32ToLP32(nextCollPointY);
+					this.localObjectMatrix.translationX = LP32.FP32ToLP32(newBouncePosForNextCheckX);
+					this.localObjectMatrix.translationY = LP32.FP32ToLP32(newBouncePosForNextCheckY);
 					recalcAbsObjectMatrix();
 					this.renderCalcMatrix.invert(this.inverseRenderCalcMatrix);
 					this.collPointCount = 0;
@@ -550,39 +556,44 @@ public final class BounceObject extends GameObject {
 	}
 
 	/* renamed from: a */
-	private void registCollPoint(GeometryObject geometry, int t, int x, int y, int x2, int y2, boolean z) {
+	private void registCollPoint(GeometryObject geometry, int t, int x, int y, int pushVectorX, int pushVectorY, boolean reverseCollision) {
 		if (t > 0) {
 			this.collPointsX[this.collPointCount] = this.renderCalcMatrix.translationX + ((int) ((((long) x) * ((long) t)) >> 16));
 			this.collPointsY[this.collPointCount] = this.renderCalcMatrix.translationY + ((int) ((((long) y) * ((long) t)) >> 16));
-			this.f41a[this.collPointCount] = z;
-			geometry.renderCalcMatrix.mulDirection(x2, y2);
+			this.reverseByCollpoint[this.collPointCount] = reverseCollision;
+			geometry.renderCalcMatrix.mulDirection(pushVectorX, pushVectorY);
 			int i6 = Matrix.vectorMulRslX;
 			int i7 = Matrix.vectorMulRslY;
 			geometry.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-			GameObject.tmpObjMatrix.mulDirection(x2, y2);
+			GameObject.tmpObjMatrix.mulDirection(pushVectorX, pushVectorY);
 			int i8 = Matrix.vectorMulRslX;
 			int i9 = Matrix.vectorMulRslY;
-			this.f65l[this.collPointCount] = (int) (((((long) i6) * ((long) (LP32.ONE - t))) + (((long) i8) * ((long) t))) >> 16);
-			this.f66m[this.collPointCount] = (int) (((((long) i7) * ((long) (LP32.ONE - t))) + (((long) i9) * ((long) t))) >> 16);
+			this.collPointsUnnormalizedPushVectorX[this.collPointCount] = (int) (((((long) i6) * ((long) (LP32.ONE - t))) + (((long) i8) * ((long) t))) >> 16);
+			this.collPointsUnnormalizedPushVectorY[this.collPointCount] = (int) (((((long) i7) * ((long) (LP32.ONE - t))) + (((long) i9) * ((long) t))) >> 16);
 		} else if (t < 0) {
 			throw new IllegalStateException("t < 0, t: " + t);
 		} else {
-			geometry.renderCalcMatrix.mulVector(aabbRayX, aabbRayY);
+			// Either in the wall or very close (weight truncated to 0)
+			geometry.renderCalcMatrix.mulVector(collPointX, collPointY);
 			this.collPointsX[this.collPointCount] = Matrix.vectorMulRslX;
 			this.collPointsY[this.collPointCount] = Matrix.vectorMulRslY;
-			this.f41a[this.collPointCount] = z;
-			geometry.renderCalcMatrix.mulVector(x2, y2);
-			this.f65l[this.collPointCount] = Matrix.vectorMulRslX;
-			this.f66m[this.collPointCount] = Matrix.vectorMulRslY;
+			this.reverseByCollpoint[this.collPointCount] = reverseCollision;
+			// The line below should be a mulDirection, its intent is to keep the pushVector normalized even with
+			// rotation and scaling, but it takes the absolute translation of the object into account so the vector
+			// is almost never normalized and collisions depend of the position of the object in the level.
+			// This is the reason for most clips inside walls.
+			geometry.renderCalcMatrix.mulVector(pushVectorX, pushVectorY);
+			this.collPointsUnnormalizedPushVectorX[this.collPointCount] = Matrix.vectorMulRslX;
+			this.collPointsUnnormalizedPushVectorY[this.collPointCount] = Matrix.vectorMulRslY;
 		}
-		geometry.renderCalcMatrix.mulVector(aabbRayX, aabbRayY);
+		geometry.renderCalcMatrix.mulVector(collPointX, collPointY);
 		int i10 = Matrix.vectorMulRslX;
 		int i11 = Matrix.vectorMulRslY;
 		geometry.loadObjectMatrixToTarget(GameObject.tmpObjMatrix);
-		GameObject.tmpObjMatrix.mulVector(aabbRayX, aabbRayY);
+		GameObject.tmpObjMatrix.mulVector(collPointX, collPointY);
 		int i12 = (int) ((float) GameRuntime.updateDelta * 6553.6f);
-		this.f68n[this.collPointCount] = (Matrix.vectorMulRslX - i10) + (i12 * 0);
-		this.f70o[this.collPointCount] = (Matrix.vectorMulRslY - i11) + (i12 * 0);
+		this.deltaCollPointsX[this.collPointCount] = (Matrix.vectorMulRslX - i10) + (i12 * 0);
+		this.deltaCollPointsY[this.collPointCount] = (Matrix.vectorMulRslY - i11) + (i12 * 0);
 		this.collPointCount++;
 		if (geometry.event > -1) {
 			System.out.println("Geometry " + getObjectId() + " started event " + geometry.event);
@@ -590,92 +601,96 @@ public final class BounceObject extends GameObject {
 		}
 	}
 
-	private static boolean aabbIntersectRay(int minX, int minY, int width, int height, int rayx1, int rayy1, int rayx2, int rayy2, int epsilon) {
-		long l2 = (long) rayx1 * (long) height >> 16;
-		long l3 = (long) rayy1 * (long) width >> 16;
-		long l4 = (long) rayx2 * (long) height >> 16;
-		long l5 = (long) rayy2 * (long) width >> 16;
-		long l6 = l2 - l3 - l4 + l5;
-		if (l6 == 0L) {
+	private static boolean vectorIntersectLine(int originX, int originY, int vectorX, int vectorY, int lineX1, int lineY1, int lineX2, int lineY2, int leewaySquared) {
+		long l2 = (long) lineX1 * (long) vectorY >> 16;
+		long l3 = (long) lineY1 * (long) vectorX >> 16;
+		long l4 = (long) lineX2 * (long) vectorY >> 16;
+		long l5 = (long) lineY2 * (long) vectorX >> 16;
+		long crossProductVectorLine = l2 - l3 - l4 + l5;
+		if (crossProductVectorLine == 0L) { // parallel
 			return false;
 		}
-		long l7 = (l2 - l3 + ((long) width * (long) minY >> 16) - ((long) height * (long) minX >> 16) << 16) / l6;
-		if (l7 < 0L || l7 > LP32.ONE) {
+		long whereVectorIntersectsLine = (l2 - l3 + ((long) vectorX * (long) originY >> 16) - ((long) vectorY * (long) originX >> 16) << 16) / crossProductVectorLine;
+		if (whereVectorIntersectsLine < 0L || whereVectorIntersectsLine > LP32.ONE) {
 			return false;
 		}
-		long weight = ((long) rayx1 * (long) (rayy2 - minY) + (long) rayy1 * (long) (minX - rayx2) + (long) rayx2 * (long) minY - (long) rayy2 * (long) minX) / l6;
-		if (weight >= 0L && weight <= LP32.ONE) {
-			aabbRayWeight = (int) weight;
-			aabbRayX = (int) ((long) minX + (weight * (long) width >> 16));
-			aabbRayY = (int) ((long) minY + (weight * (long) height >> 16));
-			aabbRayResult = false;
+		long whereLineIntersectsVector = ((long) lineX1 * (long) (lineY2 - originY) + (long) lineY1 * (long) (originX - lineX2) + (long) lineX2 * (long) originY - (long) lineY2 * (long) originX) / crossProductVectorLine;
+		if (whereLineIntersectsVector >= 0L && whereLineIntersectsVector <= LP32.ONE) { // intersects within the line segment
+			// proportionally to the movement vector, weight is where the line crosses
+			collisionWeight = (int) whereLineIntersectsVector;
+			collPointX = (int) ((long) originX + (whereLineIntersectsVector * (long) vectorX >> 16));
+			collPointY = (int) ((long) originY + (whereLineIntersectsVector * (long) vectorY >> 16));
+			reverseCollision = false;
 			return true;
 		}
-		if (weight < 0L) {
-			long l9 = minX - rayx1;
-			long l10 = rayx2 - rayx1;
-			long l11 = minY - rayy1;
-			long l12 = rayy2 - rayy1;
-			long l13 = l9 * l10 + l11 * l12 >> 16;
-			if (l13 <= 0L) {
+		if (whereLineIntersectsVector < 0L) {
+			// line behind the ray origin
+			// check if ray origin is within line based on the normal vector
+			long dxFirstpointOrigin = originX - lineX1;
+			long lineX = lineX2 - lineX1;
+			long dyFirstpointOrigin = originY - lineY1;
+			long lineY = lineY2 - lineY1;
+			long firstpointOriginDotLine = dxFirstpointOrigin * lineX + dyFirstpointOrigin * lineY >> 16;
+			if (firstpointOriginDotLine <= 0L) {
 				return false;
 			}
-			long l14 = l10 * l10 + l12 * l12 >> 16;
-			if (l13 >= l14) {
+			long lineLengthSquared = lineX * lineX + lineY * lineY >> 16;
+			if (firstpointOriginDotLine >= lineLengthSquared) {
 				return false;
 			}
-			long l15 = (long) rayx1 + ((l13 = (l13 << 16) / l14) * l10 >> 16);
-			long l16 = l15 - (long) minX;
-			long l17 = (long) rayy1 + (l13 * l12 >> 16);
-			long l18 = l17 - (long) minY;
-			long l19 = l16 * l16 + l18 * l18 >> 16;
-			if (l19 > (long) epsilon) {
+
+			long projectedX = (long) lineX1 + ((firstpointOriginDotLine = (firstpointOriginDotLine << 16) / lineLengthSquared) * lineX >> 16);
+			long deltaProjectedX = projectedX - (long) originX;
+			long projectedY = (long) lineY1 + (firstpointOriginDotLine * lineY >> 16);
+			long deltaProjectedY = projectedY - (long) originY;
+			long distanceFromProjected = deltaProjectedX * deltaProjectedX + deltaProjectedY * deltaProjectedY >> 16;
+			if (distanceFromProjected > (long) leewaySquared) {
 				return false;
 			}
-			aabbRayWeight = 0;
-			aabbRayX = (int) l15;
-			aabbRayY = (int) l17;
-			aabbRayResult = true;
+			collisionWeight = 0;
+			collPointX = (int) projectedX;
+			collPointY = (int) projectedY;
+			reverseCollision = true;
 			return true;
 		}
 		return false;
 	}
 
 	/* renamed from: c */
-	private static boolean m9c(int i, int i2, int i3, int i4, int i5, int i6, int i7, int i8) {
-		long j = (long) (i - i6);
-		long j2 = (long) (i2 - i7);
-		long j3 = ((((long) i3) * j) + (((long) i4) * j2)) >> 16;
-		if (j3 >= 0) {
+	private static boolean finiteRayIntersectsCircle(int rayOriginX, int rayOriginY, int rayCos, int raySin, int rayLength, int circleCenterX, int circleCenterY, int circleRadius) {
+		long dxCircleOrigin = (long) (rayOriginX - circleCenterX);
+		long dyCircleOrigin = (long) (rayOriginY - circleCenterY);
+		long dotProduct = ((((long) rayCos) * dxCircleOrigin) + (((long) raySin) * dyCircleOrigin)) >> 16;
+		if (dotProduct >= 0) {
 			return false;
 		}
-		long j4 = (((j * j) + (j2 * j2)) >> 16) - ((long) ((i8 * i8) << 16));
-		if (j4 <= 0) {
-			aabbRayWeight = 0;
-			int sqrt = (int) Math.sqrt((double) ((j * j) + (j2 * j2)));
-			int i9 = 0;
-			int i10 = 0;
-			if (sqrt != 0) {
-				i9 = (int) (((((long) i8) * j) << 16) / ((long) sqrt));
-				i10 = (int) (((((long) i8) * j2) << 16) / ((long) sqrt));
+		long distanceOriginTangentSquared = (((dxCircleOrigin * dxCircleOrigin) + (dyCircleOrigin * dyCircleOrigin)) >> 16) - ((long) ((circleRadius * circleRadius) << 16));
+		if (distanceOriginTangentSquared <= 0) { // ray origin is inside the circle
+			collisionWeight = 0;
+			int distanceRayCircle = (int) Math.sqrt((double) ((dxCircleOrigin * dxCircleOrigin) + (dyCircleOrigin * dyCircleOrigin)));
+			int deltaProjectedX = 0;
+			int deltaProjectedY = 0;
+			if (distanceRayCircle != 0) {
+				deltaProjectedX = (int) (((((long) circleRadius) * dxCircleOrigin) << 16) / ((long) distanceRayCircle));
+				deltaProjectedY = (int) (((((long) circleRadius) * dyCircleOrigin) << 16) / ((long) distanceRayCircle));
 			}
-			aabbRayX = i9 + i6;
-			aabbRayY = i10 + i7;
-			aabbRayResult = true;
+			collPointX = deltaProjectedX + circleCenterX;
+			collPointY = deltaProjectedY + circleCenterY;
+			reverseCollision = true;
 			return true;
 		}
-		long j5 = ((j3 * j3) >> 16) - j4;
-		if (j5 < 0) {
+		long radiusSquaredMinusDistanceRayFromCenterSquared = ((dotProduct * dotProduct) >> 16) - distanceOriginTangentSquared;
+		if (radiusSquaredMinusDistanceRayFromCenterSquared < 0) {
 			return false;
 		}
-		long sqrt2 = (-j3) - ((long) ((int) Math.sqrt((double) (j5 << 16))));
-		if (sqrt2 > ((long) i5)) {
+		long distanceOriginToCircle = (-dotProduct) - ((long) ((int) Math.sqrt((double) (radiusSquaredMinusDistanceRayFromCenterSquared << 16))));
+		if (distanceOriginToCircle > ((long) rayLength)) {
 			return false;
 		}
-		aabbRayWeight = (int) ((sqrt2 << 16) / ((long) i5));
-		aabbRayX = (int) (((long) i) + ((((long) i3) * sqrt2) >> 16));
-		aabbRayY = (int) (((sqrt2 * ((long) i4)) >> 16) + ((long) i2));
-		aabbRayResult = false;
+		collisionWeight = (int) ((distanceOriginToCircle << 16) / ((long) rayLength));
+		collPointX = (int) (((long) rayOriginX) + ((((long) rayCos) * distanceOriginToCircle) >> 16));
+		collPointY = (int) (((distanceOriginToCircle * ((long) raySin)) >> 16) + ((long) rayOriginY));
+		reverseCollision = false;
 		return true;
 	}
 
